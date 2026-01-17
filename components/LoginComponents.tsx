@@ -67,12 +67,16 @@ const LoginComponents = () => {
           >
             {rememberMe && <Feather name="check" size={18} color="black" />}
           </TouchableOpacity>
-          <Text className="ml-2 text-[#1F2A33] font-medium">Remember me</Text>
+          <Text className="ml-2 text-[#1F2A33] font-medium text-sm">
+            Remember me
+          </Text>
         </View>
 
         {/* forgate password */}
         <TouchableOpacity>
-          <Text className="text-[#D32F1E] font-medium">Forgot Password?</Text>
+          <Text className="text-[#D32F1E] font-medium text-sm">
+            Forgot Password?
+          </Text>
         </TouchableOpacity>
       </View>
 

@@ -29,6 +29,15 @@ const SignupComponents = () => {
         <GradientButton title="Sign Up" className="w-1/2 " />
       </View>
 
+      {/* name input field */}
+      <CustomInput
+        label="Name"
+        className="mt-2"
+        placeholder="name@example.com"
+        onChangeText={(text) => setEmail(text)}
+        value={email}
+      />
+
       {/* email input field */}
       <CustomInput
         label="Email"
@@ -67,16 +76,13 @@ const SignupComponents = () => {
           >
             {rememberMe && <Feather name="check" size={18} color="black" />}
           </TouchableOpacity>
-          <Text className="ml-2 text-[#1F2A33] font-medium">Remember me</Text>
+          <Text className="ml-2 text-[#1F2A33] font-medium text-sm">
+            I agree to our Terms and Conditions and Privacy Policy.
+          </Text>
         </View>
-
-        {/* forgate password */}
-        <TouchableOpacity>
-          <Text className="text-[#D32F1E] font-medium">Forgot Password?</Text>
-        </TouchableOpacity>
       </View>
 
-      <GradientButton title="Login" className="mt-7" onPress={handleLogin} />
+      <GradientButton title="Sign up" className="mt-7" onPress={handleLogin} />
 
       {/* devider or */}
       <View className="mt-3.5 flex-row items-center gap-3">

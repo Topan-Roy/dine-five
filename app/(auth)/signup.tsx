@@ -24,6 +24,9 @@ const Signup = () => {
             style={{
               height: 200,
               width: 200,
+              backgroundColor: "#00000010",
+              paddingBottom: 5,
+              borderRadius: 100,
             }}
           />
         </View>
