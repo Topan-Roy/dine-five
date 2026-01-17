@@ -1,3 +1,4 @@
+import LoginComponents from "@/components/LoginComponents";
 import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
@@ -26,6 +27,8 @@ const Login = () => {
             }}
           />
         </View>
+        {/* Login form */}
+        <LoginComponents />
       </ImageBackground>
     </View>
   );

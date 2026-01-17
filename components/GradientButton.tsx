@@ -4,23 +4,24 @@ import { Text, TouchableOpacity } from "react-native";
 
 interface GradientButtonProps {
   title: string;
-  onPress: () => void;
+  onPress?: () => void;
   className?: string;
   textClassName?: string;
 }
 
-const GradientButton = ({ 
-  title, 
-  onPress, 
-  className = "", 
-  textClassName = "" 
+const GradientButton = ({
+  title,
+  onPress,
+  className = "",
+  textClassName = "",
 }: GradientButtonProps) => {
   return (
     <TouchableOpacity onPress={onPress} className={className}>
       <LinearGradient
-        colors={['#FFCD39', '#FFDA6A', '#FFCD39']} // Light yellow to darker yellow
+        colors={["#FFCD39", "#f5d78c", "#FFCD39"]} // Light yellow to darker yellow
         start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        end={{ x: 1, y: 1 }}
+        locations={[0, 0.2, 0.7]}
         style={{
           borderRadius: 12,
         }}

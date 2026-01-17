@@ -1,7 +1,8 @@
-import { AuthButton, GoogleAuth, SignUpFields } from "@/components/LoginComponents";
+import SignupComponents from "@/components/SignupComponents";
+import { Image } from "expo-image";
+import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { Image, ImageBackground, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ImageBackground, View } from "react-native";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -9,65 +10,27 @@ const Signup = () => {
   const [agree, setAgree] = useState(false);
 
   return (
-    <SafeAreaView className="flex-1">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Background Image */}
-        <ImageBackground
-       source={require("@/assets/images/splash-screen.png")}
-          resizeMode="cover"
-          className="flex-1"
-        >
-          <View className="flex-1 px-6 pt-12">
-            {/* Logo */}
-            <View className="items-center mb-8">
-              <Image
-                source={require("@/assets/images/splash-logo.svg")}
-                resizeMode="contain"
-                style={{
-                  height: 80,
-                  width: 80,
-                }}
-              />
-            </View>
-
-            {/* Sign Up Title */}
-            <Text className="text-white text-2xl font-bold text-center mb-8">
-              Sign Up
-            </Text>
-
-            {/* Sign Up Form */}
-            <SignUpFields
-              email={email}
-              setEmail={setEmail}
-              password={password}
-              setPassword={setPassword}
-              agree={agree}
-              setAgree={setAgree}
-            />
-
-            {/* Sign Up Button */}
-            <AuthButton
-              title="Sign Up"
-              onPress={() => console.log("Sign Up")}
-            />
-
-            {/* Google Sign Up */}
-            <GoogleAuth
-              title="Sign up with Google"
-              onPress={() => console.log("Google Sign Up")}
-            />
-
-            {/* Login Link */}
-            <View className="flex-row justify-center mt-6">
-              <Text className="text-white">Already have an account? </Text>
-              <TouchableOpacity>
-                <Text className="text-yellow-400 font-medium">Log In</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ImageBackground>
-      </ScrollView>
-    </SafeAreaView>
+    <View className="flex-1">
+      <StatusBar style="auto" />
+      <ImageBackground
+        source={require("@/assets/images/splash-screen.png")}
+        resizeMode="cover"
+        style={{ flex: 1, width: "100%", height: "100%" }}
+      >
+        <View className="flex-1 items-center justify-center">
+          <Image
+            source={require("@/assets/images/splash-logo.svg")}
+            contentFit="contain"
+            style={{
+              height: 200,
+              width: 200,
+            }}
+          />
+        </View>
+        {/* Login form */}
+        <SignupComponents />
+      </ImageBackground>
+    </View>
   );
 };
 

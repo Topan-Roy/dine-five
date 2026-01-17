@@ -6,7 +6,7 @@ import CustomInput from "./CustomInput";
 import GoogleLogin from "./GoogleLogin";
 import GradientButton from "./GradientButton";
 
-const LoginComponents = () => {
+const SignupComponents = () => {
   const [email, setEmail] = useState("");
   const [isShowPassword, setIsShowPassword] = useState(false);
   const [password, setPassword] = useState("");
@@ -18,15 +18,15 @@ const LoginComponents = () => {
   return (
     <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl ">
       <View className="flex-row items-center gap-5 bg-[#FFF3CD] rounded-2xl">
-        <GradientButton title="Login" className="w-1/2 " />
         <TouchableOpacity
-          onPress={() => router.push("/(auth)/signup")}
           className=" flex-1"
+          onPress={() => router.push("/(auth)/login")}
         >
           <Text className="font-bold text-[#91958E] py-4 text-center">
-            Sign Up
+            Login
           </Text>
         </TouchableOpacity>
+        <GradientButton title="Sign Up" className="w-1/2 " />
       </View>
 
       {/* email input field */}
@@ -93,4 +93,4 @@ const LoginComponents = () => {
   );
 };
 
-export default LoginComponents;
+export default SignupComponents;
