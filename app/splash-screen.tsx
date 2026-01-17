@@ -6,10 +6,10 @@ import { ImageBackground, View } from "react-native";
 const SplashScreen = () => {
   useEffect(() => {
     const time = setTimeout(() => {
-      router.push("/(auth)/login");
+      router.push("/(step)/step1");
     }, 2000);
 
-    return clearTimeout(time);
+    return () => clearTimeout(time);
   }, []);
   return (
     <ImageBackground
