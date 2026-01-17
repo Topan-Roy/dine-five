@@ -73,7 +73,7 @@ const LoginComponents = () => {
         </View>
 
         {/* forgate password */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
           <Text className="text-[#D32F1E] font-medium text-sm">
             Forgot Password?
           </Text>
