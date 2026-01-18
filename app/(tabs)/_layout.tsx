@@ -31,7 +31,7 @@ export default function TabsLayout() {
         },
         tabBarShowLabel: false, // Hide labels, শুধু icons দেখাবে
         tabBarActiveTintColor: "#FFC107", // Yellow color যেমন আপনার design এ
-        tabBarInactiveTintColor: "#999",
+        tabBarInactiveTintColor: "#332701",
       }}
     >
       <Tabs.Screen
