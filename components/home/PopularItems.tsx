@@ -9,7 +9,7 @@ const ITEMS = [
     { id: 4, name: 'Delicious cheese pizza', price: '5.99', image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500', isNew: false },
 ];
 
-export const PopularItems = () => {
+export const PopularItems = ({ onAddItem }: { onAddItem: (price: string) => void }) => {
     return (
         <View className="px-4">
             <View className="flex-row flex-wrap justify-between">
@@ -36,7 +36,9 @@ export const PopularItems = () => {
                             <View className="bg-yellow-400 px-2.5 py-1 rounded-full">
                                 <Text className="text-sm font-normal text-[#122511]">${item.price}</Text>
                             </View>
-                            <TouchableOpacity className="w-7 h-7 bg-[#FFE69C] rounded-full items-center justify-center">
+                            <TouchableOpacity
+                                onPress={() => onAddItem(item.price)}
+                                className="w-7 h-7 bg-[#FFE69C] rounded-full items-center justify-center">
                                 <Ionicons name="add" size={18} color="#332701" />
                             </TouchableOpacity>
                         </View>
