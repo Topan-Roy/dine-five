@@ -130,7 +130,22 @@ export default function MyOrdersScreen() {
                         </View>
 
                         {activeTab === 'current' ? (
-                            <TouchableOpacity className="border border-gray-200 py-3 rounded-xl items-center">
+                            <TouchableOpacity
+                                onPress={() => {
+                                    // Demo logic to toggle states based on order id or just random/fixed
+                                    // For ID 1: Pending (cancelable)
+                                    // For ID 2: Preparing (not cancelable)
+                                    // For ID 3: Ready
+                                    let state = 'pending';
+                                    if (order.id === 2) state = 'preparing';
+                                    if (order.id === 3) state = 'ready';
+
+                                    router.push({
+                                        pathname: '/screens/profile/order-details',
+                                        params: { state }
+                                    });
+                                }}
+                                className="border border-gray-200 py-3 rounded-xl items-center">
                                 <Text className="text-gray-900 font-bold text-sm">View Progress</Text>
                             </TouchableOpacity>
                         ) : (
