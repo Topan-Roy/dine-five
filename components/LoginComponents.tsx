@@ -14,6 +14,7 @@ const LoginComponents = () => {
 
   const handleLogin = () => {
     console.log(email);
+    router.push("/(tabs)");
   };
   return (
     <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl ">
@@ -73,7 +74,9 @@ const LoginComponents = () => {
         </View>
 
         {/* forgate password */}
-        <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+        <TouchableOpacity
+          onPress={() => router.push("/(auth)/forgot-password")}
+        >
           <Text className="text-[#D32F1E] font-medium text-sm">
             Forgot Password?
           </Text>

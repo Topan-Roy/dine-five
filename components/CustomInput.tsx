@@ -31,7 +31,7 @@ const CustomInput = ({
           />
         </View>
 
-        {/* Right Icon (যেমন পাসওয়ার্ড চোখের আইকন) */}
+        {/* Right Icon */}
         {icon && <View className="ml-2">{icon}</View>}
       </View>
     </View>
