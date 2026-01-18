@@ -153,10 +153,6 @@ export default function MyOrdersScreen() {
                                 <TouchableOpacity className="flex-1 border border-gray-200 py-3 rounded-xl items-center">
                                     <Text className="text-gray-900 font-bold text-sm">Reorder</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity className="w-12 items-center justify-center border border-gray-200 rounded-xl">
-                                    {/* Simple Plus or similar icon from image */}
-                                    <Ionicons name="add" size={20} color="#000" />
-                                </TouchableOpacity>
                             </View>
                         )}
                     </View>

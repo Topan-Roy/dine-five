@@ -4,10 +4,12 @@ import { TextInput, TouchableOpacity, View } from 'react-native';
 
 export const SearchBar = ({
     searchText,
-    onSearch
+    onSearch,
+    onFilterPress
 }: {
     searchText?: string;
     onSearch?: (text: string) => void;
+    onFilterPress?: () => void;
 }) => {
     return (
         <View className="flex-row items-center px-4 mt-3.5">
@@ -20,7 +22,9 @@ export const SearchBar = ({
                     value={searchText}
                     onChangeText={onSearch}
                 />
-                <TouchableOpacity className="w-10 h-10 bg-yellow-400 rounded-full items-center justify-center shadow-sm left-3">
+                <TouchableOpacity
+                    onPress={onFilterPress}
+                    className="w-10 h-10 bg-yellow-400 rounded-full items-center justify-center shadow-sm left-3">
                     <Ionicons name="options-outline" size={22} color="#555555" />
                 </TouchableOpacity>
             </View>
