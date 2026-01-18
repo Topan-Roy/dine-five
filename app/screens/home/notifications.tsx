@@ -1,0 +1,129 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Dummy data for notifications
+const NOTIFICATIONS = {
+    new: [
+        {
+            id: 1,
+            title: 'Rate Your Order',
+            message: 'How did we do? Let us know by rating your recent order and sharing your feedback.',
+            time: '5 mins ago',
+            icon: 'fast-food'
+        },
+        {
+            id: 2,
+            title: 'Hungry? Try Our New Pizza Specials!',
+            message: 'Check out the latest additions to our menu and satisfy your cravings!',
+            time: '5 mins ago',
+            icon: 'pizza'
+        },
+        {
+            id: 3,
+            title: "Don't Miss Out: Special Offer Just for You!",
+            message: 'Get 10% off your next order with code SAVE10. Limited time only!',
+            time: '22 mins ago',
+            icon: 'gift'
+        }
+    ],
+    old: [
+        {
+            id: 4,
+            title: 'Order Delivered',
+            message: 'Your order has been successfully delivered. Enjoy your meal!',
+            time: '1 day ago',
+            icon: 'bicycle'
+        },
+        {
+            id: 5,
+            title: 'Refund Processed',
+            message: 'Your refund for order #12345 has been processed.',
+            time: '2 days ago',
+            icon: 'cash'
+        },
+        {
+            id: 6,
+            title: 'Hungry? Try Our New Pizza Specials!',
+            message: 'Check out the latest additions to our menu and satisfy your cravings!',
+            time: '2 day ago',
+            icon: 'pizza'
+        },
+        {
+            id: 7,
+            title: "Don't Miss Out: Special Offer Just for You!",
+            message: 'Get 10% off your next order with code SAVE10. Limited time only!',
+            time: '2 hours ago',
+            icon: 'gift'
+        }
+    ]
+};
+
+export default function NotificationScreen() {
+    const router = useRouter();
+    const [activeTab, setActiveTab] = useState<'new' | 'old'>('new');
+
+    const renderNotification = (item: typeof NOTIFICATIONS['new'][0]) => (
+        <View key={item.id} className="flex-row items-start mb-6 w-full">
+            <View className="w-12 h-12 bg-[#FFF9E6] rounded-full items-center justify-center mr-4">
+                {/* Using roughly similar icons to the image */}
+                <Ionicons name={item.icon as any} size={24} color="#FFC107" />
+                {/* Or hardcoded burger icon for all if strictly following image, but dynamic is better */}
+            </View>
+            <View className="flex-1">
+                <Text className="text-base font-bold text-gray-900 mb-1">{item.title}</Text>
+                <Text className="text-gray-500 text-sm leading-5 mb-2">{item.message}</Text>
+                <Text className="text-xs font-bold text-gray-900">{item.time}</Text>
+            </View>
+        </View>
+    );
+
+    return (
+        <SafeAreaView className="flex-1 bg-[#FDFBF7]">
+            <StatusBar style="dark" />
+
+            {/* Header */}
+            <View className="flex-row items-center justify-center pt-2 pb-6 relative px-4">
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    className="absolute left-4 z-10 p-2">
+                    <Ionicons name="chevron-back" size={24} color="#000" />
+                </TouchableOpacity>
+                <View className="flex-row items-center gap-2">
+                    <Ionicons name="notifications-outline" size={24} color="#000" />
+                    <Text className="text-xl font-bold text-gray-900">Notifications</Text>
+                </View>
+            </View>
+
+            {/* Toggle Switch */}
+            <View className="px-6 mb-8">
+                <View className="flex-row bg-[#FFE69C] bg-opacity-20 rounded-xl p-1 h-14 items-center">
+                    <TouchableOpacity
+                        onPress={() => setActiveTab('new')}
+                        className={`flex-1 h-full items-center justify-center rounded-xl relative ${activeTab === 'new' ? 'bg-[#FFC107]' : 'bg-transparent'}`}>
+                        <Text className={`text-base font-semibold ${activeTab === 'new' ? 'text-gray-900' : 'text-gray-600'}`}>New</Text>
+                        {/* Red dot for new */}
+                        {activeTab === 'old' && <View className="absolute top-3 right-[35%] w-2 h-2 bg-red-500 rounded-full" />}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => setActiveTab('old')}
+                        className={`flex-1 h-full items-center justify-center rounded-xl ${activeTab === 'old' ? 'bg-[#FFC107]' : 'bg-transparent'}`}>
+                        <Text className={`text-base font-semibold ${activeTab === 'old' ? 'text-gray-900' : 'text-gray-600'}`}>Old</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {/* List */}
+            <ScrollView
+                className="flex-1 px-6"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 40 }}
+            >
+                {NOTIFICATIONS[activeTab].map(renderNotification)}
+            </ScrollView>
+        </SafeAreaView>
+    );
+}

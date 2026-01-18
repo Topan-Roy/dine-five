@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 
@@ -16,6 +17,8 @@ export const PopularItems = ({
     onAddItem: (price: string) => void;
     searchText?: string;
 }) => {
+    const router = useRouter();
+
     const filteredItems = ITEMS.filter(item =>
         item.name.toLowerCase().includes(searchText.toLowerCase())
     );
@@ -26,7 +29,23 @@ export const PopularItems = ({
         <View className="px-4">
             <View className="flex-row flex-wrap justify-between">
                 {filteredItems.map((item) => (
-                    <View key={item.id} className="w-[48%] mt-4  bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100">
+                    <TouchableOpacity
+                        key={item.id}
+                        activeOpacity={0.9}
+                        onPress={() => {
+                            router.push({
+                                pathname: "/screens/home/product-details",
+                                params: {
+                                    id: item.id,
+                                    name: item.name,
+                                    price: item.price,
+                                    image: item.image,
+                                    // Passing isNew as string because params are string-based mostly, though object usually works but safer 
+                                }
+                            });
+                        }}
+                        className="w-[48%] mt-4 bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100"
+                    >
                         <View className="relative">
                             <Image
                                 source={{ uri: item.image }}
@@ -49,12 +68,15 @@ export const PopularItems = ({
                                 <Text className="text-sm font-normal text-[#122511]">${item.price}</Text>
                             </View>
                             <TouchableOpacity
-                                onPress={() => onAddItem(item.price)}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    onAddItem(item.price);
+                                }}
                                 className="w-7 h-7 bg-[#FFE69C] rounded-full items-center justify-center">
                                 <Ionicons name="add" size={18} color="#332701" />
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 ))}
             </View>
         </View>
