@@ -14,6 +14,8 @@ export default function HomeScreen() {
   const [count, setCount] = React.useState(0);
   const [total, setTotal] = React.useState(0);
 
+  const [searchText, setSearchText] = React.useState('');
+
   const handleAddItem = (price: string) => {
     setCount((prev) => prev + 1);
     setTotal((prev) => prev + parseFloat(price));
@@ -25,10 +27,10 @@ export default function HomeScreen() {
       <View style={{ paddingTop: insets.top }} className="flex-1">
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
           <HomeHeader />
-          <SearchBar />
+          <SearchBar searchText={searchText} onSearch={setSearchText} />
           <Categories />
-          <PopularItems onAddItem={handleAddItem} />
-          <PopularHotels />
+          <PopularItems onAddItem={handleAddItem} searchText={searchText} />
+          <PopularHotels searchText={searchText} />
         </ScrollView>
         <ViewCart count={count} total={total} />
       </View>

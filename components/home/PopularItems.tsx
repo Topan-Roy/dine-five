@@ -9,11 +9,23 @@ const ITEMS = [
     { id: 4, name: 'Delicious cheese pizza', price: '5.99', image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500', isNew: false },
 ];
 
-export const PopularItems = ({ onAddItem }: { onAddItem: (price: string) => void }) => {
+export const PopularItems = ({
+    onAddItem,
+    searchText = ''
+}: {
+    onAddItem: (price: string) => void;
+    searchText?: string;
+}) => {
+    const filteredItems = ITEMS.filter(item =>
+        item.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+
+    if (searchText && filteredItems.length === 0) return null;
+
     return (
         <View className="px-4">
             <View className="flex-row flex-wrap justify-between">
-                {ITEMS.map((item) => (
+                {filteredItems.map((item) => (
                     <View key={item.id} className="w-[48%] mt-4  bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100">
                         <View className="relative">
                             <Image
