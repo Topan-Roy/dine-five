@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 
@@ -25,6 +26,7 @@ const HOTELS = [
 ];
 
 export const PopularHotels = ({ searchText = '' }: { searchText?: string }) => {
+    const router = useRouter();
     const filteredHotels = HOTELS.filter(hotel =>
         hotel.name.toLowerCase().includes(searchText.toLowerCase())
     );
@@ -41,7 +43,26 @@ export const PopularHotels = ({ searchText = '' }: { searchText?: string }) => {
             </View>
 
             {filteredHotels.map((hotel) => (
-                <View key={hotel.id} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 mb-4">
+                <TouchableOpacity
+                    key={hotel.id}
+                    activeOpacity={0.9}
+                    onPress={() => {
+                        // @ts-ignore
+                        router.push({
+                            pathname: '/screens/home/hotel-details',
+                            params: {
+                                id: hotel.id,
+                                name: hotel.name,
+                                image: hotel.image,
+                                rating: hotel.rating,
+                                categories: hotel.categories,
+                                time: hotel.time,
+                                delivery: hotel.delivery
+                            }
+                        });
+                    }}
+                    className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 mb-4"
+                >
                     <Image
                         source={{ uri: hotel.image }}
                         className="w-full h-40 rounded-xl mb-3"
@@ -68,7 +89,7 @@ export const PopularHotels = ({ searchText = '' }: { searchText?: string }) => {
                             <Text className="text-xs text-gray-500 ml-1">{hotel.delivery}</Text>
                         </View>
                     </View>
-                </View>
+                </TouchableOpacity>
             ))}
         </View>
     );
