@@ -113,7 +113,7 @@ export default function ProductDetails() {
                     {/* Title & Quantity */}
                     <View className="flex-row items-center justify-between mb-4">
                         <Text className="text-2xl font-bold text-gray-900 w-[60%]">{product.name}</Text>
-                        <View className="flex-row items-center bg-[#FFF9E6] rounded-full px-2 py-1">
+                        <View className="flex-row items-center  rounded-full px-2 py-1">
                             <TouchableOpacity
                                 onPress={() => quantity > 1 && setQuantity(q => q - 1)}
                                 className="w-8 h-8 items-center justify-center bg-[#FFE69C] rounded-full">
@@ -149,7 +149,7 @@ export default function ProductDetails() {
                 </View>
             </ScrollView>
 
-            <ViewCart count={cartCount} total={cartCount * parseFloat(product.price)} />
+            <ViewCart count={quantity} total={quantity * parseFloat(product.price)} />
         </View>
     );
 }
