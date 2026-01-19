@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ORDERS = {
@@ -131,29 +132,33 @@ export default function MyOrdersScreen() {
             <View className="flex-row mb-4">
               <Image
                 source={{ uri: order.image }}
-                className="w-20 h-20 rounded-xl"
-                resizeMode="cover"
+                contentFit="cover"
+                style={{ height: 100, width: 80, borderRadius: 12 }}
               />
               <View className="flex-1 ml-3">
-                <Text className="text-base font-bold text-gray-900 mb-0.5">
+                <Text className="text-base font-medium text-[#1F2A33] mb-0.5">
                   {order.status}
                 </Text>
-                <Text className="text-sm text-gray-500 mb-2">{order.time}</Text>
+                <Text className="text-sm text-[#7A7A7A] mb-2">
+                  {order.time}
+                </Text>
 
                 {order.items.map((item, idx) => (
                   <View key={idx} className="flex-row justify-between mb-0.5">
-                    <Text className="text-sm text-gray-600">Order summary</Text>
-                    <Text className="text-sm font-semibold text-gray-900">
+                    <Text className="text-sm text-[#7A7A7A]">
+                      Order summary
+                    </Text>
+                    <Text className="text-sm font-medium text-[#1F2A33]">
                       {item.name} x{item.qty}
                     </Text>
                   </View>
                 ))}
 
                 <View className="flex-row justify-between mt-1">
-                  <Text className="text-sm text-gray-600">
+                  <Text className="text-sm text-[#7A7A7A]">
                     Total price paid
                   </Text>
-                  <Text className="text-sm font-bold text-gray-900">
+                  <Text className="text-sm font-medium text-[#1F2A33]">
                     ${order.total}
                   </Text>
                 </View>

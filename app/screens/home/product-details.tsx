@@ -31,7 +31,6 @@ export default function ProductDetails() {
 
   const [isFav, setIsFav] = useState(favoriteStore.isFavorite(product.id));
   const [quantity, setQuantity] = useState(1);
-  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     const unsub = favoriteStore.subscribe(() => {
@@ -45,7 +44,7 @@ export default function ProductDetails() {
   };
 
   const handleAddToCart = () => {
-    setCartCount((prev) => prev + quantity);
+    console.log("Added to cart:", quantity, "of", product.name);
   };
 
   return (
@@ -59,7 +58,6 @@ export default function ProductDetails() {
           className="w-full h-full"
           resizeMode="cover"
         />
-        {/* Overlay gradient can be added here if text contrast needed */}
         <View className="absolute w-full h-full bg-black/10" />
       </View>
 
@@ -96,7 +94,7 @@ export default function ProductDetails() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        {/* Spacer to push content down below the visible image area */}
+        {/* Spacer to push content down below visible image area */}
         <View className="h-[40vh]" />
 
         {/* White Content Container */}

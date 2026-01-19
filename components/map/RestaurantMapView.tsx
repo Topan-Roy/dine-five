@@ -37,12 +37,12 @@ export default function RestaurantMapView() {
             longitude: loc.coords.longitude,
           });
         } else {
-          // Default location (Mohakhali)
-          setLocation({ latitude: 23.7808, longitude: 90.4067 });
+          // Default to phone GPS location (no hardcoded fallback)
+          console.log("Location permission denied - using GPS");
         }
       } catch (error) {
         console.log("Location error:", error);
-        setLocation({ latitude: 23.7808, longitude: 90.4067 });
+        // Keep null location - will show loading state
       } finally {
         setLoading(false);
       }
@@ -58,8 +58,8 @@ export default function RestaurantMapView() {
     );
   }
 
-  const userLat = location?.latitude || 23.7808;
-  const userLng = location?.longitude || 90.4067;
+  const userLat = location?.latitude ?? 23.7808;
+  const userLng = location?.longitude ?? 90.4067;
 
   return (
     <View className="flex-1 relative">

@@ -90,19 +90,19 @@ export default function MyAccountScreen() {
               <TextInput
                 value={formData.name}
                 onChangeText={(t) => handleChange("name", t)}
-                className="bg-white p-4 rounded-xl border border-gray-100 text-base font-semibold text-gray-900"
+                className="bg-white p-4 rounded-xl border border-gray-100 text-base font-normal text-gray-900"
               />
             </View>
           ) : (
             <View className="bg-white p-4 rounded-xl border border-gray-100">
-              <Text className="text-base font-semibold text-gray-900">
+              <Text className="text-base font-normal text-gray-900">
                 {formData.name}
               </Text>
             </View>
           )}
 
           {/* Phone Field */}
-          <View>
+          <View className="mt-4">
             {isEditing && (
               <Text className="text-gray-500 text-sm mb-1 ml-1">
                 Phone Number
@@ -110,7 +110,7 @@ export default function MyAccountScreen() {
             )}
             <View className="flex-row gap-3">
               <View className="bg-white p-4 rounded-xl border border-gray-100 items-center justify-center">
-                <Text className="text-base font-semibold text-gray-900">
+                <Text className="text-base font-normal text-gray-900">
                   {formData.phonePrefix}
                 </Text>
               </View>
@@ -120,10 +120,10 @@ export default function MyAccountScreen() {
                     value={formData.phone}
                     onChangeText={(t) => handleChange("phone", t)}
                     keyboardType="phone-pad"
-                    className="text-base font-semibold text-gray-900 p-0"
+                    className="text-base font-normal text-gray-900 p-0"
                   />
                 ) : (
-                  <Text className="text-base font-semibold text-gray-900">
+                  <Text className="text-base font-normal text-gray-900">
                     {formData.phone}
                   </Text>
                 )}
@@ -132,7 +132,7 @@ export default function MyAccountScreen() {
           </View>
 
           {/* DOB Field */}
-          <View>
+          <View className="mt-4">
             {isEditing && (
               <Text className="text-gray-500 text-sm mb-1 ml-1">
                 Date of Birth
@@ -144,10 +144,10 @@ export default function MyAccountScreen() {
                   value={formData.dob}
                   onChangeText={(t) => handleChange("dob", t)}
                   placeholder="DD-MM-YYYY"
-                  className="text-base font-semibold text-gray-900 p-0"
+                  className="text-base font-normal text-gray-900 p-0"
                 />
               ) : (
-                <Text className="text-base font-semibold text-gray-900">
+                <Text className="text-base font-normal text-gray-900">
                   {formData.dob}
                 </Text>
               )}
@@ -155,7 +155,7 @@ export default function MyAccountScreen() {
           </View>
 
           {/* Address Field */}
-          <View>
+          <View className="mt-4">
             {isEditing && (
               <Text className="text-gray-500 text-sm mb-1 ml-1">Address</Text>
             )}
@@ -164,10 +164,10 @@ export default function MyAccountScreen() {
                 <TextInput
                   value={formData.address}
                   onChangeText={(t) => handleChange("address", t)}
-                  className="flex-1 text-base font-semibold text-gray-900 p-0"
+                  className="flex-1 text-base font-normal text-gray-900 p-0"
                 />
               ) : (
-                <Text className="text-base font-semibold text-gray-900">
+                <Text className="text-base font-normal text-gray-900">
                   Address - {formData.address}
                 </Text>
               )}

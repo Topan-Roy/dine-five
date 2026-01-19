@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -70,8 +70,6 @@ export default function HotelDetailsScreen() {
   const hotelTime = params.time as string;
   const hotelDelivery = params.delivery as string;
   const hotelCategories = params.categories as string;
-
-  const [itemCount, setItemCount] = useState(0);
 
   const products = HOTEL_PRODUCTS.filter((item) => item.hotelId === hotelId);
 
@@ -195,7 +193,7 @@ export default function HotelDetailsScreen() {
                     <TouchableOpacity
                       onPress={(e) => {
                         e.stopPropagation();
-                        setItemCount((prev) => prev + 1);
+                        console.log("Added to cart:", item.name);
                       }}
                       className="w-7 h-7 bg-[#FFE69C] rounded-full items-center justify-center"
                     >
