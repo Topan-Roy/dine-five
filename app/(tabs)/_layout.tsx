@@ -29,8 +29,8 @@ export default function TabsLayout() {
           // Shadow for Android
           elevation: 5,
         },
-        tabBarShowLabel: false, // Hide labels, শুধু icons দেখাবে
-        tabBarActiveTintColor: "#FFC107", // Yellow color যেমন আপনার design এ
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: "#FFC107",
         tabBarInactiveTintColor: "#332701",
       }}
     >
