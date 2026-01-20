@@ -1,10 +1,11 @@
 import { EmptyState } from "@/components/common/EmptyState";
 import { favoriteStore, Product } from "@/utils/favoriteStore";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function FavoriteScreen() {
@@ -24,8 +25,8 @@ export default function FavoriteScreen() {
     <View className="flex-row items-center bg-white p-3 rounded-2xl mb-4 shadow-sm border border-gray-100">
       <Image
         source={{ uri: item.image }}
-        className="w-24 h-24 rounded-xl"
-        resizeMode="cover"
+        style={{ width: 96, height: 96, borderRadius: 12 }}
+        contentFit="cover"
       />
       <View className="flex-1 ml-3">
         <View className="flex-row justify-between items-start">

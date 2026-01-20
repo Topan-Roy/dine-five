@@ -1,4 +1,4 @@
-import { Image, ImageBackground } from "expo-image";
+import { Image } from "expo-image";
 import React from "react";
 import { Dimensions, FlatList, Text, TouchableOpacity, View } from "react-native";
 
@@ -61,16 +61,18 @@ export const PromoBanner = () => {
         </View>
 
         <View className="absolute -right-2 top-0 bottom-0 justify-center w-[45%]">
-          <ImageBackground
-            source={item.bgImage}
-            className="w-[150px] h-[140px]"
-          >
+          <View className="w-[150px] h-[140px] justify-center items-center">
+            <Image
+              source={item.bgImage}
+              className="absolute inset-0 w-full h-full"
+              contentFit="contain"
+            />
             <Image
               source={item.frontImage}
               contentFit="contain"
               style={{ height: 126, width: 100 }}
             />
-          </ImageBackground>
+          </View>
         </View>
       </View>
     </View>
