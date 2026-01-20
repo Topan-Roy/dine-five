@@ -2,6 +2,7 @@ import { Categories } from '@/components/home/Categories';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { PopularHotels } from '@/components/home/PopularHotels';
 import { PopularItems } from '@/components/home/PopularItems';
+import { PromoBanner } from '@/components/home/PromoBanner';
 import { SearchBar } from '@/components/home/SearchBar';
 import { ViewCart } from '@/components/home/ViewCart';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,7 +36,9 @@ export default function HomeScreen() {
             onSearch={setSearchText}
             onFilterPress={() => setFilterModalVisible(true)}
           />
+          <PromoBanner />
           <Categories />
+
 
           {(filterType === 'all' || filterType === 'food') && (
             <PopularItems onAddItem={handleAddItem} searchText={searchText} />
