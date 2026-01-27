@@ -1,15 +1,12 @@
 import LoginComponents from "@/components/LoginComponents";
 import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React from "react";
 import { ImageBackground, View } from "react-native";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-
   return (
+
     <View className="flex-1">
       <StatusBar style="auto" />
       <ImageBackground

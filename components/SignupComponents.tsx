@@ -1,20 +1,60 @@
+import { useStore } from "@/stores/stores";
 import Feather from "@expo/vector-icons/Feather";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import CustomInput from "./CustomInput";
 import GoogleLogin from "./GoogleLogin";
 import GradientButton from "./GradientButton";
 
 const SignupComponents = () => {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [isShowPassword, setIsShowPassword] = useState(false);
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const [isShowPassword, setIsShowPassword] = useState(false);
+  const [agree, setAgree] = useState(false);
 
-  const handleLogin = () => {
-    console.log(email);
+  const { signup, isLoading } = useStore() as any;
+
+  const handleSignup = async () => {
+    if (!name || !email || !password) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+    if (!agree) {
+      Alert.alert("Error", "Please agree to the Terms and Conditions.");
+      return;
+    }
+
+    try {
+      const result = await signup({
+        fullName: name,
+        email,
+        password,
+        role: "CUSTOMER",
+      });
+      console.log("Signup result:", result);
+      if (result) {
+        router.push({
+          pathname: "/(auth)/verify-otp",
+          params: { email },
+        });
+      } else {
+        Alert.alert("Error", "Signup failed. Please try again.");
+      }
+
+    } catch (error) {
+      console.error("Signup error:", error);
+      Alert.alert("Error", "An unexpected error occurred.");
+    }
   };
+
   return (
     <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl ">
       <View className="flex-row items-center gap-5 bg-[#FFF3CD] rounded-2xl">
@@ -33,9 +73,9 @@ const SignupComponents = () => {
       <CustomInput
         label="Name"
         className="mt-2"
-        placeholder="name@example.com"
-        onChangeText={(text) => setEmail(text)}
-        value={email}
+        placeholder="Your full name"
+        onChangeText={(text) => setName(text)}
+        value={name}
       />
 
       {/* email input field */}
@@ -45,6 +85,8 @@ const SignupComponents = () => {
         placeholder="name@example.com"
         onChangeText={(text) => setEmail(text)}
         value={email}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
 
       {/* password input field */}
@@ -54,7 +96,7 @@ const SignupComponents = () => {
         placeholder="min. 6 characters"
         onChangeText={(text) => setPassword(text)}
         value={password}
-        secureTextEntry={isShowPassword ? false : true}
+        secureTextEntry={!isShowPassword}
         icon={
           <TouchableOpacity onPress={() => setIsShowPassword(!isShowPassword)}>
             {isShowPassword ? (
@@ -66,30 +108,33 @@ const SignupComponents = () => {
         }
       />
 
-      {/* remember me & forgot password */}
-      <View className="mt-3 flex-row items-center justify-between">
-        {/* remember me */}
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            className="h-6 w-6 border-2 border-black rounded-md flex-row items-center justify-center"
-            onPress={() => setRememberMe(!rememberMe)}
-          >
-            {rememberMe && <Feather name="check" size={18} color="black" />}
-          </TouchableOpacity>
-          <Text className="ml-2 text-[#1F2A33] font-medium text-sm">
-            I agree to our Terms and Conditions and Privacy Policy.
-          </Text>
-        </View>
+      {/* terms & conditions */}
+      <View className="mt-3 flex-row items-center">
+        <TouchableOpacity
+          className="h-6 w-6 border-2 border-black rounded-md flex-row items-center justify-center"
+          onPress={() => setAgree(!agree)}
+        >
+          {agree && <Feather name="check" size={18} color="black" />}
+        </TouchableOpacity>
+        <Text className="ml-2 text-[#1F2A33] font-medium text-sm flex-1">
+          I agree to our Terms and Conditions and Privacy Policy.
+        </Text>
       </View>
 
-      <GradientButton title="Sign up" className="mt-7" onPress={handleLogin} />
+      <View className="mt-7">
+        {isLoading ? (
+          <View className="items-center py-4 bg-yellow-400 rounded-full">
+            <ActivityIndicator color="black" />
+          </View>
+        ) : (
+          <GradientButton title="Sign up" onPress={handleSignup} />
+        )}
+      </View>
 
-      {/* devider or */}
+      {/* divider or */}
       <View className="mt-3.5 flex-row items-center gap-3">
-        {/* divider */}
         <View className=" h-px bg-[#EDEDED] mx-2 flex-1" />
         <Text className="text-[#8E8E8E]  text-base">or</Text>
-        {/* divider */}
         <View className="flex-1 h-px bg-[#EDEDED] mx-2" />
       </View>
 

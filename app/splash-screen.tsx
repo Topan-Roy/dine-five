@@ -1,16 +1,36 @@
+import { useStore } from "@/stores/stores";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { ImageBackground, View } from "react-native";
 
 const SplashScreen = () => {
-  useEffect(() => {
-    const time = setTimeout(() => {
-      router.push("/(step)/step1");
-    }, 2000);
+  const { user, accessToken, initializeAuth } = useStore() as any;
 
-    return () => clearTimeout(time);
-  }, []);
+  useEffect(() => {
+    let timer: any;
+
+    const init = async () => {
+      // Ensure auth is initialized from storage
+      const auth = await initializeAuth();
+
+      timer = setTimeout(() => {
+        if (auth && auth.user && auth.accessToken) {
+          router.replace("/(tabs)");
+        } else {
+          router.replace("/(step)/step1");
+        }
+      }, 2000);
+    };
+
+    init();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, []); // Only run on mount
+
+
   return (
     <ImageBackground
       source={require("@/assets/images/splash-screen.png")}

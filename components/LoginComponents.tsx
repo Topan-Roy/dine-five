@@ -1,21 +1,58 @@
+import { useStore } from "@/stores/stores";
 import Feather from "@expo/vector-icons/Feather";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from "react-native";
 import CustomInput from "./CustomInput";
 import GoogleLogin from "./GoogleLogin";
 import GradientButton from "./GradientButton";
 
 const LoginComponents = () => {
   const [email, setEmail] = useState("");
-  const [isShowPassword, setIsShowPassword] = useState(false);
   const [password, setPassword] = useState("");
+  const [isShowPassword, setIsShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleLogin = () => {
-    console.log(email);
-    router.push("/(tabs)");
+  const { login, isLoading } = useStore() as any;
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+
+    try {
+      const result = await login({ email, password });
+      if (result) {
+        router.replace("/(tabs)");
+      } else {
+        Alert.alert("Error", "Login failed. Please check your credentials.");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      if (error.message.includes("verify your email")) {
+        Alert.alert(
+          "Verification Required",
+          "Please verify your email address before logging in.",
+          [
+            {
+              text: "Verify Now",
+              onPress: () =>
+                router.push({
+                  pathname: "/(auth)/verify-otp",
+                  params: { email },
+                }),
+            },
+            { text: "Cancel", style: "cancel" },
+          ]
+        );
+      } else {
+        Alert.alert("Error", error.message || "An unexpected error occurred.");
+      }
+    }
   };
+
+
   return (
     <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl ">
       <View className="flex-row items-center gap-5 bg-[#FFF3CD] rounded-2xl">
@@ -37,6 +74,8 @@ const LoginComponents = () => {
         placeholder="name@example.com"
         onChangeText={(text) => setEmail(text)}
         value={email}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
 
       {/* password input field */}
@@ -46,7 +85,7 @@ const LoginComponents = () => {
         placeholder="min. 6 characters"
         onChangeText={(text) => setPassword(text)}
         value={password}
-        secureTextEntry={isShowPassword ? false : true}
+        secureTextEntry={!isShowPassword}
         icon={
           <TouchableOpacity onPress={() => setIsShowPassword(!isShowPassword)}>
             {isShowPassword ? (
@@ -83,7 +122,15 @@ const LoginComponents = () => {
         </TouchableOpacity>
       </View>
 
-      <GradientButton title="Login" className="mt-7" onPress={handleLogin} />
+      <View className="mt-7">
+        {isLoading ? (
+          <View className="items-center py-4 bg-yellow-400 rounded-full">
+            <ActivityIndicator color="black" />
+          </View>
+        ) : (
+          <GradientButton title="Login" onPress={handleLogin} />
+        )}
+      </View>
 
       {/* devider or */}
       <View className="mt-3.5 flex-row items-center gap-3">
@@ -101,3 +148,4 @@ const LoginComponents = () => {
 };
 
 export default LoginComponents;
+

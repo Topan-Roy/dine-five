@@ -1,8 +1,9 @@
+import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const MENU_ITEMS = [
@@ -28,6 +29,28 @@ const MENU_ITEMS = [
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { logout } = useStore() as any;
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to log out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Log out",
+          style: "destructive",
+          onPress: async () => {
+            const success = await logout();
+            if (success) {
+              router.replace("/(auth)/login");
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#FDFBF7]">
@@ -74,10 +97,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => {
-            // Log out logic placeholder
-            router.replace("/(tabs)");
-          }}
+          onPress={handleLogout}
           className="bg-[#FFC107] rounded-2xl py-4 flex-row items-center justify-center gap-2 shadow-sm"
         >
           <Ionicons name="log-out-outline" size={20} color="#000" />
@@ -87,3 +107,4 @@ export default function SettingsScreen() {
     </SafeAreaView>
   );
 }
+
