@@ -2,7 +2,13 @@ import { useStore } from "@/stores/stores";
 import Feather from "@expo/vector-icons/Feather";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import CustomInput from "./CustomInput";
 import GoogleLogin from "./GoogleLogin";
 import GradientButton from "./GradientButton";
@@ -44,7 +50,7 @@ const LoginComponents = () => {
                 }),
             },
             { text: "Cancel", style: "cancel" },
-          ]
+          ],
         );
       } else {
         Alert.alert("Error", error.message || "An unexpected error occurred.");
@@ -52,11 +58,10 @@ const LoginComponents = () => {
     }
   };
 
-
   return (
-    <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl ">
+    <View className="pt-5 px-5 pb-10  rounded-t-2xl ">
       <View className="flex-row items-center gap-5 bg-[#FFF3CD] rounded-2xl">
-        <GradientButton title="Login" className="w-1/2 " />
+        <GradientButton title="Login" className="w-1/2  " />
         <TouchableOpacity
           onPress={() => router.push("/(auth)/signup")}
           className=" flex-1"
@@ -148,4 +153,3 @@ const LoginComponents = () => {
 };
 
 export default LoginComponents;
-

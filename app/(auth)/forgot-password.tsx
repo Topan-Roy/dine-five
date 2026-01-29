@@ -1,29 +1,56 @@
 import GradientButton from "@/components/GradientButton";
+import { useStore } from "@/stores/stores";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { ImageBackground, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ImageBackground,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
+  const { forgotPassword, isLoading } = useStore() as any;
 
-  const handleSendEmail = () => {
-    console.log("Email:", email);
-    router.push("/(auth)/verify-otp");
+  const handleSendEmail = async () => {
+    if (!email) return;
+
+    try {
+      console.log("Forgot Password for:", email);
+      const result = await forgotPassword(email);
+      console.log("Forgot Password result:", result);
+
+      if (result) {
+        router.push({
+          pathname: "/(auth)/emailverify",
+          params: { email, type: "forgot" },
+        });
+      } else {
+        const storeError = (useStore.getState() as any).error;
+        Alert.alert("Error", String(storeError || "Failed to send reset email"));
+      }
+    } catch (error: any) {
+      console.error("Forgot Password error:", error);
+      Alert.alert("Error", String(error.message || "Something went wrong"));
+    }
   };
 
   return (
     <View className="flex-1">
       <StatusBar style="auto" />
       <ImageBackground
-        source={require("@/assets/images/splash-screen.png")}
+        source={require("@/assets/images/Screenshot.png")}
         resizeMode="cover"
         style={{ flex: 1, width: "100%", height: "100%" }}
       >
         <View className="flex-1 items-center justify-center">
           <Image
-            source={require("@/assets/images/splash-logo.svg")}
+            source={require("@/assets/images/logo.jpg")}
             contentFit="contain"
             style={{
               height: 200,
@@ -59,19 +86,15 @@ const ForgotPassword = () => {
           </View>
 
           {/* Continue button */}
-          <GradientButton
-            title="Continue"
-            onPress={handleSendEmail}
-            className="w-full mb-4 mt-14"
-          />
-
-          {/* Back to login */}
-          {/* <View className="flex-row justify-center">
-            <Text className="text-gray-600">Remember your password? </Text>
-            <TouchableOpacity>
-              <Text className="text-yellow-600 font-medium">Log In</Text>
-            </TouchableOpacity>
-          </View> */}
+          <View className="mt-14 mb-4">
+            {isLoading ? (
+              <View className="items-center py-4 bg-[#D32F1E] rounded-full">
+                <ActivityIndicator color="white" />
+              </View>
+            ) : (
+              <GradientButton title="Continue" onPress={handleSendEmail} />
+            )}
+          </View>
         </View>
       </ImageBackground>
     </View>

@@ -5,41 +5,46 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { ActivityIndicator, ImageBackground, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ImageBackground,
+  Text,
+  View,
+} from "react-native";
 
-const VerifyOTP = () => {
-  const { email } = useLocalSearchParams<{ email: string }>();
+const EmailVerify = () => {
+  const { email, type } = useLocalSearchParams<{ email: string; type?: string }>();
   const [code, setCode] = useState("");
-  const { verifyOTP, isLoading } = useStore() as any;
+  const { isLoading, verifyOTP, verifyForgotOTP } = useStore() as any; // adjust according to your store
 
-  const handleVerifyOTP = async () => {
+  const handleEmailVerif = async () => {
     if (!code) {
-      // Code খালি থাকলে কোনো alert না দেখিয়ে শুধু return
+      console.log("Please enter the verification code");
       return;
     }
 
     try {
-      console.log("Verifying OTP for:", email, "with code:", code);
-      const result = await verifyOTP({ email, code });
-      console.log("Verification result:", JSON.stringify(result, null, 2));
+      console.log("Verifying email for:", email, "with code:", code, "type:", type);
+      // use different store methods based on type
+      const result = type === "forgot"
+        ? await verifyForgotOTP({ email, code })
+        : await verifyOTP({ email, code });
 
-      const { user, accessToken } = useStore.getState() as any;
-      console.log("Auth state after verification:", { user, accessToken });
+      console.log("Verification result:", result);
 
-      if (result?.success) {
-        // OTP verified
-        if (user && accessToken) {
-          router.replace("/(tabs)"); // logged in → go to tabs
-        } else {
-          router.replace("/(auth)/login"); // not logged in → go to login
-        }
+      if (result) {
+        router.replace({
+          pathname: "/(auth)/reset-password",
+          params: { email, code },
+        });
       } else {
-        // OTP invalid → stay on same screen or handle error silently
-        console.log("Invalid OTP");
+        const storeError = (useStore.getState() as any).error;
+        Alert.alert("Error", String(storeError || "Incorrect verification code"));
       }
     } catch (error: any) {
-      console.error("Verification error:", error);
-      // Optional: handle error silently or show a toast/snackbar if needed
+      console.log("Verification failed:", error);
+      Alert.alert("Error", String(error.message || "Something went wrong"));
     }
   };
 
@@ -64,10 +69,11 @@ const VerifyOTP = () => {
             }}
           />
         </View>
+
         {/* OTP Verification form */}
         <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl">
           <Text className="text-2xl font-bold text-center mb-4">
-            Enter Verification OTP
+            Enter Verification Code
           </Text>
           <Text className="text-gray-600 text-center mb-2">
             We have sent a verification code to:
@@ -89,11 +95,11 @@ const VerifyOTP = () => {
           {/* Verify button */}
           <View className="mt-14 mb-4">
             {isLoading ? (
-              <View className="items-center py-4 bg-yellow-400 rounded-full">
-                <ActivityIndicator color="black" />
+              <View className="items-center py-4 bg-[#D32F1E] rounded-full">
+                <ActivityIndicator color="white" />
               </View>
             ) : (
-              <GradientButton title="Verify" onPress={handleVerifyOTP} />
+              <GradientButton title="Verify" onPress={handleEmailVerif} />
             )}
           </View>
         </View>
@@ -102,4 +108,4 @@ const VerifyOTP = () => {
   );
 };
 
-export default VerifyOTP;
+export default EmailVerify;

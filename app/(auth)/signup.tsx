@@ -13,13 +13,13 @@ const Signup = () => {
     <View className="flex-1">
       <StatusBar style="auto" />
       <ImageBackground
-        source={require("@/assets/images/splash-screen.png")}
+        source={require("@/assets/images/Screenshot.png")}
         resizeMode="cover"
         style={{ flex: 1, width: "100%", height: "100%" }}
       >
         <View className="flex-1 items-center justify-center">
           <Image
-            source={require("@/assets/images/splash-logo.svg")}
+            source={require("@/assets/images/logo.jpg")}
             contentFit="contain"
             style={{
               height: 200,

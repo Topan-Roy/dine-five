@@ -25,6 +25,7 @@ export const useStore = create((set, get) => ({
   isLoading: false,
   error: null,
   isInitialized: false,
+  resetToken: null as string | null,
 
   // Add this function to persist auth data to AsyncStorage
   persistAuthData: async (user: any, accessToken: any, refreshToken: any) => {
@@ -219,36 +220,175 @@ export const useStore = create((set, get) => ({
       );
 
       const result = await response.json();
+      console.log("verifyOTP full result:", JSON.stringify(result, null, 2));
 
       if (!response.ok) {
         throw new Error(result.message || "Verification failed");
       }
 
-      // Check if backend returned user/token
-      const userData = result.data?.user || null;
-      const sessionData = result.data?.session || null;
+      // Check for user/token in different possible locations
+      const userData = result.data?.user || result.user || result.data || null;
+      const accessToken =
+        result.data?.session?.accessToken ||
+        result.session?.accessToken ||
+        result.accessToken ||
+        result.data?.accessToken ||
+        result.token;
+      const refreshToken =
+        result.data?.session?.refreshToken ||
+        result.session?.refreshToken ||
+        result.refreshToken ||
+        result.data?.refreshToken;
 
-      if (userData && sessionData?.accessToken) {
+      if (userData && accessToken) {
         await (get() as any).persistAuthData(
           userData,
-          sessionData.accessToken,
-          sessionData.refreshToken,
+          accessToken,
+          refreshToken,
         );
 
         set({
           user: userData,
-          accessToken: sessionData.accessToken,
-          refreshToken: sessionData?.refreshToken || null,
+          accessToken: accessToken,
+          refreshToken: refreshToken || null,
           isLoading: false,
         });
       } else {
-        // OTP success but no token
         set({ isLoading: false });
       }
 
-      return result; // return entire backend response
+      return result;
     } catch (error: any) {
       console.error("verifyOTP error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  // 1️⃣ Verify forgot password OTP
+  verifyForgotOTP: async (data: { email: string; code: string }) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/auth/verify-forgot-otp`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: data.email,
+            otp: data.code,
+          }),
+        },
+      );
+
+      const result = await response.json();
+      console.log(
+        "verifyForgotOTP full result:",
+        JSON.stringify(result, null, 2),
+      );
+
+      if (!response.ok) {
+        throw new Error(result.message || "Verification failed");
+      }
+
+      // Save token as resetToken
+      const resetToken = result.data?.accessToken || result.accessToken;
+      if (!resetToken) throw new Error("Reset token not received from server");
+
+      set({ resetToken, isLoading: false });
+
+      return result;
+    } catch (error: any) {
+      console.error("verifyForgotOTP error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  // 2️⃣ Request forgot password
+  forgotPassword: async (email: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/auth/forgot-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        },
+      );
+
+      const result = await response.json();
+      console.log(
+        "forgotPassword full result:",
+        JSON.stringify(result, null, 2),
+      );
+
+      if (!response.ok) {
+        throw new Error(result.message || "Forgot password request failed");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.error("forgotPassword error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  // 3️⃣ Reset password
+  resetPassword: async (data: {
+    newPassword: string;
+    confirmPassword: string;
+  }) => {
+    set({ isLoading: true, error: null });
+    // console.log(data.newPassword + data.confirmPassword);
+
+    try {
+      const { resetToken } = get() as any;
+
+      if (!resetToken) {
+        throw new Error("Reset token missing. Please verify OTP first.");
+      }
+
+      if (!data.newPassword || !data.confirmPassword) {
+        throw new Error("Please provide both newPassword and confirmPassword");
+      }
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/auth/reset-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${resetToken}`,
+          },
+          body: JSON.stringify({
+            newPassword: data.newPassword,
+            confirmPassword: data.confirmPassword,
+          }),
+        },
+      );
+
+      const result = await response.json();
+      console.log(
+        "resetPassword full result:",
+        JSON.stringify(result, null, 2),
+      );
+
+      if (!response.ok) {
+        throw new Error(result.message || "Reset password failed");
+      }
+
+      // Clear resetToken after success
+      set({ isLoading: false, resetToken: null });
+
+      return result;
+    } catch (error: any) {
+      console.error("resetPassword error", error);
       set({ error: error.message, isLoading: false });
       return null;
     }

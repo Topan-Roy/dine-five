@@ -1,8 +1,12 @@
 import GradientButton from "@/components/GradientButton";
+import { useStore } from "@/stores/stores";
 import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   ImageBackground,
   Text,
   TextInput,
@@ -11,22 +15,57 @@ import {
 } from "react-native";
 
 const ResetPassword = () => {
+  const { email, code } = useLocalSearchParams<{
+    email: string;
+    code: string;
+  }>();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { resetPassword, isLoading } = useStore() as any;
+
+  const handleResetPassword = async () => {
+    if (!newPassword || !confirmPassword) return;
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
+    try {
+      console.log("Resetting password for:", email);
+      const result = await resetPassword({
+        email,
+        otp: code,
+        newPassword, // new password
+        confirmPassword, // confirm password
+      });
+
+      if (result) {
+        Alert.alert("Success", "Password reset successfully!", [
+          { text: "OK", onPress: () => router.replace("/(auth)/login") },
+        ]);
+      } else {
+        const storeError = (useStore.getState() as any).error;
+        Alert.alert("Error", String(storeError || "Failed to reset password"));
+      }
+    } catch (error: any) {
+      console.error("Reset Password error:", error);
+      Alert.alert("Error", String(error.message || "Something went wrong"));
+    }
+  };
 
   return (
     <View className="flex-1">
       <StatusBar style="auto" />
       <ImageBackground
-        source={require("@/assets/images/splash-screen.png")}
+        source={require("@/assets/images/Screenshot.png")}
         resizeMode="cover"
         style={{ flex: 1, width: "100%", height: "100%" }}
       >
         <View className="flex-1 items-center justify-center">
           <Image
-            source={require("@/assets/images/splash-logo.svg")}
+            source={require("@/assets/images/logo.jpg")}
             contentFit="contain"
             style={{
               height: 200,
@@ -93,11 +132,18 @@ const ResetPassword = () => {
           </View>
 
           {/* Reset button */}
-          <GradientButton
-            title="Reset Password"
-            onPress={() => console.log("Reset Password")}
-            className="w-full mb-4 mt-14"
-          />
+          <View className="mt-14 mb-4">
+            {isLoading ? (
+              <View className="items-center py-4 bg-[#D32F1E] rounded-full">
+                <ActivityIndicator color="white" />
+              </View>
+            ) : (
+              <GradientButton
+                title="Reset Password"
+                onPress={handleResetPassword}
+              />
+            )}
+          </View>
 
           {/* Back to Login */}
           {/* <View className="flex-row justify-center">
