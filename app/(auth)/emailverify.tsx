@@ -14,7 +14,10 @@ import {
 } from "react-native";
 
 const EmailVerify = () => {
-  const { email, type } = useLocalSearchParams<{ email: string; type?: string }>();
+  const { email, type } = useLocalSearchParams<{
+    email: string;
+    type?: string;
+  }>();
   const [code, setCode] = useState("");
   const { isLoading, verifyOTP, verifyForgotOTP } = useStore() as any; // adjust according to your store
 
@@ -25,11 +28,19 @@ const EmailVerify = () => {
     }
 
     try {
-      console.log("Verifying email for:", email, "with code:", code, "type:", type);
+      console.log(
+        "Verifying email for:",
+        email,
+        "with code:",
+        code,
+        "type:",
+        type,
+      );
       // use different store methods based on type
-      const result = type === "forgot"
-        ? await verifyForgotOTP({ email, code })
-        : await verifyOTP({ email, code });
+      const result =
+        type === "forgot"
+          ? await verifyForgotOTP({ email, code })
+          : await verifyOTP({ email, code });
 
       console.log("Verification result:", result);
 
@@ -40,7 +51,10 @@ const EmailVerify = () => {
         });
       } else {
         const storeError = (useStore.getState() as any).error;
-        Alert.alert("Error", String(storeError || "Incorrect verification code"));
+        Alert.alert(
+          "Error",
+          String(storeError || "Incorrect verification code"),
+        );
       }
     } catch (error: any) {
       console.log("Verification failed:", error);
@@ -71,7 +85,19 @@ const EmailVerify = () => {
         </View>
 
         {/* OTP Verification form */}
-        <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl">
+        {/* <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl"> */}
+        {/* Forgot Password form */}
+        <View
+          className="bg-white pt-8 px-6 pb-10 rounded-t-3xl"
+          style={{
+            borderTopWidth: 2,
+            borderLeftWidth: 2,
+            borderRightWidth: 2,
+            borderColor: "#F59E0B",
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+          }}
+        >
           <Text className="text-2xl font-bold text-center mb-4">
             Enter Verification Code
           </Text>

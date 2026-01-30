@@ -65,7 +65,19 @@ const VerifyOTP = () => {
           />
         </View>
         {/* OTP Verification form */}
-        <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl">
+        {/* <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl"> */}
+        {/* Forgot Password form */}
+        <View
+          className="bg-white pt-8 px-6 pb-10 rounded-t-3xl"
+          style={{
+            borderTopWidth: 2,
+            borderLeftWidth: 2,
+            borderRightWidth: 2,
+            borderColor: "#F59E0B",
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+          }}
+        >
           <Text className="text-2xl font-bold text-center mb-4">
             Enter Verification OTP
           </Text>

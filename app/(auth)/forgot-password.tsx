@@ -32,7 +32,10 @@ const ForgotPassword = () => {
         });
       } else {
         const storeError = (useStore.getState() as any).error;
-        Alert.alert("Error", String(storeError || "Failed to send reset email"));
+        Alert.alert(
+          "Error",
+          String(storeError || "Failed to send reset email"),
+        );
       }
     } catch (error: any) {
       console.error("Forgot Password error:", error);
@@ -62,7 +65,18 @@ const ForgotPassword = () => {
           />
         </View>
         {/* Forgot Password form */}
-        <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl">
+        {/* Forgot Password form */}
+        <View
+          className="bg-white pt-8 px-6 pb-10 rounded-t-3xl"
+          style={{
+            borderTopWidth: 2,
+            borderLeftWidth: 2,
+            borderRightWidth: 2,
+            borderColor: "#F59E0B",
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+          }}
+        >
           <Text className="text-2xl font-bold text-center mb-4">
             Forgot Password?
           </Text>

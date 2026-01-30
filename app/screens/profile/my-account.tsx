@@ -1,3 +1,4 @@
+import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -14,17 +15,30 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyAccountScreen() {
   const router = useRouter();
+  const { user } = useStore() as any;
   const [isEditing, setIsEditing] = useState(false);
 
-  // Filter state
+  // Filter state initialized with user data
   const [formData, setFormData] = useState({
-    name: "Theresa Webb",
-    email: "michael.mitc@example.com",
-    phone: "555-0128",
+    name: user?.name || user?.fullName || "Theresa Webb",
+    email: user?.email || "michael.mitc@example.com",
+    phone: user?.phone || "555-0128",
     phonePrefix: "+1",
     dob: "12-10-1996",
     address: "King kong",
   });
+
+  // Keep form synced with store user data
+  React.useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: user.name || user.fullName || prev.name,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+      }));
+    }
+  }, [user]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

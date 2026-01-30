@@ -1,3 +1,4 @@
+import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -35,6 +36,7 @@ const MENU_ITEMS = [
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { user } = useStore() as any;
 
   return (
     <SafeAreaView className="flex-1 bg-[#FDFBF7]">
@@ -59,10 +61,10 @@ export default function ProfileScreen() {
           </View>
           <View>
             <Text className="text-2xl font-bold text-gray-900 ">
-              Theresa Webb
+              {user?.name || user?.fullName || "User"}
             </Text>
             <Text className="text-gray-500 text-base  mt-1">
-              michael.mitc@example.com
+              {user?.email || "No email provided"}
             </Text>
           </View>
         </View>

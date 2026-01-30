@@ -48,7 +48,6 @@ const SignupComponents = () => {
       } else {
         Alert.alert("Error", "Signup failed. Please try again.");
       }
-
     } catch (error) {
       console.error("Signup error:", error);
       Alert.alert("Error", "An unexpected error occurred.");
