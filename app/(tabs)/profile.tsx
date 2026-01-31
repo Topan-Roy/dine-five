@@ -35,8 +35,10 @@ const MENU_ITEMS = [
 ];
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const { user } = useStore() as any;
+  const router = useRouter();
+
+  console.log("User in Profile:", user?.fullName || user?.name);
 
   return (
     <SafeAreaView className="flex-1 bg-[#FDFBF7]">
@@ -53,7 +55,12 @@ export default function ProfileScreen() {
           <View className="w-20 h-20 rounded-full mb-4 overflow-hidden shadow-sm">
             <Image
               source={{
-                uri: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
+                uri:
+                  user?.profilePic ||
+                  user?.avatar ||
+                  user?.photo ||
+                  user?.image ||
+                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
               }}
               style={{ height: 80, width: 80, borderRadius: 100 }}
               contentFit="cover"
@@ -61,7 +68,7 @@ export default function ProfileScreen() {
           </View>
           <View>
             <Text className="text-2xl font-bold text-gray-900 ">
-              {user?.name || user?.fullName || "User"}
+              {user?.name || "User"}
             </Text>
             <Text className="text-gray-500 text-base  mt-1">
               {user?.email || "No email provided"}

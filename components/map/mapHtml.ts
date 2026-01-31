@@ -2,9 +2,9 @@
 import { RESTAURANTS } from './data';
 
 export const generateMapHTML = (userLat: number, userLng: number) => {
-    const restaurantsJSON = JSON.stringify(RESTAURANTS);
+  const restaurantsJSON = JSON.stringify(RESTAURANTS);
 
-    return `
+  return `
       <!DOCTYPE html>
       <html>
         <head>
@@ -97,7 +97,7 @@ export const generateMapHTML = (userLat: number, userLng: number) => {
                 .addTo(map);
 
             } catch (error) {
-               console.error(error);
+               console.log(error);
             }
           </script>
         </body>

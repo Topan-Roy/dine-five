@@ -1,9 +1,12 @@
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   Text,
@@ -15,8 +18,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyAccountScreen() {
   const router = useRouter();
-  const { user } = useStore() as any;
+  const { user, updateProfile } = useStore() as any;
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Filter state initialized with user data
   const [formData, setFormData] = useState({
@@ -33,15 +38,83 @@ export default function MyAccountScreen() {
     if (user) {
       setFormData((prev) => ({
         ...prev,
-        name: user.name || user.fullName || prev.name,
+        name: user?.name || user?.fullName || prev.name,
         email: user.email || prev.email,
         phone: user.phone || prev.phone,
+        dob: user.dob || prev.dob,
+        address: user.address || prev.address,
       }));
     }
   }, [user]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      let cleanPhone = (formData.phone || "").replace(/\D/g, "");
+      const fullPhone = `${formData.phonePrefix}${cleanPhone}`;
+
+      console.log("Saving profile data for:", formData.name, "with phone:", fullPhone);
+
+      let dataToUpdate: any;
+      if (selectedImage) {
+        const form = new FormData();
+        form.append("name", formData.name);
+        form.append("phone", fullPhone);
+        form.append("dob", formData.dob);
+        form.append("address", formData.address);
+
+        const filename = selectedImage.split("/").pop() || "profile.jpg";
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+
+        form.append("photo", {
+          uri: selectedImage,
+          name: filename,
+          type,
+        } as any);
+        dataToUpdate = form;
+      } else {
+        dataToUpdate = {
+          name: formData.name,
+          phone: fullPhone,
+          dob: formData.dob,
+          address: formData.address,
+        };
+      }
+
+      const result = await updateProfile(dataToUpdate);
+
+      if (result) {
+        Alert.alert("Success", "Profile updated successfully");
+        setIsEditing(false);
+        setSelectedImage(null); // Clear selection after success
+      } else {
+        const storeError = (useStore.getState() as any).error;
+        Alert.alert("Error", storeError || "Failed to update profile");
+      }
+    } catch (error: any) {
+      console.log("Save error:", error);
+      Alert.alert("Error", error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -59,12 +132,23 @@ export default function MyAccountScreen() {
         <Text className="text-xl font-bold text-gray-900">My Account</Text>
 
         <TouchableOpacity
-          onPress={() => setIsEditing(!isEditing)}
-          className="absolute right-4 text-yellow-500"
+          onPress={() => {
+            if (isEditing) {
+              handleSave();
+            } else {
+              setIsEditing(true);
+            }
+          }}
+          className="absolute right-4"
+          disabled={isLoading}
         >
-          <Text className="text-[#FFC107] font-bold text-lg">
-            {isEditing ? "Save" : "Edit"}
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#FFC107" />
+          ) : (
+            <Text className="text-[#FFC107] font-bold text-lg">
+              {isEditing ? "Save" : "Edit"}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -75,14 +159,21 @@ export default function MyAccountScreen() {
             <View className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden">
               <Image
                 source={{
-                  uri: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
+                  uri:
+                    selectedImage ||
+                    user?.photo ||
+                    user?.image ||
+                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
                 }}
                 className="w-full h-full"
                 resizeMode="cover"
               />
             </View>
             {isEditing && (
-              <TouchableOpacity className="absolute bottom-0 right-0 bg-gray-900 w-8 h-8 rounded-full items-center justify-center border-2 border-white">
+              <TouchableOpacity
+                onPress={pickImage}
+                className="absolute bottom-0 right-0 bg-gray-900 w-8 h-8 rounded-full items-center justify-center border-2 border-white"
+              >
                 <Ionicons name="camera" size={14} color="#fff" />
               </TouchableOpacity>
             )}

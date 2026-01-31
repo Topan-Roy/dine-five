@@ -27,6 +27,29 @@ export const useStore = create((set, get) => ({
   isInitialized: false,
   resetToken: null as string | null,
 
+  // // this is for user profile
+  userProfile: async () => {
+    const response = await fetch(
+      `${process.env.EXPO_PUBLIC_API_URL}/auth/user-profile`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${get().accessToken}`,
+        },
+      },
+    );
+
+    const result = await response.json();
+    console.log("userProfile result:", JSON.stringify(result, null, 2));
+
+    if (!response.ok) {
+      throw new Error(result.message || "Failed to fetch user profile");
+    }
+
+    return result.data;
+  },
+
   // Add this function to persist auth data to AsyncStorage
   persistAuthData: async (user: any, accessToken: any, refreshToken: any) => {
     try {
@@ -48,7 +71,7 @@ export const useStore = create((set, get) => ({
 
       await Promise.all(promises);
     } catch (error) {
-      console.error("Failed to persist auth data:", error);
+      console.log("Failed to persist auth data:", error);
       throw error;
     }
   },
@@ -78,18 +101,13 @@ export const useStore = create((set, get) => ({
         return { user: null, accessToken: null };
       }
     } catch (error) {
-      console.error("Failed to initialize auth:", error);
+      console.log("Failed to initialize auth:", error);
       set({ isInitialized: true });
       return { user: null, accessToken: null };
     }
   },
 
   signup: async (data: any) => {
-    // console.log(
-    //   "Signup starting with URL:",
-    //   `${process.env.EXPO_PUBLIC_API_URL}/auth/signup`,
-    // );
-    // console.log("Signup data:", data);
     set({ isLoading: true, error: null });
 
     try {
@@ -133,7 +151,7 @@ export const useStore = create((set, get) => ({
         throw new Error("Invalid response format: User data is missing");
       }
     } catch (error: any) {
-      console.error("signup error", error);
+      console.log("signup error", error);
       set({ error: error.message, isLoading: false });
       return null;
     }
@@ -169,19 +187,22 @@ export const useStore = create((set, get) => ({
         throw new Error(message);
       }
 
-      // Check for nested or flat data
-      const userData = result.data?.user || result.data || result.user;
-      const sessionData = result.data?.session || result.session || result.data;
+      // Extract user and session data based on the provided JSON structure
+      const user = result.data?.user || result.user || result.data;
+      const session = result.data?.session || result.session;
 
-      const user = userData;
-      const accessToken = sessionData?.accessToken || result.accessToken;
-      const refreshToken = sessionData?.refreshToken || result.refreshToken;
+      const accessToken = session?.accessToken || result.accessToken || result.data?.accessToken;
+      const refreshToken = session?.refreshToken || result.refreshToken || result.data?.refreshToken;
 
       if (user) {
-        await (get() as any).persistAuthData(user, accessToken, refreshToken);
+        // If we already have a user, merge them to avoid losing fields like email/role
+        const currentUser = (get() as any).user;
+        const mergedUser = currentUser ? { ...currentUser, ...user } : user;
+
+        await (get() as any).persistAuthData(mergedUser, accessToken, refreshToken);
 
         set({
-          user: user,
+          user: mergedUser,
           accessToken: accessToken,
           refreshToken: refreshToken,
           isLoading: false,
@@ -192,7 +213,7 @@ export const useStore = create((set, get) => ({
         throw new Error("Invalid response format: User data is missing");
       }
     } catch (error: any) {
-      console.error("login error", error);
+      console.log("login error", error);
       // Ensure we don't overwrite "EMAIL_NOT_VERIFIED" if it was set above
       if ((get() as any).error !== "EMAIL_NOT_VERIFIED") {
         set({ error: error.message, isLoading: false });
@@ -259,7 +280,7 @@ export const useStore = create((set, get) => ({
 
       return result;
     } catch (error: any) {
-      console.error("verifyOTP error", error);
+      console.log("verifyOTP error", error);
       set({ error: error.message, isLoading: false });
       return null;
     }
@@ -300,7 +321,7 @@ export const useStore = create((set, get) => ({
 
       return result;
     } catch (error: any) {
-      console.error("verifyForgotOTP error", error);
+      console.log("verifyForgotOTP error", error);
       set({ error: error.message, isLoading: false });
       return null;
     }
@@ -333,7 +354,7 @@ export const useStore = create((set, get) => ({
       set({ isLoading: false });
       return result;
     } catch (error: any) {
-      console.error("forgotPassword error", error);
+      console.log("forgotPassword error", error);
       set({ error: error.message, isLoading: false });
       return null;
     }
@@ -388,7 +409,118 @@ export const useStore = create((set, get) => ({
 
       return result;
     } catch (error: any) {
-      console.error("resetPassword error", error);
+      console.log("resetPassword error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  updateProfile: async (data: any) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      // Check if data is FormData or regular object
+      const isFormData = data instanceof FormData;
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/profile/me`,
+        {
+          method: "PATCH",
+          headers: {
+            ...(isFormData ? {} : { "Content-Type": "application/json" }),
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: isFormData ? data : JSON.stringify(data),
+        },
+      );
+
+      const result = await response.json();
+      console.log("updateProfile result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Profile update failed");
+      }
+
+      // Extract updated data
+      const updatedData = result.data || result.user || (result.success ? result : null);
+
+      if (updatedData) {
+        const currentUser = (get() as any).user;
+
+        // Ensure updatedData is actually an object before spreading
+        const finalData = typeof updatedData === 'object' ? updatedData : {};
+        const mergedUser = { ...currentUser, ...finalData };
+
+        // Persist updated user
+        await (get() as any).persistAuthData(
+          mergedUser,
+          accessToken,
+          (get() as any).refreshToken,
+        );
+
+        set({
+          user: mergedUser,
+          isLoading: false,
+        });
+      } else {
+        set({ isLoading: false });
+      }
+
+      return result;
+    } catch (error: any) {
+      console.log("updateProfile error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  fetchProfile: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) return null;
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/profile/me`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch profile");
+      }
+
+      const latestUser = result.data || result.user;
+      if (latestUser) {
+        const currentUser = (get() as any).user;
+        const mergedUser = { ...currentUser, ...latestUser };
+
+        await (get() as any).persistAuthData(
+          mergedUser,
+          accessToken,
+          (get() as any).refreshToken,
+        );
+
+        set({
+          user: mergedUser,
+          isLoading: false,
+        });
+        return mergedUser;
+      }
+
+      set({ isLoading: false });
+      return null;
+    } catch (error: any) {
+      console.log("fetchProfile error", error);
       set({ error: error.message, isLoading: false });
       return null;
     }
@@ -410,7 +542,7 @@ export const useStore = create((set, get) => ({
 
       return true;
     } catch (error) {
-      console.error("Failed to logout:", error);
+      console.log("Failed to logout:", error);
       return false;
     }
   },

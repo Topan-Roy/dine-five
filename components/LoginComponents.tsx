@@ -35,7 +35,7 @@ const LoginComponents = () => {
         Alert.alert("Error", "Login failed. Please check your credentials.");
       }
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.log("Login error:", error);
       if (error.message.includes("verify your email")) {
         Alert.alert(
           "Verification Required",

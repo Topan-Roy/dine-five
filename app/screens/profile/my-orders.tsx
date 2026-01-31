@@ -1,3 +1,4 @@
+import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -76,7 +77,10 @@ const ORDERS = {
 
 export default function MyOrdersScreen() {
   const router = useRouter();
+  const { user } = useStore() as any;
   const [activeTab, setActiveTab] = useState<"current" | "previous">("current");
+
+  console.log("MyOrders for user:", user?.name || user?.fullName || user?.email);
 
   return (
     <SafeAreaView className="flex-1 bg-[#FDFBF7]">

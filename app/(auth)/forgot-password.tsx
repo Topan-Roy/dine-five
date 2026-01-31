@@ -38,7 +38,7 @@ const ForgotPassword = () => {
         );
       }
     } catch (error: any) {
-      console.error("Forgot Password error:", error);
+      console.log("Forgot Password error:", error);
       Alert.alert("Error", String(error.message || "Something went wrong"));
     }
   };

@@ -164,6 +164,14 @@ export default function ProductDetails() {
                 Add to card
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleAddToCart}
+              className="bg-yellow-400 px-8 py-4 rounded-2xl shadow-md"
+            >
+              <Text className="text-[#1F2A33] font-medium text-base">
+                Buy now
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Customer Reviews */}

@@ -38,7 +38,7 @@ const VerifyOTP = () => {
         console.log("Invalid OTP");
       }
     } catch (error: any) {
-      console.error("Verification error:", error);
+      console.log("Verification error:", error);
       // Optional: handle error silently or show a toast/snackbar if needed
     }
   };

@@ -50,7 +50,7 @@ const ResetPassword = () => {
         Alert.alert("Error", String(storeError || "Failed to reset password"));
       }
     } catch (error: any) {
-      console.error("Reset Password error:", error);
+      console.log("Reset Password error:", error);
       Alert.alert("Error", String(error.message || "Something went wrong"));
     }
   };
