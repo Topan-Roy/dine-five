@@ -10,6 +10,8 @@ export interface Product {
     time?: number;
     description?: string;
     isNew?: boolean;
+    restaurantName?: string;
+    restaurantProfile?: string;
 }
 
 interface FavoriteStore {

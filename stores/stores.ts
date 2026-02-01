@@ -30,7 +30,7 @@ export const useStore = create((set, get) => ({
   // // this is for user profile
   userProfile: async () => {
     const response = await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL}/auth/user-profile`,
+      `${process.env.EXPO_PUBLIC_API_URL}/profile/me`,
       {
         method: "GET",
         headers: {
@@ -191,15 +191,23 @@ export const useStore = create((set, get) => ({
       const user = result.data?.user || result.user || result.data;
       const session = result.data?.session || result.session;
 
-      const accessToken = session?.accessToken || result.accessToken || result.data?.accessToken;
-      const refreshToken = session?.refreshToken || result.refreshToken || result.data?.refreshToken;
+      const accessToken =
+        session?.accessToken || result.accessToken || result.data?.accessToken;
+      const refreshToken =
+        session?.refreshToken ||
+        result.refreshToken ||
+        result.data?.refreshToken;
 
       if (user) {
         // If we already have a user, merge them to avoid losing fields like email/role
         const currentUser = (get() as any).user;
         const mergedUser = currentUser ? { ...currentUser, ...user } : user;
 
-        await (get() as any).persistAuthData(mergedUser, accessToken, refreshToken);
+        await (get() as any).persistAuthData(
+          mergedUser,
+          accessToken,
+          refreshToken,
+        );
 
         set({
           user: mergedUser,
@@ -445,13 +453,14 @@ export const useStore = create((set, get) => ({
       }
 
       // Extract updated data
-      const updatedData = result.data || result.user || (result.success ? result : null);
+      const updatedData =
+        result.data || result.user || (result.success ? result : null);
 
       if (updatedData) {
         const currentUser = (get() as any).user;
 
         // Ensure updatedData is actually an object before spreading
-        const finalData = typeof updatedData === 'object' ? updatedData : {};
+        const finalData = typeof updatedData === "object" ? updatedData : {};
         const mergedUser = { ...currentUser, ...finalData };
 
         // Persist updated user
@@ -521,6 +530,101 @@ export const useStore = create((set, get) => ({
       return null;
     } catch (error: any) {
       console.log("fetchProfile error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  fetchNotifications: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/notifications`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch notifications");
+      }
+
+      set({ isLoading: false });
+      return result.data;
+    } catch (error: any) {
+      console.log("fetchNotifications error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  deleteAccount: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/profile/me`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to deactivate account");
+      }
+
+      // Logout automatically after account deletion
+      await (get() as any).logout();
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("deleteAccount error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  fetchFeed: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/feed`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch feed");
+      }
+
+      set({ isLoading: false });
+      return result.data;
+    } catch (error: any) {
+      console.log("fetchFeed error", error);
       set({ error: error.message, isLoading: false });
       return null;
     }

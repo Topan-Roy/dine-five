@@ -10,26 +10,45 @@ const HOTELS = [
     rating: "4.2",
     time: "32 min",
     delivery: "Free",
-    categories: "Thai food • Thai food • Thai food",
+    categories: "Thai food • Noodles • Spicy",
     image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500",
   },
-  // Adding another dummy hotel for search demonstration
   {
     id: 2,
     name: "The Golden Spoon",
     rating: "4.5",
     time: "25 min",
     delivery: "$2.00",
-    categories: "Indian • Curry • Spacious",
+    categories: "Indian • Curry • Burger • Pizza",
     image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500",
   },
+  {
+    id: 3,
+    name: "Donut Paradise",
+    rating: "4.8",
+    time: "15 min",
+    delivery: "Free",
+    categories: "Dessert • Donut • Sweet",
+    image: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500",
+  }
 ];
 
-export const PopularHotels = ({ searchText = "" }: { searchText?: string }) => {
+export const PopularHotels = ({
+  searchText = "",
+  activeCategory = "All"
+}: {
+  searchText?: string;
+  activeCategory?: string;
+}) => {
   const router = useRouter();
-  const filteredHotels = HOTELS.filter((hotel) =>
-    hotel.name.toLowerCase().includes(searchText.toLowerCase()),
-  );
+
+  const filteredHotels = HOTELS.filter((hotel) => {
+    const matchesSearch = hotel.name.toLowerCase().includes(searchText.toLowerCase());
+    const matchesCategory = activeCategory === "All" ||
+      hotel.categories.toLowerCase().includes(activeCategory.toLowerCase());
+
+    return matchesSearch && matchesCategory;
+  });
 
   if (searchText && filteredHotels.length === 0) return null;
 

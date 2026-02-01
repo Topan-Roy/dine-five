@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function ProductDetails() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { id, name, price, image, description } = params;
+  const { id, name, price, image, description, rating, reviews, restaurantName, restaurantProfile } = params;
 
   const product: Product = {
     id: (id as string) || "1",
@@ -20,13 +20,15 @@ export default function ProductDetails() {
     image:
       (image as string) ||
       "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500",
-    rating: 4.8,
-    reviews: 300,
+    rating: parseFloat(rating as string) || 4.8,
+    reviews: parseInt(reviews as string) || 300,
     calories: 300,
     time: 25,
     description:
       (description as string) ||
       "A classic favorite! Indulge in a crispy, thin crust topped with rich tomato sauce, layers of gooey mozzarella cheese, and delicious pepperoni slices. Perfectly baked with a hint of herbs for a mouth-watering experience in every bite.",
+    restaurantName: (restaurantName as string) || "The Gourmet Kitchen",
+    restaurantProfile: (restaurantProfile as string) || "",
   };
 
   const [isFav, setIsFav] = useState(favoriteStore.isFavorite(product.id));
@@ -119,6 +121,23 @@ export default function ProductDetails() {
                 {product.time}mins
               </Text>
             </View>
+          </View>
+
+          {/* Restaurant Info */}
+          <View className="flex-row items-center gap-3 mb-4">
+            {product.restaurantProfile ? (
+              <Image
+                source={{ uri: product.restaurantProfile }}
+                className="w-10 h-10 rounded-full bg-gray-100"
+              />
+            ) : (
+              <View className="w-10 h-10 rounded-full bg-yellow-100 items-center justify-center">
+                <Ionicons name="restaurant" size={18} color="#FFC107" />
+              </View>
+            )}
+            <Text className="text-sm font-medium text-gray-700">
+              {product.restaurantName}
+            </Text>
           </View>
 
           {/* Title & Quantity */}

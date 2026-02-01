@@ -7,7 +7,9 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
+  Modal,
   ScrollView,
   Text,
   TextInput,
@@ -22,6 +24,20 @@ export default function MyAccountScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+
+  const COUNTRY_CODES = [
+    { code: "+1", country: "United States", flag: "🇺🇸" },
+    { code: "+880", country: "Bangladesh", flag: "🇧🇩" },
+    { code: "+44", country: "United Kingdom", flag: "🇬🇧" },
+    { code: "+91", country: "India", flag: "🇮🇳" },
+    { code: "+971", country: "UAE", flag: "🇦🇪" },
+    { code: "+966", country: "Saudi Arabia", flag: "🇸🇦" },
+    { code: "+61", country: "Australia", flag: "🇦🇺" },
+    { code: "+1", country: "Canada", flag: "🇨🇦" },
+    { code: "+49", country: "Germany", flag: "🇩🇪" },
+    { code: "+33", country: "France", flag: "🇫🇷" },
+  ];
 
   // Filter state initialized with user data
   const [formData, setFormData] = useState({
@@ -214,11 +230,18 @@ export default function MyAccountScreen() {
               </Text>
             )}
             <View className="flex-row gap-3">
-              <View className="bg-white p-4 rounded-xl border border-gray-100 items-center justify-center">
+              <TouchableOpacity
+                onPress={() => isEditing && setShowCountryPicker(true)}
+                disabled={!isEditing}
+                className="bg-white p-4 rounded-xl border border-gray-100 flex-row items-center justify-center gap-2"
+              >
                 <Text className="text-base font-normal text-gray-900">
                   {formData.phonePrefix}
                 </Text>
-              </View>
+                {isEditing && (
+                  <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+                )}
+              </TouchableOpacity>
               <View className="flex-1 bg-white p-4 rounded-xl border border-gray-100 justify-center">
                 {isEditing ? (
                   <TextInput
@@ -283,6 +306,51 @@ export default function MyAccountScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Country Code Picker Modal */}
+      <Modal
+        visible={showCountryPicker}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCountryPicker(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white rounded-t-3xl h-[60%] px-6 pt-6">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-xl font-bold text-gray-900">
+                Select Country
+              </Text>
+              <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
+                <Ionicons name="close" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={COUNTRY_CODES}
+              keyExtractor={(item) => item.country + item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    handleChange("phonePrefix", item.code);
+                    setShowCountryPicker(false);
+                  }}
+                  className="flex-row items-center py-4 border-b border-gray-50"
+                >
+                  <Text className="text-2xl mr-4">{item.flag}</Text>
+                  <Text className="flex-1 text-base text-gray-900">
+                    {item.country}
+                  </Text>
+                  <Text className="text-base font-semibold text-[#FFC107]">
+                    {item.code}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 40 }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

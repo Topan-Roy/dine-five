@@ -29,7 +29,7 @@ const MENU_ITEMS = [
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { logout } = useStore() as any;
+  const { logout, deleteAccount } = useStore() as any;
 
   const handleLogout = () => {
     Alert.alert(
@@ -48,7 +48,32 @@ export default function SettingsScreen() {
           },
         },
       ],
-      { cancelable: true }
+      { cancelable: true },
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const result = await deleteAccount();
+            if (result && result.success) {
+              Alert.alert("Success", result.message || "Account deactivated");
+              router.replace("/(auth)/login");
+            } else {
+              const error = (useStore.getState() as any).error;
+              Alert.alert("Error", error || "Failed to delete account");
+            }
+          },
+        },
+      ],
+      { cancelable: true },
     );
   };
 
@@ -91,7 +116,10 @@ export default function SettingsScreen() {
         {/* Danger Actions */}
         <Text className="text-gray-400 text-sm mb-4">Danger Actions</Text>
 
-        <TouchableOpacity className="bg-red-600 rounded-2xl py-4 flex-row items-center justify-center gap-2 mb-4 shadow-sm">
+        <TouchableOpacity
+          onPress={handleDeleteAccount}
+          className="bg-red-600 rounded-2xl py-4 flex-row items-center justify-center gap-2 mb-4 shadow-sm"
+        >
           <Ionicons name="trash-outline" size={20} color="#fff" />
           <Text className="text-white font-bold text-base">Delete Account</Text>
         </TouchableOpacity>
