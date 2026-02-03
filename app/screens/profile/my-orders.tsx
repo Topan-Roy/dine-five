@@ -1,86 +1,58 @@
+import { EmptyState } from "@/components/common/EmptyState";
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const ORDERS = {
-  current: [
-    {
-      id: 1,
-      status: "Preparing",
-      time: "Ready in  25mins",
-      items: [{ name: "Margherita Pizza", qty: 1 }],
-      total: "5.99",
-      image:
-        "https://images.unsplash.com/photo-1541745537411-b8046dc6d66c?w=150",
-      state: "preparing", // for logic if needed
-    },
-    {
-      id: 2,
-      status: "Ready for pickup",
-      time: "Ready in  25mins", // maybe "Pickup now" ? keeping text from image if possible, image says "Ready in 25mins" for preparing, and "Ready in 25mins" for pickup? That seems like a typo in design or static frame. I'll use "Pickup now" for logic validity or stick to image text.
-      // Image 2nd card says "Ready for pickup" title, and subtext "Ready in 25mins". This implies it was ready in 25 mins or is ready.
-      items: [{ name: "Margherita Pizza", qty: 1 }],
-      total: "5.99",
-      image:
-        "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=150",
-      state: "pickup",
-    },
-    {
-      id: 3,
-      status: "Preparing",
-      time: "Ready in  25mins",
-      items: [{ name: "Margherita Pizza", qty: 1 }],
-      total: "5.99",
-      image:
-        "https://images.unsplash.com/photo-1541745537411-b8046dc6d66c?w=150",
-      state: "preparing",
-    },
-  ],
-  previous: [
-    {
-      id: 4,
-      status: "Order Completed",
-      time: "Picked up on  26 October",
-      items: [{ name: "Margherita Pizza", qty: 1 }],
-      total: "5.99",
-      image:
-        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150",
-      state: "completed",
-    },
-    {
-      id: 5,
-      status: "Order Completed",
-      time: "Picked up on  26 October",
-      items: [{ name: "Margherita Pizza", qty: 1 }],
-      total: "5.99",
-      image:
-        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150",
-      state: "completed",
-    },
-    {
-      id: 6,
-      status: "Order Completed",
-      time: "Picked up on  26 October",
-      items: [{ name: "Margherita Pizza", qty: 1 }],
-      total: "5.99",
-      image:
-        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150",
-      state: "completed",
-    },
-  ],
-};
-
 export default function MyOrdersScreen() {
   const router = useRouter();
-  const { user } = useStore() as any;
+  const { fetchCurrentOrders, fetchPreviousOrders, isLoading } =
+    useStore() as any;
   const [activeTab, setActiveTab] = useState<"current" | "previous">("current");
+  const [currentOrders, setCurrentOrders] = useState<any[]>([]);
+  const [previousOrders, setPreviousOrders] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  console.log("MyOrders for user:", user?.name || user?.fullName || user?.email);
+  const loadOrders = async () => {
+    if (activeTab === "current") {
+      const data = await fetchCurrentOrders();
+      if (data) setCurrentOrders(data);
+    } else {
+      const result = await fetchPreviousOrders();
+      if (result && result.data) setPreviousOrders(result.data);
+    }
+  };
+
+  React.useEffect(() => {
+    loadOrders();
+  }, [activeTab]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadOrders();
+    setRefreshing(false);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatStatus = (status: string) => {
+    return status
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  const ordersToShow = activeTab === "current" ? currentOrders : previousOrders;
 
   return (
     <SafeAreaView className="flex-1 bg-[#FDFBF7]">
@@ -126,82 +98,127 @@ export default function MyOrdersScreen() {
       {/* List */}
       <ScrollView
         className="flex-1 px-6"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
       >
-        {ORDERS[activeTab].map((order) => (
-          <View
-            key={order.id}
-            className="bg-white p-4 rounded-2xl mb-4 shadow-sm border border-gray-100"
-          >
-            <View className="flex-row mb-4">
-              <Image
-                source={{ uri: order.image }}
-                contentFit="cover"
-                style={{ height: 100, width: 80, borderRadius: 12 }}
-              />
-              <View className="flex-1 ml-3">
-                <Text className="text-base font-medium text-[#1F2A33] mb-0.5">
-                  {order.status}
-                </Text>
-                <Text className="text-sm text-[#7A7A7A] mb-2">
-                  {order.time}
-                </Text>
-
-                {order.items.map((item, idx) => (
-                  <View key={idx} className="flex-row justify-between mb-0.5">
-                    <Text className="text-sm text-[#7A7A7A]">
-                      Order summary
+        {isLoading && !refreshing ? (
+          <View className="flex-1 items-center justify-center pt-20">
+            <Text className="text-gray-500">Loading orders...</Text>
+          </View>
+        ) : ordersToShow.length === 0 ? (
+          <View className="flex-1 justify-center">
+            <EmptyState
+              title="No orders found"
+              message={
+                activeTab === "current"
+                  ? "You don't have any active orders right now."
+                  : "You haven't placed any orders yet."
+              }
+              buttonText="Order Now"
+              onButtonPress={() => router.push("/(tabs)")}
+            />
+          </View>
+        ) : (
+          ordersToShow.map((order) => (
+            <View
+              key={order._id}
+              className="bg-white p-4 rounded-2xl mb-4 shadow-sm border border-gray-100"
+            >
+              <View className="flex-row mb-4">
+                <View
+                  className="bg-gray-100 items-center justify-center rounded-xl"
+                  style={{ height: 100, width: 80 }}
+                >
+                  <Ionicons
+                    name="fast-food-outline"
+                    size={32}
+                    color="#9CA3AF"
+                  />
+                </View>
+                <View className="flex-1 ml-3">
+                  <View className="flex-row justify-between items-start mb-0.5">
+                    <Text className="text-base font-bold text-[#1F2A33] flex-1">
+                      {formatStatus(order.status)}
                     </Text>
-                    <Text className="text-sm font-medium text-[#1F2A33]">
-                      {item.name} x{item.qty}
+                    <Text className="text-xs font-medium text-gray-400">
+                      #{order.orderId ? order.orderId.split("-").pop() : "N/A"}
                     </Text>
                   </View>
-                ))}
+                  <Text className="text-sm text-[#7A7A7A] mb-2">
+                    {activeTab === "current"
+                      ? "Ordered on " + formatDate(order.createdAt)
+                      : "Completed on " + formatDate(order.createdAt)}
+                  </Text>
 
-                <View className="flex-row justify-between mt-1">
-                  <Text className="text-sm text-[#7A7A7A]">
-                    Total price paid
-                  </Text>
-                  <Text className="text-sm font-medium text-[#1F2A33]">
-                    ${order.total}
-                  </Text>
+                  <View className="flex-row justify-between mb-0.5">
+                    <Text className="text-sm text-[#7A7A7A]">Provider</Text>
+                    <Text className="text-sm font-medium text-[#1F2A33]">
+                      {order.providerId?.fullName || "Dine Five"}
+                    </Text>
+                  </View>
+
+                  <View className="flex-row justify-between mb-0.5">
+                    <Text className="text-sm text-[#7A7A7A]">Items</Text>
+                    <Text className="text-sm font-medium text-[#1F2A33]">
+                      {order.items?.length || 0} items
+                    </Text>
+                  </View>
+
+                  <View className="flex-row justify-between mt-1">
+                    <Text className="text-sm text-[#7A7A7A]">
+                      Total price paid
+                    </Text>
+                    <Text className="text-sm font-bold text-[#FFC107]">
+                      ${order.totalPrice}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {activeTab === "current" ? (
-              <TouchableOpacity
-                onPress={() => {
-                  // Demo logic to toggle states based on order id or just random/fixed
-                  // For ID 1: Pending (cancelable)
-                  // For ID 2: Preparing (not cancelable)
-                  // For ID 3: Ready
-                  let state = "pending";
-                  if (order.id === 2) state = "preparing";
-                  if (order.id === 3) state = "ready";
-
-                  router.push({
-                    pathname: "/screens/profile/order-details",
-                    params: { state },
-                  });
-                }}
-                className="border border-gray-200 py-3 rounded-xl items-center"
-              >
-                <Text className="text-gray-900 font-bold text-sm">
-                  View Progress
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <View className="flex-row gap-3">
-                <TouchableOpacity className="flex-1 border border-gray-200 py-3 rounded-xl items-center">
-                  <Text className="text-gray-900 font-bold text-sm">
-                    Reorder
+              {activeTab === "current" ? (
+                <TouchableOpacity
+                  onPress={() => {
+                    router.push({
+                      pathname: "/screens/profile/order-details",
+                      params: { orderId: order._id, state: order.status },
+                    });
+                  }}
+                  className="bg-[#FFFFFF] py-3 rounded-xl items-center border border-[#E3E6F0]"
+                >
+                  <Text className="text-[#000] font-bold text-sm">
+                    View Progress
                   </Text>
                 </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        ))}
+              ) : (
+                <View className="flex-row gap-3">
+                  <TouchableOpacity
+                    onPress={() => {
+                      // Logic for reordering could be added here
+                    }}
+                    className="flex-1 border border-[#E3E6F0] py-3 rounded-xl items-center bg-[#FFFFFF]"
+                  >
+                    <Text className="text-[#000] font-bold text-sm">
+                      Reorder
+                    </Text>
+                  </TouchableOpacity>
+                  {/* <TouchableOpacity
+                    onPress={() => {
+                      router.push({
+                        pathname: "/screens/profile/order-details",
+                        params: { orderId: order._id, state: order.status },
+                      });
+                    }}
+                    className="flex-1 bg-white border border-gray-100 py-3 rounded-xl items-center"
+                  >
+                    <Text className="text-gray-900 font-bold text-sm">
+                      Details
+                    </Text>
+                  </TouchableOpacity> */}
+                </View>
+              )}
+            </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );

@@ -4,70 +4,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// Dummy data for notifications
-const NOTIFICATIONS = {
-  new: [
-    {
-      id: 1,
-      title: "Rate Your Order",
-      message:
-        "How did we do? Let us know by rating your recent order and sharing your feedback.",
-      time: "5 mins ago",
-      icon: "fast-food",
-    },
-    {
-      id: 2,
-      title: "Hungry? Try Our New Pizza Specials!",
-      message:
-        "Check out the latest additions to our menu and satisfy your cravings!",
-      time: "5 mins ago",
-      icon: "pizza",
-    },
-    {
-      id: 3,
-      title: "Don't Miss Out: Special Offer Just for You!",
-      message:
-        "Get 10% off your next order with code SAVE10. Limited time only!",
-      time: "22 mins ago",
-      icon: "gift",
-    },
-  ],
-  old: [
-    {
-      id: 4,
-      title: "Order Delivered",
-      message: "Your order has been successfully delivered. Enjoy your meal!",
-      time: "1 day ago",
-      icon: "bicycle",
-    },
-    {
-      id: 5,
-      title: "Refund Processed",
-      message: "Your refund for order #12345 has been processed.",
-      time: "2 days ago",
-      icon: "cash",
-    },
-    {
-      id: 6,
-      title: "Hungry? Try Our New Pizza Specials!",
-      message:
-        "Check out the latest additions to our menu and satisfy your cravings!",
-      time: "2 day ago",
-      icon: "pizza",
-    },
-    {
-      id: 7,
-      title: "Don't Miss Out: Special Offer Just for You!",
-      message:
-        "Get 10% off your next order with code SAVE10. Limited time only!",
-      time: "2 hours ago",
-      icon: "gift",
-    },
-  ],
-};
 
 export default function NotificationScreen() {
   const router = useRouter();
@@ -110,11 +54,14 @@ export default function NotificationScreen() {
 
     return date.toLocaleDateString();
   };
-
   const renderNotification = (item: any) => (
-    <View key={item.id || item._id} className="flex-row items-start mb-6 w-full">
+    <View className="flex-row items-start mb-6 w-full">
       <View className="w-12 h-12 bg-[#FFF3CD] rounded-full items-center justify-center mr-4">
-        <Ionicons name={(item.icon || "notifications") as any} size={24} color="#FFC107" />
+        <Ionicons
+          name={(item.icon || "notifications") as any}
+          size={24}
+          color="#FFC107"
+        />
       </View>
       <View className="flex-1">
         <Text className="text-base font-semibold text-[#363A33] mb-1">
@@ -191,22 +138,30 @@ export default function NotificationScreen() {
         >
           {activeTab === "new" ? (
             notifications.newNotifications.length > 0 ? (
-              notifications.newNotifications.map(renderNotification)
+              notifications.newNotifications.map((item, index) => (
+                <React.Fragment key={item._id || item.id || `new-${index}`}>
+                  {renderNotification(item)}
+                </React.Fragment>
+              ))
             ) : (
               <EmptyState
+                key="empty-new"
                 title="No New Notifications"
                 message="We'll notify you when something new arrives. Keep an eye out for updates!"
               />
             )
+          ) : notifications.oldNotifications.length > 0 ? (
+            notifications.oldNotifications.map((item, index) => (
+              <React.Fragment key={item._id || item.id || `old-${index}`}>
+                {renderNotification(item)}
+              </React.Fragment>
+            ))
           ) : (
-            notifications.oldNotifications.length > 0 ? (
-              notifications.oldNotifications.map(renderNotification)
-            ) : (
-              <EmptyState
-                title="No Past Notifications"
-                message="Your notification history is empty. All your future activity will appear here."
-              />
-            )
+            <EmptyState
+              key="empty-old"
+              title="No Past Notifications"
+              message="Your notification history is empty. All your future activity will appear here."
+            />
           )}
         </ScrollView>
       )}

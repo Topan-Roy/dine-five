@@ -1,6 +1,6 @@
 import { ViewCart } from "@/components/home/ViewCart";
 import { CustomerReviews } from "@/components/product/CustomerReviews";
-import { favoriteStore, Product } from "@/utils/favoriteStore";
+import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -11,9 +11,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function ProductDetails() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { addFavorite, removeFavorite, addToCart, favorites, fetchFavorites } = useStore() as any;
   const { id, name, price, image, description, rating, reviews, restaurantName, restaurantProfile } = params;
 
-  const product: Product = {
+  const product: any = {
     id: (id as string) || "1",
     name: (name as string) || "Pepperoni Cheese Pizza",
     price: (price as string) || "5.99",
@@ -31,22 +32,26 @@ export default function ProductDetails() {
     restaurantProfile: (restaurantProfile as string) || "",
   };
 
-  const [isFav, setIsFav] = useState(favoriteStore.isFavorite(product.id));
+  const isFav = favorites.includes(product.id);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    const unsub = favoriteStore.subscribe(() => {
-      setIsFav(favoriteStore.isFavorite(product.id));
-    });
-    return unsub;
-  }, [product.id]);
+    if (favorites.length === 0) {
+      fetchFavorites();
+    }
+  }, []);
 
-  const handleToggleFavorite = () => {
-    favoriteStore.toggleFavorite(product);
+  const handleToggleFavorite = async () => {
+    if (isFav) {
+      await removeFavorite(product.id);
+    } else {
+      await addFavorite(product.id);
+    }
   };
 
   const handleAddToCart = () => {
-    console.log("Added to cart:", quantity, "of", product.name);
+    addToCart(product, quantity);
+    router.push("/(tabs)/card");
   };
 
   return (

@@ -26,6 +26,7 @@ export const useStore = create((set, get) => ({
   error: null,
   isInitialized: false,
   resetToken: null as string | null,
+  favorites: [] as string[],
 
   // // this is for user profile
   userProfile: async () => {
@@ -629,6 +630,229 @@ export const useStore = create((set, get) => ({
       return null;
     }
   },
+
+  fetchCurrentOrders: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/customer/orders/current`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      console.log(
+        "fetchCurrentOrders result:",
+        JSON.stringify(result, null, 2),
+      );
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch current orders");
+      }
+
+      set({ isLoading: false });
+      return result.data;
+    } catch (error: any) {
+      console.log("fetchCurrentOrders error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  fetchPreviousOrders: async (page = 1, limit = 10) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/customer/orders/previous?page=${page}&limit=${limit}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      console.log(
+        "fetchPreviousOrders result:",
+        JSON.stringify(result, null, 2),
+      );
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch previous orders");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("fetchPreviousOrders error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  fetchFavorites: async (page = 1, limit = 10) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/favorites/feed?page=${page}&limit=${limit}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      console.log("fetchFavorites result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch favorites");
+      }
+
+      set({ isLoading: false });
+      if (result.data && result.data.favorites) {
+        set({
+          favorites: result.data.favorites.map((f: any) => f.food.foodId),
+        });
+      }
+      return result.data;
+    } catch (error: any) {
+      console.log("fetchFavorites error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  addFavorite: async (foodId: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/favorites`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ foodId }),
+        },
+      );
+
+      const result = await response.json();
+      console.log("addFavorite result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to add favorite");
+      }
+
+      const { favorites } = get() as any;
+      set({ favorites: [...favorites, foodId], isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("addFavorite error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  removeFavorite: async (foodId: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/favorites/${foodId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      console.log("removeFavorite result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to remove favorite");
+      }
+
+      const { favorites } = get() as any;
+      set({
+        favorites: favorites.filter((id: string) => id !== foodId),
+        isLoading: false,
+      });
+      return result;
+    } catch (error: any) {
+      console.log("removeFavorite error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+  // fetchCatagori: async (page = 1, limit = 10) => {
+  //   set({ isLoading: true, error: null });
+
+  //   try {
+  //     const { accessToken } = get() as any;
+  //     if (!accessToken) throw new Error("No access token found");
+
+  //     const response = await fetch(
+  //       `${process.env.EXPO_PUBLIC_API_URL}/categories`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${accessToken}`,
+  //         },
+  //       },
+  //     );
+
+  //     const result = await response.json();
+  //     console.log(
+  //       "fetchPreviousOrders result:",
+  //       JSON.stringify(result, null, 2),
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error(result.message || "Failed to fetch previous orders");
+  //     }
+
+  //     set({ isLoading: false });
+  //     return result;
+  //   } catch (error: any) {
+  //     console.log("fetchPreviousOrders error", error);
+  //     set({ error: error.message, isLoading: false });
+  //     return null;
+  //   }
+  // },
 
   logout: async () => {
     try {

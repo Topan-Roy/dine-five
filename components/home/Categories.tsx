@@ -6,20 +6,34 @@ const CATEGORIES = ["All", "Burger", "Pizza", "Donut", "Drinks", "Tacos"];
 
 export const Categories = ({
   activeCategory,
-  onCategoryChange
+  onCategoryChange,
 }: {
-  activeCategory: string,
-  onCategoryChange: (cat: string) => void
+  activeCategory: string;
+  onCategoryChange: (cat: string) => void;
 }) => {
   const router = useRouter();
+  // const { fetchCatagori, categories } = useStore() as any;
 
+  // useEffect(() => {
+  //   fetchCatagori();
+  // }, []);
+
+  // useEffect(() => {
+  //   if (categories?.length) {
+  //     categories.forEach((cat: any) => {
+  //       console.log("Category Name:", cat.categoryName);
+  //     });
+  //   }
+  // }, [categories]);
   return (
     <View className="mt-4">
       <View className="flex-row items-center justify-between px-4 py-2">
         <Text className="text-base font-medium text-[#1F2A33]">
           Top Categories
         </Text>
-        <TouchableOpacity onPress={() => router.push("/screens/home/all-categories")}>
+        <TouchableOpacity
+          onPress={() => router.push("/screens/home/all-categories")}
+        >
           <Text className="text-yellow-500 font-medium text-sm">See all</Text>
         </TouchableOpacity>
       </View>

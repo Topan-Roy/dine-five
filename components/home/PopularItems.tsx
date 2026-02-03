@@ -2,9 +2,13 @@ import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
-
-
+import {
+  ActivityIndicator,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export const PopularItems = ({
   onAddItem,
@@ -32,8 +36,11 @@ export const PopularItems = ({
   }, [fetchFeed]);
 
   const filteredItems = items.filter((item) => {
-    const matchesSearch = item.title?.toLowerCase().includes(searchText.toLowerCase());
-    const matchesCategory = activeCategory === "All" ||
+    const matchesSearch = item.title
+      ?.toLowerCase()
+      .includes(searchText.toLowerCase());
+    const matchesCategory =
+      activeCategory === "All" ||
       item.categoryName?.toLowerCase().includes(activeCategory.toLowerCase());
 
     return matchesSearch && matchesCategory;
@@ -68,6 +75,7 @@ export const PopularItems = ({
                   reviews: item.totalReviews.toString(),
                   restaurantName: item.provider?.restaurantName,
                   restaurantProfile: item.provider?.profile,
+                  isFavorite: (item.favoriteCount > 0).toString(),
                 },
               });
             }}

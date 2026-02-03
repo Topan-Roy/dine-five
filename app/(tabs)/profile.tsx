@@ -27,6 +27,12 @@ const MENU_ITEMS = [
     route: "/screens/profile/payment",
   },
   {
+    id: "favorite",
+    title: "Favorite",
+    icon: "heart-outline",
+    route: "/screens/profile/favorite",
+  },
+  {
     id: "settings",
     title: "Settings",
     icon: "settings-outline",
