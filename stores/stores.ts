@@ -854,6 +854,42 @@ export const useStore = create((set, get) => ({
   //   }
   // },
 
+  cancelOrder: async (orderId: string, reason?: string) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const url = `${process.env.EXPO_PUBLIC_API_URL}/orders/${orderId}/cancel`;
+      console.log("Cancelling order at URL:", url);
+      console.log("Payload:", JSON.stringify({ reason }));
+
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ reason, status: "cancelled" }),
+      });
+
+      const result = await response.json();
+      console.log("Cancel Order Response:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to cancel order");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("cancelOrder error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
   logout: async () => {
     try {
       await Promise.all([

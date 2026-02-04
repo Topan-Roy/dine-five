@@ -1,9 +1,9 @@
 import { EmptyState } from "@/components/common/EmptyState";
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -19,16 +19,21 @@ export default function MyOrdersScreen() {
   const loadOrders = async () => {
     if (activeTab === "current") {
       const data = await fetchCurrentOrders();
-      if (data) setCurrentOrders(data);
+      if (data) {
+        console.log("Fetched Current Orders:", JSON.stringify(data, null, 2));
+        setCurrentOrders(data);
+      }
     } else {
       const result = await fetchPreviousOrders();
       if (result && result.data) setPreviousOrders(result.data);
     }
   };
 
-  React.useEffect(() => {
-    loadOrders();
-  }, [activeTab]);
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [activeTab]),
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -50,6 +55,23 @@ export default function MyOrdersScreen() {
       .split("_")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return "text-yellow-600";
+      case "cancelled":
+        return "text-red-500";
+      case "delivered":
+      case "picked_up":
+        return "text-green-600";
+      case "preparing":
+      case "ready_for_pickup":
+        return "text-blue-600";
+      default:
+        return "text-[#1F2A33]";
+    }
   };
 
   const ordersToShow = activeTab === "current" ? currentOrders : previousOrders;
@@ -137,7 +159,9 @@ export default function MyOrdersScreen() {
                 </View>
                 <View className="flex-1 ml-3">
                   <View className="flex-row justify-between items-start mb-0.5">
-                    <Text className="text-base font-bold text-[#1F2A33] flex-1">
+                    <Text
+                      className={`text-base font-bold flex-1 ${getStatusColor(order.status)}`}
+                    >
                       {formatStatus(order.status)}
                     </Text>
                     <Text className="text-xs font-medium text-gray-400">
@@ -180,7 +204,7 @@ export default function MyOrdersScreen() {
                   onPress={() => {
                     router.push({
                       pathname: "/screens/profile/order-details",
-                      params: { orderId: order._id, state: order.status },
+                      params: { orderId: order.orderId, state: order.status },
                     });
                   }}
                   className="bg-[#FFFFFF] py-3 rounded-xl items-center border border-[#E3E6F0]"

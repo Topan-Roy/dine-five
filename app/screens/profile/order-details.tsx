@@ -23,11 +23,19 @@ export default function OrderDetailsScreen() {
   const [rateModalVisible, setRateModalVisible] = useState(false);
   const [rating, setRating] = useState(0);
 
-  const isCancelable = currentState === "pending";
+  const isCancelable = [
+    "pending",
+    "preparing",
+    "ready",
+    "ready_for_pickup",
+  ].includes(currentState);
 
   const handleCancelPress = () => {
     if (isCancelable) {
-      router.push("/screens/profile/cancel-reason");
+      router.push({
+        pathname: "/screens/profile/cancel-reason",
+        params: { orderId: params.orderId },
+      });
     }
   };
 
@@ -37,7 +45,8 @@ export default function OrderDetailsScreen() {
       { title: "Order prepared", active: currentState !== "pending" }, // vaguely mapping to images
       {
         title: "Order is ready for pickup",
-        active: currentState === "ready" || currentState === "picked_up",
+        active:
+          ["ready", "ready_for_pickup", "picked_up"].includes(currentState),
       },
       { title: "Order picked up", active: currentState === "picked_up" },
     ];
@@ -76,9 +85,9 @@ export default function OrderDetailsScreen() {
         {/* Step 2: Ready */}
         <View className="relative">
           <View
-            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${["ready", "picked_up"].includes(currentState) ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
+            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${["ready", "ready_for_pickup", "picked_up"].includes(currentState) ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
           />
-          {currentState === "ready" ? (
+          {currentState === "ready" || currentState === "ready_for_pickup" ? (
             <View>
               <Text className="font-bold text-gray-900 text-base">
                 Your order is Rady for pickup
@@ -86,9 +95,7 @@ export default function OrderDetailsScreen() {
               <Text className="text-gray-500 text-sm mt-1 w-48">
                 Please head to the counter to collect your food.
               </Text>
-              <Text className="text-sm font-bold text-gray-400 mt-1">
-                Est. time 20mins
-              </Text>
+
 
               <TouchableOpacity className="mt-3 border border-gray-200 rounded-xl py-3 w-48 items-center">
                 <Text className="font-bold text-gray-900">I'm here</Text>

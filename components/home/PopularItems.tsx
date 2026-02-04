@@ -27,8 +27,10 @@ export const PopularItems = ({
   useEffect(() => {
     const loadFeed = async () => {
       const data = await fetchFeed();
-      if (data) {
+      if (Array.isArray(data)) {
         setItems(data);
+      } else {
+        setItems([]);
       }
       setLoading(false);
     };
@@ -36,14 +38,17 @@ export const PopularItems = ({
   }, [fetchFeed]);
 
   const filteredItems = items.filter((item) => {
-    const matchesSearch = item.title
-      ?.toLowerCase()
-      .includes(searchText.toLowerCase());
+    const matchesSearch = (item.title || "")
+      .toLowerCase()
+      .includes((searchText || "").toLowerCase());
+
     const matchesCategory =
       activeCategory === "All" ||
-      item.categoryName?.toLowerCase().includes(activeCategory.toLowerCase());
+      (item.categoryName || "")
+        .toLowerCase()
+        .includes((activeCategory || "").toLowerCase());
 
-    return matchesSearch && matchesCategory;
+    return !!(matchesSearch && matchesCategory);
   });
 
   if (loading) {
@@ -69,12 +74,12 @@ export const PopularItems = ({
                 params: {
                   id: item.foodId,
                   name: item.title,
-                  price: item.finalPriceTag.toString(),
-                  image: item.image,
-                  rating: item.averageRating.toString(),
-                  reviews: item.totalReviews.toString(),
-                  restaurantName: item.provider?.restaurantName,
-                  restaurantProfile: item.provider?.profile,
+                  price: (item.finalPriceTag ?? 0).toString(),
+                  image: item.image || "",
+                  rating: (item.averageRating ?? 0).toString(),
+                  reviews: (item.totalReviews ?? 0).toString(),
+                  restaurantName: item.provider?.restaurantName || "",
+                  restaurantProfile: item.provider?.profile || "",
                   isFavorite: (item.favoriteCount > 0).toString(),
                 },
               });
@@ -110,7 +115,7 @@ export const PopularItems = ({
               <TouchableOpacity
                 onPress={(e) => {
                   e.stopPropagation();
-                  onAddItem(item.finalPriceTag.toString());
+                  onAddItem((item.finalPriceTag ?? 0).toString());
                 }}
                 className="w-7 h-7 bg-[#FFE69C] rounded-full items-center justify-center"
               >
