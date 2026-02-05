@@ -1021,19 +1021,26 @@ export const useStore = create((set, get) => ({
 
         attachments.forEach((file, index) => {
           const fileName = file.uri.split("/").pop() || `image_${index}.jpg`;
-          const fileType = file.type === "video" ? "video/mp4" : "image/jpeg";
+          const extension = fileName.split(".").pop()?.toLowerCase() || "jpg";
+          const fileType = file.type === "video" ? "video/mp4" : `image/${extension === 'png' ? 'png' : 'jpeg'}`;
 
-          body.append("attachments", {
+          body.append("image", {
             uri: file.uri,
-            name: file.uri.split("/").pop() || `image_${index}.jpg`,
-            type: file.type === "video" ? "video/mp4" : "image/jpeg",
+            name: fileName,
+            type: fileType,
           } as any);
         });
       } else {
         body = JSON.stringify({ receiverId: providerId, text: message });
       }
 
-      console.log("SENDING TO PROVIDER PAYLOAD:", body);
+      console.log("--- OUTGOING MESSAGE DETAILS ---");
+      console.log("Text:", message);
+      if (isFormData) {
+        console.log("Attachments count:", attachments.length);
+        attachments.forEach((a, i) => console.log(`Attachment ${i}:`, a.uri));
+      }
+      console.log("--------------------------------");
 
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/chat/message/customer-to-provider`,
@@ -1055,6 +1062,12 @@ export const useStore = create((set, get) => ({
         result = JSON.parse(responseText);
       } catch (e) {
         throw new Error(`Server returned non-JSON: ${responseText.substring(0, 50)}`);
+      }
+
+      if (result.success && result.data?.imageUrl) {
+        console.log("SUCCESS! Image uploaded to:", result.data.imageUrl);
+      } else if (result.success) {
+        console.log("Message sent successfully (No Image URL returned)");
       }
 
       if (!response.ok) {

@@ -86,22 +86,22 @@ export default function CustomerSupportScreen() {
     if (!conversationId) return;
     try {
       const data = await fetchMessages(conversationId);
-      // Based on provided JSON: data might contain messages array directly under data.messages
-      const rawMessages = data?.messages || (Array.isArray(data) ? data : []);
-
-      if (rawMessages.length > 0) {
+      if (data && (data.messages || Array.isArray(data))) {
+        const rawMessages = data.messages || (Array.isArray(data) ? data : []);
         const formattedMessages = rawMessages.map((m: any) => ({
-          id: m.messageId || m.id || m._id || Math.random().toString(),
-          text: m.text || m.message || m.content,
-          // If senderId matches user id, it's the customer (Right side), so isSupport = false
-          isSupport: m.senderId
-            ? m.senderId !== user?.id && m.senderId !== user?._id
-            : m.sender !== user?.id,
+          id: m.id || m._id || m.messageId || Math.random().toString(),
+          text: m.content || m.text || m.message || "",
+          // If sender role is PROVIDER, it's support (Left side)
+          isSupport: m.sender?.role
+            ? m.sender.role === "PROVIDER"
+            : (m.senderId !== user?.id && m.senderId !== user?._id),
           time: new Date(m.createdAt).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           }),
-          attachments: m.attachments || (m.imageUrl ? [{ uri: m.imageUrl, type: 'image' }] : []),
+          attachments: m.attachmentUrl
+            ? [{ uri: m.attachmentUrl, type: 'image' }]
+            : (m.attachments || (m.imageUrl ? [{ uri: m.imageUrl, type: 'image' }] : [])),
         }));
 
         setMessages(formattedMessages);
@@ -377,8 +377,8 @@ export default function CustomerSupportScreen() {
                 >
                   <View
                     className={`rounded-2xl px-4 py-3 ${msg.isSupport
-                        ? "bg-white rounded-tl-none shadow-sm"
-                        : "bg-[#F3F4F6] rounded-tr-none"
+                      ? "bg-white rounded-tl-none shadow-sm"
+                      : "bg-[#F3F4F6] rounded-tr-none"
                       }`}
                   >
                     <Text className="text-gray-700 leading-5">{msg.text}</Text>
@@ -508,8 +508,8 @@ export default function CustomerSupportScreen() {
             <TouchableOpacity
               onPress={handleSendMessage}
               className={`w-10 h-10 rounded-full items-center justify-center shadow-sm ${message.trim() || attachments.length > 0
-                  ? "bg-[#FFC107]"
-                  : "bg-gray-300"
+                ? "bg-[#FFC107]"
+                : "bg-gray-300"
                 }`}
             >
               <Ionicons
