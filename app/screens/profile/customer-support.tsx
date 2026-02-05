@@ -1,63 +1,115 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ResizeMode, Video } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useStore } from "../../../stores/stores";
 
 export default function CustomerSupportScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const {
+    fetchMessages,
+    fetchConversations,
+    sendMessage,
+    sendMessageToProvider,
+    user,
+    isLoading,
+  } = useStore() as any;
+
+  const [conversationId, setConversationId] = useState<string | null>(
+    (params.conversationId as string) || null,
+  );
+  const [providerId] = useState<string | null>(
+    (params.providerId as string) || "69714abce548ab10b90c0e50",
+  );
+
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<
-    Array<{ uri: string; type: "image" | "video" }>
+    { uri: string; type: "image" | "video" }[]
   >([]);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Good morning! We're from Boba Foods, how may I help you?",
-      isSupport: true,
-      time: "10:30 AM",
-      attachments: [],
-    },
-    {
-      id: 2,
-      text: "I have ordered for a pepperoni cheese pizza but I have received a different. There must have been a mistake somewhere. Please replace it.",
-      isSupport: false,
-      time: "10:32 AM",
-      attachments: [],
-    },
-    {
-      id: 3,
-      text: "The quick brown fox jumps over the lazy dog",
-      isSupport: true,
-      time: "10:33 AM",
-      attachments: [
-        {
-          uri: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500",
-          type: "image",
-        },
-      ],
-    },
-    {
-      id: 4,
-      text: "The quick brown fox jumps over the lazy dog",
-      isSupport: false,
-      time: "10:35 AM",
-      attachments: [],
-    },
-  ]);
+  const [messages, setMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadData();
+
+    // Set up polling for new messages every 5 seconds
+    const interval = setInterval(() => {
+      if (conversationId) {
+        refreshMessages();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [conversationId]);
+
+  const loadData = async () => {
+    if (conversationId) {
+      await refreshMessages();
+    } else {
+      // Try to find if there's an existing conversation
+      const result = await fetchConversations();
+      const convs = result?.conversations || [];
+
+      if (convs.length > 0) {
+        // Find existing conversation with this provider or take the first one
+        const targetConv = providerId
+          ? convs.find(
+            (c: any) =>
+              c.providerId === providerId || c.provider?.id === providerId,
+          )
+          : convs[0];
+
+        if (targetConv) {
+          setConversationId(targetConv.id || targetConv._id);
+        }
+      }
+    }
+  };
+
+  const refreshMessages = async () => {
+    if (!conversationId) return;
+    try {
+      const data = await fetchMessages(conversationId);
+      // Based on provided JSON: data might contain messages array directly under data.messages
+      const rawMessages = data?.messages || (Array.isArray(data) ? data : []);
+
+      if (rawMessages.length > 0) {
+        const formattedMessages = rawMessages.map((m: any) => ({
+          id: m.messageId || m.id || m._id || Math.random().toString(),
+          text: m.text || m.message || m.content,
+          // If senderId matches user id, it's the customer (Right side), so isSupport = false
+          isSupport: m.senderId
+            ? m.senderId !== user?.id && m.senderId !== user?._id
+            : m.sender !== user?.id,
+          time: new Date(m.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          attachments: m.attachments || (m.imageUrl ? [{ uri: m.imageUrl, type: 'image' }] : []),
+        }));
+
+        setMessages(formattedMessages);
+      }
+    } catch (e) {
+      console.log("Polling error:", e);
+    }
+  };
 
   // Request permissions
   const requestPermissions = async () => {
@@ -182,29 +234,105 @@ export default function CustomerSupportScreen() {
   };
 
   // Send message with attachments
-  const handleSendMessage = () => {
-    console.log("Send button clicked!");
-    console.log("Message:", message);
-    console.log("Attachments:", attachments);
+  const handleSendMessage = async () => {
+    if (!message.trim() && attachments.length === 0) return;
 
-    if (message.trim() || attachments.length > 0) {
-      const newMessage = {
-        id: messages.length + 1,
-        text: message.trim(),
-        isSupport: false,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        attachments: [...attachments],
-      };
-      console.log("New message:", newMessage);
-      setMessages([...messages, newMessage]);
-      setMessage("");
-      setAttachments([]);
-      console.log("Message sent and cleared!");
-    } else {
-      console.log("Cannot send empty message");
+    const currentMessage = message.trim();
+    const currentAttachments = [...attachments];
+
+    // Optimistic Update: Add message to list immediately
+    const tempId = Date.now().toString();
+    const optimisticMessage = {
+      id: tempId,
+      text: currentMessage,
+      isSupport: false,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      attachments: currentAttachments,
+      sending: true,
+    };
+
+    setMessages((prev) => [
+      ...prev.filter((m) => m.id !== "welcome"),
+      optimisticMessage,
+    ]);
+    setMessage("");
+    setAttachments([]);
+
+    // Scroll to bottom
+    setTimeout(
+      () => scrollViewRef.current?.scrollToEnd({ animated: true }),
+      100,
+    );
+
+    try {
+      let result;
+      // We always use sendMessageToProvider because the user confirmed
+      // /api/chat/message/customer-to-provider is the working endpoint in Postman
+      if (providerId) {
+        result = await sendMessageToProvider(
+          providerId,
+          currentMessage,
+          currentAttachments,
+        );
+
+        // If the API returns the new conversation ID or we need to sync
+        const newConvId =
+          result?.data?.conversationId ||
+          result?.conversationId ||
+          result?.data?.id;
+
+        if (newConvId && !conversationId) {
+          setConversationId(newConvId);
+        }
+      } else {
+        throw new Error("Missing provider ID");
+      }
+
+      if (result) {
+        // Update optimistic message with real messageId from API
+        const responseData = result.data;
+        if (responseData) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === tempId
+                ? {
+                  ...m,
+                  id: responseData.messageId || responseData.id,
+                  sending: false,
+                }
+                : m,
+            ),
+          );
+        }
+
+        if (!conversationId) {
+          // If first message, we need to refresh to get the new conversationId
+          const list = await fetchConversations();
+          const convs = list?.conversations || [];
+          if (convs.length > 0) {
+            const target = providerId
+              ? convs.find(
+                (c: any) =>
+                  c.providerId === providerId ||
+                  c.provider?.id === providerId,
+              )
+              : convs[0];
+            if (target) setConversationId(target.id || target._id);
+          }
+        } else {
+          await refreshMessages();
+        }
+      }
+    } catch (error: any) {
+      console.log("Error sending message:", error);
+      Alert.alert("Error", error.message || "Failed to send message properly.");
+      // Remove the optimistic message if it failed
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setMessage(currentMessage);
+      setAttachments(currentAttachments);
     }
   };
 
@@ -229,155 +357,171 @@ export default function CustomerSupportScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
-        {/* Dynamic Chat Messages */}
-        {messages.map((msg) => (
-          <View key={msg.id} className="mb-4">
-            <View
-              className={`flex-row ${msg.isSupport ? "justify-start" : "justify-end"}`}
-            >
+        <ScrollView
+          ref={scrollViewRef}
+          className="flex-1 px-6"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingVertical: 20 }}
+          onContentSizeChange={() =>
+            scrollViewRef.current?.scrollToEnd({ animated: true })
+          }
+        >
+          {/* Dynamic Chat Messages */}
+          {messages.map((msg) => (
+            <View key={msg.id} className="mb-4">
               <View
-                className={`max-w-[80%] ${msg.isSupport ? "order-2" : "order-1"}`}
+                className={`flex-row ${msg.isSupport ? "justify-start" : "justify-end"}`}
               >
                 <View
-                  className={`rounded-2xl px-4 py-3 ${
-                    msg.isSupport
-                      ? "bg-white rounded-tl-none shadow-sm"
-                      : "bg-[#F3F4F6] rounded-tr-none"
-                  }`}
+                  className={`max-w-[80%] ${msg.isSupport ? "order-2" : "order-1"}`}
                 >
-                  <Text className="text-gray-700 leading-5">{msg.text}</Text>
-
-                  {/* Message Attachments */}
-                  {msg.attachments && msg.attachments.length > 0 && (
-                    <View className="mt-2">
-                      {msg.attachments.map((attachment, index) => (
-                        <View key={index} className="mb-2">
-                          {attachment.type === "image" ? (
-                            <Image
-                              source={{ uri: attachment.uri }}
-                              className=" h-32 w-32 rounded-xl"
-                              resizeMode="cover"
-                            />
-                          ) : (
-                            <View className="relative">
-                              <Video
-                                source={{ uri: attachment.uri }}
-                                className="w-44 h-44 rounded-xl"
-                                useNativeControls
-                                resizeMode={ResizeMode.COVER}
-                                isLooping
-                                shouldPlay={false}
-                              />
-                            </View>
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-                <Text
-                  className={`text-xs text-gray-500 mt-1 ${
-                    msg.isSupport ? "text-left" : "text-right"
-                  }`}
-                >
-                  {msg.time}
-                </Text>
-              </View>
-            </View>
-          </View>
-        ))}
-
-        {/* WhatsApp-style Attachment Preview Above Send Button */}
-        {attachments.length > 0 && (
-          <View className="mb-4">
-            <View className="bg-white rounded-2xl p-3 shadow-sm">
-              <View className="flex-row flex-wrap gap-2">
-                {attachments.map((attachment, index) => (
-                  <View key={index} className="relative">
-                    {attachment.type === "image" ? (
-                      <Image
-                        source={{ uri: attachment.uri }}
-                        className="w-16 h-16 rounded-lg"
-                        resizeMode="cover"
+                  <View
+                    className={`rounded-2xl px-4 py-3 ${msg.isSupport
+                        ? "bg-white rounded-tl-none shadow-sm"
+                        : "bg-[#F3F4F6] rounded-tr-none"
+                      }`}
+                  >
+                    <Text className="text-gray-700 leading-5">{msg.text}</Text>
+                    {msg.sending && (
+                      <ActivityIndicator
+                        size="small"
+                        color="#FFC107"
+                        style={{ marginTop: 4 }}
                       />
-                    ) : (
-                      <View className="relative">
-                        <Video
-                          source={{ uri: attachment.uri }}
-                          className="w-20 h-20 rounded-lg"
-                          resizeMode={ResizeMode.COVER}
-                          shouldPlay={false}
-                          isMuted
-                        />
-                        <View className="absolute inset-0 bg-black bg-opacity-30 rounded-lg items-center justify-center">
-                          <Ionicons name="play" size={12} color="white" />
-                        </View>
+                    )}
+
+                    {/* Message Attachments */}
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <View className="mt-2">
+                        {msg.attachments.map(
+                          (attachment: any, index: number) => (
+                            <View key={index} className="mb-2">
+                              {attachment.type === "image" ? (
+                                <Image
+                                  source={{ uri: attachment.uri }}
+                                  className=" h-32 w-32 rounded-xl"
+                                  resizeMode="cover"
+                                />
+                              ) : (
+                                <View className="relative">
+                                  <Video
+                                    source={{ uri: attachment.uri }}
+                                    className="w-44 h-44 rounded-xl"
+                                    useNativeControls
+                                    resizeMode={ResizeMode.COVER}
+                                    isLooping
+                                    shouldPlay={false}
+                                  />
+                                </View>
+                              )}
+                            </View>
+                          ),
+                        )}
                       </View>
                     )}
-                    <TouchableOpacity
-                      onPress={() => removeAttachment(index)}
-                      className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full items-center justify-center"
-                    >
-                      <Ionicons name="close" size={10} color="white" />
-                    </TouchableOpacity>
                   </View>
-                ))}
+                  <Text
+                    className={`text-xs text-gray-500 mt-1 ${msg.isSupport ? "text-left" : "text-right"
+                      }`}
+                  >
+                    {msg.time}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
-        )}
+          ))}
 
-        {/* Typing indicator placeholder */}
-        <View className="self-start bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm mb-4">
-          <View className="flex-row gap-1">
-            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+          {/* WhatsApp-style Attachment Preview Above Send Button */}
+          {attachments.length > 0 && (
+            <View className="mb-4">
+              <View className="bg-white rounded-2xl p-3 shadow-sm">
+                <View className="flex-row flex-wrap gap-2">
+                  {attachments.map((attachment, index) => (
+                    <View key={index} className="relative">
+                      {attachment.type === "image" ? (
+                        <Image
+                          source={{ uri: attachment.uri }}
+                          className="w-16 h-16 rounded-lg"
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View className="relative">
+                          <Video
+                            source={{ uri: attachment.uri }}
+                            className="w-20 h-20 rounded-lg"
+                            resizeMode={ResizeMode.COVER}
+                            shouldPlay={false}
+                            isMuted
+                          />
+                          <View className="absolute inset-0 bg-black bg-opacity-30 rounded-lg items-center justify-center">
+                            <Ionicons name="play" size={12} color="white" />
+                          </View>
+                        </View>
+                      )}
+                      <TouchableOpacity
+                        onPress={() => removeAttachment(index)}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full items-center justify-center"
+                      >
+                        <Ionicons name="close" size={10} color="white" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Typing indicator placeholder (only shown if loading) */}
+          {isLoading && messages.length === 0 && (
+            <View className="self-start bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm mb-4">
+              <View className="flex-row gap-1">
+                <View className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                <View className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                <View className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+              </View>
+            </View>
+          )}
+
+          {/* Space at bottom for input */}
+          <View className="h-4" />
+        </ScrollView>
+
+        {/* Input Field */}
+        <View className="px-6 pb-6 bg-white border-t border-gray-100">
+          <View className="flex-row items-center gap-3">
+            <TouchableOpacity
+              onPress={showMediaOptions}
+              className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
+            >
+              <Ionicons name="add" size={24} color="#6B7280" />
+            </TouchableOpacity>
+            <View className="flex-1 bg-gray-50 rounded-full px-4 py-3">
+              <TextInput
+                value={message}
+                onChangeText={setMessage}
+                placeholder="Type here..."
+                placeholderTextColor="#9CA3AF"
+                className="text-gray-900"
+                multiline
+              />
+            </View>
+            <TouchableOpacity
+              onPress={handleSendMessage}
+              className={`w-10 h-10 rounded-full items-center justify-center shadow-sm ${message.trim() || attachments.length > 0
+                  ? "bg-[#FFC107]"
+                  : "bg-gray-300"
+                }`}
+            >
+              <Ionicons
+                name="send"
+                size={18}
+                color={
+                  message.trim() || attachments.length > 0 ? "#fff" : "#8E8E93"
+                }
+              />
+            </TouchableOpacity>
           </View>
         </View>
-
-        {/* Space at bottom for input */}
-        <View className="h-4" />
-      </ScrollView>
-
-      {/* Input Field */}
-      <View className="px-6 pb-6 bg-white border-t border-gray-100">
-        <View className="flex-row items-center gap-3">
-          <TouchableOpacity
-            onPress={showMediaOptions}
-            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
-          >
-            <Ionicons name="add" size={24} color="#6B7280" />
-          </TouchableOpacity>
-          <View className="flex-1 bg-gray-50 rounded-full px-4 py-3">
-            <TextInput
-              value={message}
-              onChangeText={setMessage}
-              placeholder="Type here..."
-              placeholderTextColor="#9CA3AF"
-              className="text-gray-900"
-              multiline
-            />
-          </View>
-          <TouchableOpacity
-            onPress={handleSendMessage}
-            className={`w-10 h-10 rounded-full items-center justify-center shadow-sm ${
-              message.trim() || attachments.length > 0
-                ? "bg-[#FFC107]"
-                : "bg-gray-300"
-            }`}
-          >
-            <Ionicons
-              name="send"
-              size={18}
-              color={
-                message.trim() || attachments.length > 0 ? "#fff" : "#8E8E93"
-              }
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

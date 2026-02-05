@@ -29,27 +29,27 @@ export const useStore = create((set, get) => ({
   favorites: [] as string[],
 
   // // this is for user profile
-  userProfile: async () => {
-    const response = await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL}/profile/me`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${get().accessToken}`,
-        },
-      },
-    );
+  // userProfile: async () => {
+  //   const response = await fetch(
+  //     `${process.env.EXPO_PUBLIC_API_URL}/profile/me`,
+  //     {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${get().accessToken}`,
+  //       },
+  //     },
+  //   );
 
-    const result = await response.json();
-    console.log("userProfile result:", JSON.stringify(result, null, 2));
+  //   const result = await response.json();
+  //   console.log("userProfile result:", JSON.stringify(result, null, 2));
 
-    if (!response.ok) {
-      throw new Error(result.message || "Failed to fetch user profile");
-    }
+  //   if (!response.ok) {
+  //     throw new Error(result.message || "Failed to fetch user profile");
+  //   }
 
-    return result.data;
-  },
+  //   return result.data;
+  // },
 
   // Add this function to persist auth data to AsyncStorage
   persistAuthData: async (user: any, accessToken: any, refreshToken: any) => {
@@ -113,7 +113,7 @@ export const useStore = create((set, get) => ({
 
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/auth/signup`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/signup`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -163,7 +163,7 @@ export const useStore = create((set, get) => ({
 
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/auth/login`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -238,7 +238,7 @@ export const useStore = create((set, get) => ({
 
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/auth/verify-email`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/verify-email`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -301,7 +301,7 @@ export const useStore = create((set, get) => ({
 
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/auth/verify-forgot-otp`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/verify-forgot-otp`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -342,7 +342,7 @@ export const useStore = create((set, get) => ({
 
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/auth/forgot-password`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/forgot-password`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -389,7 +389,7 @@ export const useStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/auth/reset-password`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/reset-password`,
         {
           method: "POST",
           headers: {
@@ -435,7 +435,7 @@ export const useStore = create((set, get) => ({
       const isFormData = data instanceof FormData;
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/profile/me`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/profile/me`,
         {
           method: "PATCH",
           headers: {
@@ -495,7 +495,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) return null;
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/profile/me`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/profile/me`,
         {
           method: "GET",
           headers: {
@@ -544,7 +544,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/notifications`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/notifications`,
         {
           method: "GET",
           headers: {
@@ -576,7 +576,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/profile/me`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/profile/me`,
         {
           method: "DELETE",
           headers: {
@@ -609,7 +609,7 @@ export const useStore = create((set, get) => ({
     try {
       const { accessToken } = get() as any;
 
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/feed`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/v1/feed`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -639,7 +639,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/customer/orders/current`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/customer/orders/current`,
         {
           method: "GET",
           headers: {
@@ -676,7 +676,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/customer/orders/previous?page=${page}&limit=${limit}`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/customer/orders/previous?page=${page}&limit=${limit}`,
         {
           method: "GET",
           headers: {
@@ -713,7 +713,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/favorites/feed?page=${page}&limit=${limit}`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/favorites/feed?page=${page}&limit=${limit}`,
         {
           method: "GET",
           headers: {
@@ -752,7 +752,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/favorites`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/favorites`,
         {
           method: "POST",
           headers: {
@@ -788,7 +788,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/favorites/${foodId}`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/favorites/${foodId}`,
         {
           method: "DELETE",
           headers: {
@@ -861,7 +861,7 @@ export const useStore = create((set, get) => ({
       const { accessToken } = get() as any;
       if (!accessToken) throw new Error("No access token found");
 
-      const url = `${process.env.EXPO_PUBLIC_API_URL}/orders/${orderId}/cancel`;
+      const url = `${process.env.EXPO_PUBLIC_API_URL}/api/v1/orders/${orderId}/cancel`;
       console.log("Cancelling order at URL:", url);
       console.log("Payload:", JSON.stringify({ reason }));
 
@@ -887,6 +887,186 @@ export const useStore = create((set, get) => ({
       console.log("cancelOrder error", error);
       set({ error: error.message, isLoading: false });
       return null;
+    }
+  },
+
+  fetchConversations: async (limit = 20) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/chat/conversations?limit=${limit}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch conversations");
+      }
+
+      set({ isLoading: false });
+      return result.data;
+    } catch (error: any) {
+      console.log("fetchConversations error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  fetchMessages: async (conversationId: string, page = 1, limit = 20) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/chat/conversations/${conversationId}/messages?page=${page}&limit=${limit}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch messages");
+      }
+
+      set({ isLoading: false });
+      return result.data;
+    } catch (error: any) {
+      console.log("fetchMessages error", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  sendMessage: async (conversationId: string, message: string, attachments: any[] = []) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const isFormData = attachments.length > 0;
+      let body: any;
+
+      if (isFormData) {
+        body = new FormData();
+        body.append("message", message);
+        attachments.forEach((file) => {
+          const fileName = file.uri.split("/").pop();
+          body.append("attachments", {
+            uri: file.uri,
+            name: fileName,
+            type: file.type === "video" ? "video/mp4" : "image/jpeg",
+          } as any);
+        });
+      } else {
+        body = JSON.stringify({ message });
+      }
+
+      console.log("Sending POST to:", `${process.env.EXPO_PUBLIC_API_URL}/api/chat/conversations/${conversationId}/messages`);
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/chat/conversations/${conversationId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            ...(isFormData ? {} : { "Content-Type": "application/json" }),
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: body,
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        console.log("Response error:", result);
+        throw new Error(result.message || "Failed to send message");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("sendMessage error details:", error);
+      set({ error: error.message, isLoading: false });
+      throw error;
+    }
+  },
+
+  sendMessageToProvider: async (providerId: string, message: string, attachments: any[] = []) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const isFormData = attachments.length > 0;
+      let body: any;
+
+      if (isFormData) {
+        body = new FormData();
+        body.append("receiverId", providerId);
+        body.append("text", message);
+
+        attachments.forEach((file, index) => {
+          const fileName = file.uri.split("/").pop() || `image_${index}.jpg`;
+          const fileType = file.type === "video" ? "video/mp4" : "image/jpeg";
+
+          body.append("attachments", {
+            uri: file.uri,
+            name: file.uri.split("/").pop() || `image_${index}.jpg`,
+            type: file.type === "video" ? "video/mp4" : "image/jpeg",
+          } as any);
+        });
+      } else {
+        body = JSON.stringify({ receiverId: providerId, text: message });
+      }
+
+      console.log("SENDING TO PROVIDER PAYLOAD:", body);
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/chat/message/customer-to-provider`,
+        {
+          method: "POST",
+          headers: {
+            ...(isFormData ? {} : { "Content-Type": "application/json" }),
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: body,
+        },
+      );
+
+      const responseText = await response.text();
+      console.log("SERVER RESPONSE RAW:", responseText);
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Server returned non-JSON: ${responseText.substring(0, 50)}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(result.message || result.error || "Failed to send message to provider");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("sendMessageToProvider error details:", error);
+      set({ error: error.message, isLoading: false });
+      throw error;
     }
   },
 
