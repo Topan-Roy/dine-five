@@ -29,6 +29,9 @@ export const PopularItems = ({
       const data = await fetchFeed();
       if (Array.isArray(data)) {
         setItems(data);
+        if (data.length > 0) {
+          console.log("Popular Item Sample:", JSON.stringify(data[0], null, 2));
+        }
       } else {
         setItems([]);
       }
@@ -72,7 +75,8 @@ export const PopularItems = ({
               router.push({
                 pathname: "/screens/home/product-details",
                 params: {
-                  id: item.foodId,
+                  id: item._id || item.id || item.foodId,
+                  foodId: item.foodId || item._id || item.id,
                   name: item.title,
                   price: (item.finalPriceTag ?? 0).toString(),
                   image: item.image || "",

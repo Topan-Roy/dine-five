@@ -65,6 +65,7 @@ export default function MyOrdersScreen() {
         return "text-red-500";
       case "delivered":
       case "picked_up":
+      case "completed":
         return "text-green-600";
       case "preparing":
       case "ready_for_pickup":
@@ -214,7 +215,7 @@ export default function MyOrdersScreen() {
                   </Text>
                 </TouchableOpacity>
               ) : (
-                <View className="flex-row gap-3">
+                <View className="flex-row gap-2">
                   <TouchableOpacity
                     onPress={() => {
                       // Logic for reordering could be added here
@@ -225,19 +226,27 @@ export default function MyOrdersScreen() {
                       Reorder
                     </Text>
                   </TouchableOpacity>
-                  {/* <TouchableOpacity
-                    onPress={() => {
-                      router.push({
-                        pathname: "/screens/profile/order-details",
-                        params: { orderId: order._id, state: order.status },
-                      });
-                    }}
-                    className="flex-1 bg-white border border-gray-100 py-3 rounded-xl items-center"
-                  >
-                    <Text className="text-gray-900 font-bold text-sm">
-                      Details
-                    </Text>
-                  </TouchableOpacity> */}
+                  {["picked_up", "delivered", "completed"].includes(order.status?.toLowerCase()) && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        router.push({
+                          pathname: "/screens/profile/order-details",
+                          params: {
+                            orderId: order.orderId,
+                            _id: order._id,
+                            state: order.status,
+                            autoRate: "true"
+                          },
+                        });
+                      }}
+                      className="flex-row items-center justify-center border border-yellow-400 py-3 px-4 rounded-xl bg-yellow-50"
+                    >
+                      <Ionicons name="star" size={16} color="#FFC107" className="mr-1" />
+                      <Text className="text-[#332701] font-bold text-sm ml-1">
+                        Rate
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </View>

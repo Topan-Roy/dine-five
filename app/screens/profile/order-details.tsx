@@ -1,12 +1,15 @@
+import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   Modal,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -17,18 +20,26 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function OrderDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { submitReview, isLoading } = useStore() as any;
   const currentState = (params.state as string) || "pending"; // default to pending for demo
 
   // State for Rating Modal
   const [rateModalVisible, setRateModalVisible] = useState(false);
   const [rating, setRating] = useState(0);
+  const [review, setReview] = useState("");
+
+  useEffect(() => {
+    if (params.autoRate === "true" && ["picked_up", "delivered", "completed"].includes(currentState)) {
+      setRateModalVisible(true);
+    }
+  }, [params.autoRate, currentState]);
 
   const isCancelable = [
     "pending",
     "preparing",
     "ready",
     "ready_for_pickup",
-  ].includes(currentState);
+  ].includes(currentState.toLowerCase()) && !["completed", "delivered", "picked_up"].includes(currentState.toLowerCase());
 
   const handleCancelPress = () => {
     if (isCancelable) {
@@ -36,6 +47,54 @@ export default function OrderDetailsScreen() {
         pathname: "/screens/profile/cancel-reason",
         params: { orderId: params.orderId },
       });
+    }
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!["picked_up", "delivered", "completed"].includes(currentState)) {
+      Alert.alert("Notice", "You can only review completed orders");
+      return;
+    }
+
+    if (rating === 0) {
+      Alert.alert("Rating Required", "Please select a star rating before submitting.");
+      return;
+    }
+
+    try {
+      // Prioritize the MongoDB _id as the sample response shows the API expects it
+      const orderIdToSend = (params._id as string) || (params.orderId as string);
+
+      console.log("Submitting review for ID:", orderIdToSend, "with rating:", rating);
+
+      if (!orderIdToSend) {
+        Alert.alert("Error", "Order ID not found");
+        return;
+      }
+
+      const result = await submitReview(orderIdToSend, rating, review);
+
+      if (result.success) {
+        Alert.alert("Success", "Thank you for your feedback! Your review has been submitted.");
+        setRateModalVisible(false);
+        setRating(0);
+        setReview("");
+      }
+    } catch (error: any) {
+      // Detailed error handling based on server response logs
+      const errorMsg = error.message || "";
+
+      if (errorMsg.includes("completed orders") || errorMsg.includes("NOT_COMPLETED")) {
+        Alert.alert(
+          "Review Not Available",
+          "Your order hasn't been fully processed by the system yet. Please try again once the order status is finalized."
+        );
+      } else if (errorMsg.toLowerCase().includes("already") || errorMsg.toLowerCase().includes("exists")) {
+        Alert.alert("Already Reviewed", "You have already submitted a review for this order.");
+        setRateModalVisible(false);
+      } else {
+        Alert.alert("Review Error", errorMsg || "Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -48,7 +107,10 @@ export default function OrderDetailsScreen() {
         active:
           ["ready", "ready_for_pickup", "picked_up"].includes(currentState),
       },
-      { title: "Order picked up", active: currentState === "picked_up" },
+      {
+        title: "Order picked up",
+        active: ["picked_up", "delivered"].includes(currentState),
+      },
     ];
 
     // Designing the specific "Preparing your order" card look from Image 2
@@ -61,9 +123,9 @@ export default function OrderDetailsScreen() {
         <View className="relative">
           {/* Dot */}
           <View
-            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 bg-[#FFC107] border-[#FFC107] z-10`}
+            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${currentState !== "pending" ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
           />
-          {currentState === "pending" || currentState === "preparing" ? (
+          {currentState === "preparing" ? (
             <View>
               <Text className="font-bold text-gray-900 text-base">
                 Preparing your order
@@ -76,7 +138,7 @@ export default function OrderDetailsScreen() {
               </Text>
             </View>
           ) : (
-            <Text className="text-gray-300 font-bold text-base">
+            <Text className={`${currentState !== "pending" ? "text-gray-400" : "text-gray-200"} font-bold text-base`}>
               Order prepared
             </Text>
           )}
@@ -85,25 +147,23 @@ export default function OrderDetailsScreen() {
         {/* Step 2: Ready */}
         <View className="relative">
           <View
-            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${["ready", "ready_for_pickup", "picked_up"].includes(currentState) ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
+            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${["ready", "ready_for_pickup", "picked_up", "delivered"].includes(currentState) ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
           />
           {currentState === "ready" || currentState === "ready_for_pickup" ? (
             <View>
               <Text className="font-bold text-gray-900 text-base">
-                Your order is Rady for pickup
+                Your order is Ready for pickup
               </Text>
               <Text className="text-gray-500 text-sm mt-1 w-48">
                 Please head to the counter to collect your food.
               </Text>
-
-
-              <TouchableOpacity className="mt-3 border border-gray-200 rounded-xl py-3 w-48 items-center">
+              <TouchableOpacity className="mt-3 border border-gray-200 rounded-xl py-3 w-48 items-center bg-white shadow-sm">
                 <Text className="font-bold text-gray-900">I'm here</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <Text
-              className={`${["picked_up"].includes(currentState) ? "text-gray-300" : "text-gray-200"} font-bold text-base`}
+              className={`${["picked_up", "delivered"].includes(currentState) ? "text-gray-400" : "text-gray-200"} font-bold text-base`}
             >
               Order is ready for pickup
             </Text>
@@ -113,18 +173,19 @@ export default function OrderDetailsScreen() {
         {/* Step 3: Picked Up */}
         <View className="relative">
           <View
-            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${currentState === "picked_up" ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
+            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${["picked_up", "delivered", "completed"].includes(currentState) ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
           />
-          {currentState === "picked_up" ? (
+          {["picked_up", "delivered", "completed"].includes(currentState) ? (
             <View>
               <Text className="font-bold text-gray-900 text-base">
                 Order picked up
               </Text>
               <TouchableOpacity
                 onPress={() => setRateModalVisible(true)}
-                className="mt-3 border border-gray-200 rounded-xl py-3 w-48 items-center"
+                className="mt-3 border border-yellow-400 bg-yellow-50 rounded-xl py-3 px-6 flex-row items-center justify-center w-56 shadow-sm"
               >
-                <Text className="font-bold text-gray-900">Rate the food!</Text>
+                <Ionicons name="star" size={20} color="#FFC107" />
+                <Text className="font-bold text-[#332701] ml-2 text-base">Rate the food!</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -265,11 +326,31 @@ export default function OrderDetailsScreen() {
               ))}
             </View>
 
+            <View className="w-full mb-2">
+              <View className="w-full border border-gray-100 rounded-2xl p-4 bg-gray-50/50 min-h-[100px]">
+                <TextInput
+                  placeholder="Write here..."
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  maxLength={120}
+                  value={review}
+                  onChangeText={setReview}
+                  style={{ textAlignVertical: "top", fontSize: 16 }}
+                />
+              </View>
+              <Text className="text-right text-gray-400 text-xs mt-2">
+                {review.length} / 120
+              </Text>
+            </View>
+
             <TouchableOpacity
-              onPress={() => setRateModalVisible(false)}
-              className="bg-gray-200 w-full py-4 rounded-xl items-center"
+              onPress={handleReviewSubmit}
+              disabled={isLoading}
+              className={`w-full py-4 rounded-2xl items-center mt-4 ${isLoading ? "bg-gray-100" : "bg-[#E9EDF7]"}`}
             >
-              <Text className="text-gray-500 font-bold text-lg">Rate</Text>
+              <Text className={`font-bold text-lg ${isLoading ? "text-gray-400" : "text-[#9CA3AF]"}`}>
+                {isLoading ? "Submitting..." : "Rate"}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

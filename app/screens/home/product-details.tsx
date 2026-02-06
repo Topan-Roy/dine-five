@@ -12,10 +12,12 @@ export default function ProductDetails() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { addFavorite, removeFavorite, addToCart, favorites, fetchFavorites } = useStore() as any;
-  const { id, name, price, image, description, rating, reviews, restaurantName, restaurantProfile } = params;
+  const { id, foodId, name, price, image, description, rating, reviews, restaurantName, restaurantProfile } = params;
+  const productId = (id as string) || (foodId as string) || "1";
 
   const product: any = {
-    id: (id as string) || "1",
+    id: productId,
+    foodId: (foodId as string) || (id as string) || "1",
     name: (name as string) || "Pepperoni Cheese Pizza",
     price: (price as string) || "5.99",
     image:
@@ -32,7 +34,7 @@ export default function ProductDetails() {
     restaurantProfile: (restaurantProfile as string) || "",
   };
 
-  const isFav = favorites.includes(product.id);
+  const isFav = favorites.includes(product.id) || favorites.includes(product.foodId);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -42,10 +44,11 @@ export default function ProductDetails() {
   }, []);
 
   const handleToggleFavorite = async () => {
+    console.log("Toggling favorite for foodId:", product.foodId);
     if (isFav) {
-      await removeFavorite(product.id);
+      await removeFavorite(product.foodId);
     } else {
-      await addFavorite(product.id);
+      await addFavorite(product.foodId);
     }
   };
 

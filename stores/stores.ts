@@ -733,7 +733,7 @@ export const useStore = create((set, get) => ({
       set({ isLoading: false });
       if (result.data && result.data.favorites) {
         set({
-          favorites: result.data.favorites.map((f: any) => f.food.foodId),
+          favorites: result.data.favorites.map((f: any) => f.food.foodId || f.food._id || f.food.id),
         });
       }
       return result.data;
@@ -751,6 +751,7 @@ export const useStore = create((set, get) => ({
       const { accessToken } = get() as any;
       if (!accessToken) throw new Error("No access token found");
 
+      console.log("Adding favorite for foodId:", foodId);
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/v1/favorites`,
         {
@@ -764,9 +765,9 @@ export const useStore = create((set, get) => ({
       );
 
       const result = await response.json();
-      console.log("addFavorite result:", JSON.stringify(result, null, 2));
-
+      console.log("addFavorite result:", result);
       if (!response.ok) {
+        console.log("addFavorite error details:", result);
         throw new Error(result.message || "Failed to add favorite");
       }
 
@@ -1078,6 +1079,55 @@ export const useStore = create((set, get) => ({
       return result;
     } catch (error: any) {
       console.log("sendMessageToProvider error details:", error);
+      set({ error: error.message, isLoading: false });
+      throw error;
+    }
+  },
+
+  submitReview: async (orderId: string, rating: number, comment: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const url = `${process.env.EXPO_PUBLIC_API_URL}/api/v1/reviews`;
+      const body = JSON.stringify({ orderId, rating, comment });
+
+      console.log("--- SUBMIT REVIEW REQUEST ---");
+      console.log("URL:", url);
+      console.log("Body:", body);
+      console.log("-----------------------------");
+
+      const response = await fetch(
+        url,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: body,
+        },
+      );
+
+      const responseText = await response.text();
+      console.log("SERVER RAW RESPONSE (Review):", responseText);
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Server returned non-JSON: ${responseText.substring(0, 50)}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(result.message || result.error || "Failed to submit review");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("submitReview error:", error);
       set({ error: error.message, isLoading: false });
       throw error;
     }
