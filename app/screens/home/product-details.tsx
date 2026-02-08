@@ -11,9 +11,48 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function ProductDetails() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { addFavorite, removeFavorite, addToCart, favorites, fetchFavorites } = useStore() as any;
-  const { id, foodId, name, price, image, description, rating, reviews, restaurantName, restaurantProfile } = params;
+  const { addFavorite, removeFavorite, addToCart, favorites, fetchFavorites, fetchReviewsByFoodId } =
+    useStore() as any;
+  const {
+    id,
+    foodId,
+    name,
+    price,
+    image,
+    description,
+    restaurantName,
+    restaurantProfile,
+  } = params;
   const productId = (id as string) || (foodId as string) || "1";
+
+  const [reviewsData, setReviewsData] = useState<any[]>([]);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      const targetId = (foodId as string) || (id as string);
+      if (targetId) {
+        try {
+          const result = await fetchReviewsByFoodId(targetId);
+          if (result && result.data) {
+            setReviewsData(result.data);
+            setTotalReviews(result.meta?.total || result.data.length || 0);
+
+            // Calculate average rating if not provided by backend
+            if (result.data.length > 0) {
+              const total = result.data.reduce((sum: number, review: any) => sum + (review.rating || 0), 0);
+              const avg = total / result.data.length;
+              setAverageRating(parseFloat(avg.toFixed(1)));
+            }
+          }
+        } catch (error) {
+          console.log("Error loading reviews:", error);
+        }
+      }
+    };
+    loadReviews();
+  }, [foodId, id]);
 
   const product: any = {
     id: productId,
@@ -23,8 +62,8 @@ export default function ProductDetails() {
     image:
       (image as string) ||
       "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500",
-    rating: parseFloat(rating as string) || 4.8,
-    reviews: parseInt(reviews as string) || 300,
+    rating: averageRating || parseFloat(params.rating as string) || 0,
+    reviews: totalReviews,
     calories: 300,
     time: 25,
     description:
@@ -34,7 +73,8 @@ export default function ProductDetails() {
     restaurantProfile: (restaurantProfile as string) || "",
   };
 
-  const isFav = favorites.includes(product.id) || favorites.includes(product.foodId);
+  const isFav =
+    favorites.includes(product.id) || favorites.includes(product.foodId);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -52,9 +92,20 @@ export default function ProductDetails() {
     }
   };
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity);
-    router.push("/(tabs)/card");
+  const handleAddToCart = async () => {
+    try {
+      const result = await addToCart(product, quantity);
+      if (result) {
+        // Only navigate if successful
+        router.push("/(tabs)/card");
+      } else {
+        // Handle error (alert is shown inside addToCart via console for now, assuming user will see toast/alert in future)
+        // You might want to add a visible alert here
+        alert("Failed to add to cart. Please try again.");
+      }
+    } catch (error) {
+      console.log("Error adding to cart:", error);
+    }
   };
 
   return (
@@ -113,8 +164,11 @@ export default function ProductDetails() {
           <View className="flex-row justify-between mb-6 border border-[#E3E6F0] rounded-lg p-3 bg-white shadow-sm">
             <View className="flex-row items-center gap-1">
               <Ionicons name="star" size={14} color="#FFC107" />
+              <Text className="text-sm font-bold text-[#1F2A33]">
+                {product.rating}
+              </Text>
               <Text className="text-sm font-normal text-[#7A7A7A]">
-                {product.rating} Reviews
+                ({product.reviews} Reviews)
               </Text>
             </View>
             <View className="flex-row items-center gap-1">
@@ -132,7 +186,7 @@ export default function ProductDetails() {
           </View>
 
           {/* Restaurant Info */}
-          <View className="flex-row items-center gap-3 mb-4">
+          {/* <View className="flex-row items-center gap-3 mb-4">
             {product.restaurantProfile ? (
               <Image
                 source={{ uri: product.restaurantProfile }}
@@ -146,7 +200,7 @@ export default function ProductDetails() {
             <Text className="text-sm font-medium text-gray-700">
               {product.restaurantName}
             </Text>
-          </View>
+          </View> */}
 
           {/* Title & Quantity */}
           <View className="flex-row items-center justify-between mb-4">

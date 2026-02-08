@@ -1,6 +1,5 @@
 import { Categories } from "@/components/home/Categories";
 import { HomeHeader } from "@/components/home/HomeHeader";
-import { PopularHotels } from "@/components/home/PopularHotels";
 import { PopularItems } from "@/components/home/PopularItems";
 import { PromoBanner } from "@/components/home/PromoBanner";
 import { SearchBar } from "@/components/home/SearchBar";
@@ -18,9 +17,6 @@ export default function HomeScreen() {
   const [total, setTotal] = React.useState(0);
 
   const [searchText, setSearchText] = React.useState("");
-  const [filterType, setFilterType] = React.useState<"all" | "food" | "hotel">(
-    "all",
-  );
   const [filterModalVisible, setFilterModalVisible] = React.useState(false);
   const [activeCategory, setActiveCategory] = React.useState("All");
   const params = useLocalSearchParams();
@@ -56,20 +52,11 @@ export default function HomeScreen() {
             onCategoryChange={setActiveCategory}
           />
 
-          {(filterType === "all" || filterType === "food") && (
-            <PopularItems
-              onAddItem={handleAddItem}
-              searchText={searchText}
-              activeCategory={activeCategory}
-            />
-          )}
-
-          {(filterType === "all" || filterType === "hotel") && (
-            <PopularHotels
-              searchText={searchText}
-              activeCategory={activeCategory}
-            />
-          )}
+          <PopularItems
+            onAddItem={handleAddItem}
+            searchText={searchText}
+            activeCategory={activeCategory}
+          />
 
           <Modal
             animationType="fade"
@@ -84,70 +71,28 @@ export default function HomeScreen() {
             >
               <View className="bg-white m-4 p-4 rounded-2xl w-3/4 shadow-xl">
                 <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
-                  Filter By
+                  Filter Options
                 </Text>
 
                 <TouchableOpacity
-                  onPress={() => {
-                    setFilterType("food");
-                    setFilterModalVisible(false);
-                  }}
-                  className={`p-3 rounded-xl mb-2 flex-row justify-between items-center ${filterType === "food" ? "bg-yellow-50 border border-yellow-200" : "bg-gray-50"}`}
+                  onPress={() => setFilterModalVisible(false)}
+                  className="p-3 rounded-xl mb-2 flex-row justify-between items-center bg-yellow-50 border border-yellow-200"
                 >
-                  <Text
-                    className={`font-semibold ${filterType === "food" ? "text-yellow-700" : "text-gray-700"}`}
-                  >
-                    Food
+                  <Text className="font-semibold text-yellow-700">
+                    Food Items
                   </Text>
-                  {filterType === "food" && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color="#EAB308"
-                    />
-                  )}
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color="#EAB308"
+                  />
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => {
-                    setFilterType("hotel");
-                    setFilterModalVisible(false);
-                  }}
-                  className={`p-3 rounded-xl mb-2 flex-row justify-between items-center ${filterType === "hotel" ? "bg-yellow-50 border border-yellow-200" : "bg-gray-50"}`}
+                  onPress={() => setFilterModalVisible(false)}
+                  className="mt-4 bg-gray-900 p-3 rounded-xl"
                 >
-                  <Text
-                    className={`font-semibold ${filterType === "hotel" ? "text-yellow-700" : "text-gray-700"}`}
-                  >
-                    Hotel
-                  </Text>
-                  {filterType === "hotel" && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color="#EAB308"
-                    />
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setFilterType("all");
-                    setFilterModalVisible(false);
-                  }}
-                  className={`p-3 rounded-xl flex-row justify-between items-center ${filterType === "all" ? "bg-yellow-50 border border-yellow-200" : "bg-gray-50"}`}
-                >
-                  <Text
-                    className={`font-semibold ${filterType === "all" ? "text-yellow-700" : "text-gray-700"}`}
-                  >
-                    Show All
-                  </Text>
-                  {filterType === "all" && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color="#EAB308"
-                    />
-                  )}
+                  <Text className="text-white text-center font-bold">Close</Text>
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>

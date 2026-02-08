@@ -30,12 +30,12 @@ const HOTELS = [
     delivery: "Free",
     categories: "Dessert • Donut • Sweet",
     image: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500",
-  }
+  },
 ];
 
 export const PopularHotels = ({
   searchText = "",
-  activeCategory = "All"
+  activeCategory = "All",
 }: {
   searchText?: string;
   activeCategory?: string;
@@ -43,8 +43,11 @@ export const PopularHotels = ({
   const router = useRouter();
 
   const filteredHotels = HOTELS.filter((hotel) => {
-    const matchesSearch = hotel.name.toLowerCase().includes(searchText.toLowerCase());
-    const matchesCategory = activeCategory === "All" ||
+    const matchesSearch = hotel.name
+      .toLowerCase()
+      .includes(searchText.toLowerCase());
+    const matchesCategory =
+      activeCategory === "All" ||
       hotel.categories.toLowerCase().includes(activeCategory.toLowerCase());
 
     return matchesSearch && matchesCategory;

@@ -1091,13 +1091,6 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const url = `${process.env.EXPO_PUBLIC_API_URL}/api/v1/reviews`;
-      const body = JSON.stringify({ orderId, rating, comment });
-
-      console.log("--- SUBMIT REVIEW REQUEST ---");
-      console.log("URL:", url);
-      console.log("Body:", body);
-      console.log("-----------------------------");
-
       const response = await fetch(
         url,
         {
@@ -1106,19 +1099,11 @@ export const useStore = create((set, get) => ({
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          body: body,
+          body: JSON.stringify({ orderId, rating, comment }),
         },
       );
 
-      const responseText = await response.text();
-      console.log("SERVER RAW RESPONSE (Review):", responseText);
-
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (e) {
-        throw new Error(`Server returned non-JSON: ${responseText.substring(0, 50)}`);
-      }
+      const result = await response.json();
 
       if (!response.ok) {
         throw new Error(result.message || result.error || "Failed to submit review");
@@ -1130,6 +1115,375 @@ export const useStore = create((set, get) => ({
       console.log("submitReview error:", error);
       set({ error: error.message, isLoading: false });
       throw error;
+    }
+  },
+
+  fetchReviewByOrderId: async (identifier: string) => {
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      // Check if identifier is an orderId or a specific reviewId
+      // For now, let's support both: filtering by orderId and direct fetch by reviewId
+      const url = identifier.length > 20
+        ? `${process.env.EXPO_PUBLIC_API_URL}/api/v1/reviews/${identifier}`
+        : `${process.env.EXPO_PUBLIC_API_URL}/api/v1/reviews?orderId=${identifier}`;
+
+      console.log("Fetching review from:", url);
+
+      const response = await fetch(
+        url,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const responseText = await response.text();
+      console.log("Fetch Review Raw:", responseText);
+
+      const result = JSON.parse(responseText);
+      if (!response.ok) {
+        return null;
+      }
+      return result;
+    } catch (error) {
+      console.log("fetchReviewByOrderId error:", error);
+      return null;
+    }
+  },
+
+  updateReview: async (reviewId: string, rating: number, comment: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const url = `${process.env.EXPO_PUBLIC_API_URL}/api/v1/reviews/${reviewId}`;
+      const body = JSON.stringify({ rating, comment });
+
+      console.log("Updating review at:", url);
+      console.log("Update Body:", body);
+
+      const response = await fetch(
+        url,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: body,
+        },
+      );
+
+      const responseText = await response.text();
+      console.log("Update Review Raw:", responseText);
+
+      const result = JSON.parse(responseText);
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to update review");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("updateReview error:", error);
+      set({ error: error.message, isLoading: false });
+      throw error;
+    }
+  },
+
+  fetchBanners: async () => {
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/banners/active`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch banners");
+      }
+
+      return result.data;
+    } catch (error: any) {
+      console.log("fetchBanners error:", error);
+      return [];
+    }
+  },
+
+  fetchReviewsByFoodId: async (foodId: string) => {
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/reviews/food/${foodId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch reviews");
+      }
+
+      return result;
+    } catch (error: any) {
+      console.log("fetchReviewsByFoodId error:", error);
+      return { data: [], meta: { total: 0 } };
+    }
+  },
+
+  addToCart: async (item: any, quantity: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      // Construct payload for the API
+      // Based on user request: { items: [{ foodId: "...", quantity: 1, price: 15 }] }
+      // But usually cart APIs take one item at a time or a list. 
+      // The user log shows a response structure, implying the request might be simpler:
+      // POST /api/v1/cart/add
+      // Body: { foodId: "...", quantity: 1 } (typically)
+
+      const payload = {
+        foodId: item.foodId || item._id || item.id,
+        quantity: quantity,
+      };
+
+      console.log("Adding to cart:", payload);
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/cart/add`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const result = await response.json();
+      console.log("addToCart result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to add item to cart");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("addToCart error:", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  fetchCart: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/cart`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch cart");
+      }
+
+      set({ isLoading: false });
+      return result.data;
+    } catch (error: any) {
+      console.log("fetchCart error:", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  fetchCartCount: async () => {
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) return 0;
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/cart/count`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (response.ok) {
+        return result.data?.count || result.count || 0;
+      }
+      return 0;
+    } catch (error) {
+      // console.log("fetchCartCount error", error);
+      return 0;
+    }
+  },
+
+  updateCartQuantity: async (foodId: string, quantity: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/cart/update`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ foodId, quantity }),
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to update cart");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("updateCartQuantity error:", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  removeCartItem: async (foodId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/cart/remove`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ foodId }),
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to remove item");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("removeCartItem error:", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  clearCart: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/cart/clear`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to clear cart");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("clearCart error:", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  createOrder: async (orderData: any) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/orders`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(orderData),
+        },
+      );
+
+      const result = await response.json();
+      console.log("createOrder result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to place order");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("createOrder error:", error);
+      set({ error: error.message, isLoading: false });
+      return null;
     }
   },
 

@@ -41,13 +41,13 @@ export const PopularItems = ({
   }, [fetchFeed]);
 
   const filteredItems = items.filter((item) => {
-    const matchesSearch = (item.title || "")
+    const matchesSearch = (item.name || "")
       .toLowerCase()
       .includes((searchText || "").toLowerCase());
 
     const matchesCategory =
       activeCategory === "All" ||
-      (item.categoryName || "")
+      (item.category || "")
         .toLowerCase()
         .includes((activeCategory || "").toLowerCase());
 
@@ -69,22 +69,22 @@ export const PopularItems = ({
       <View className="flex-row flex-wrap justify-between">
         {filteredItems.map((item) => (
           <TouchableOpacity
-            key={item.foodId}
+            key={item.id}
             activeOpacity={0.9}
             onPress={() => {
               router.push({
                 pathname: "/screens/home/product-details",
                 params: {
-                  id: item._id || item.id || item.foodId,
-                  foodId: item.foodId || item._id || item.id,
-                  name: item.title,
-                  price: (item.finalPriceTag ?? 0).toString(),
+                  id: item.id,
+                  foodId: item.id,
+                  name: item.name,
+                  price: (item.price ?? 0).toString(),
                   image: item.image || "",
-                  rating: (item.averageRating ?? 0).toString(),
-                  reviews: (item.totalReviews ?? 0).toString(),
-                  restaurantName: item.provider?.restaurantName || "",
-                  restaurantProfile: item.provider?.profile || "",
-                  isFavorite: (item.favoriteCount > 0).toString(),
+                  rating: (item.rating ?? 0).toString(),
+                  reviews: "0",
+                  restaurantName: item.provider || "",
+                  restaurantProfile: "",
+                  isFavorite: "false",
                 },
               });
             }}
@@ -96,34 +96,35 @@ export const PopularItems = ({
                 className="w-full h-32 rounded-xl"
                 resizeMode="cover"
               />
-              {!item.foodAvailability && (
-                <View className="absolute top-2 left-2 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
-                  <Text className="text-sm font-normal text-gray-500">OUT</Text>
+              {item.inStock === true && (
+                <View className="absolute top-2 left-2 bg-yellow-400 px-2 py-0.5 rounded-full shadow-sm">
+                  <Text className="text-[10px] font-bold text-[#332701]">New</Text>
                 </View>
               )}
             </View>
 
             <Text
               numberOfLines={2}
-              className="text-sm font-normal text-[#122511] mt-2 leading-tight h-8"
+              className="text-sm font-bold text-[#122511] mt-2 leading-tight h-8"
             >
-              {item.title}
+              {item.name}
             </Text>
 
+
             <View className="flex-row items-center justify-between mt-2">
-              <View className="bg-yellow-400 px-2.5 py-1 rounded-full">
-                <Text className="text-sm font-normal text-[#122511]">
-                  ${item.finalPriceTag}
+              <View className="bg-[#FFE69C] px-3 py-1 rounded-full">
+                <Text className="text-sm font-bold text-[#332701]">
+                  ${item.price}
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={(e) => {
                   e.stopPropagation();
-                  onAddItem((item.finalPriceTag ?? 0).toString());
+                  onAddItem((item.price ?? 0).toString());
                 }}
-                className="w-7 h-7 bg-[#FFE69C] rounded-full items-center justify-center"
+                className="w-8 h-8 bg-yellow-400 rounded-full items-center justify-center shadow-sm"
               >
-                <Ionicons name="add" size={18} color="#332701" />
+                <Ionicons name="add" size={20} color="#332701" />
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

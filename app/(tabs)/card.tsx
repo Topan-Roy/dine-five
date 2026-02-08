@@ -1,5 +1,6 @@
 import { CartItem } from '@/components/card/CartItem';
 import { EmptyState } from '@/components/common/EmptyState';
+import { useStore } from '@/stores/stores';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -34,20 +35,76 @@ const INITIAL_CART = [
 
 export default function CardScreen() {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState(INITIAL_CART);
+  const { fetchCart, updateCartQuantity, removeCartItem } = useStore() as any;
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [subtotal, setSubtotal] = useState(0);
 
-  const updateQuantity = (id: number, delta: number) => {
-    setCartItems(items => {
-      return items.map(item => {
-        if (item.id === id) {
-          return { ...item, quantity: item.quantity + delta };
-        }
-        return item;
-      }).filter(item => item.quantity > 0);
-    });
+  const loadCart = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    const cartData = await fetchCart();
+    if (cartData && cartData.items) {
+      // Map API items to component structure if needed, or use directly
+      const formattedItems = cartData.items.map((item: any) => ({
+        id: item.foodId._id || item.foodId.id || item._id, // Cart Item ID or Food ID depending on API
+        cartItemId: item._id, // Actual item ID in cart array
+        name: item.foodId.title || item.foodId.name,
+        price: item.price,
+        image: item.foodId.image,
+        quantity: item.quantity,
+        foodId: item.foodId._id // Keep reference to foodId
+      }));
+      setCartItems(formattedItems);
+      setSubtotal(cartData.subtotal || 0);
+    } else {
+      setCartItems([]);
+      setSubtotal(0);
+    }
+    if (showLoading) setLoading(false);
   };
 
-  const total = cartItems.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+  React.useEffect(() => {
+    loadCart();
+  }, []);
+
+  const handleUpdateQuantity = async (foodId: string, cartItemId: string, delta: number, currentQuantity: number) => {
+    const newQuantity = currentQuantity + delta;
+
+    // Optimistic Update
+    setCartItems(prevItems =>
+      prevItems.map(item => {
+        if (item.cartItemId === cartItemId) {
+          return { ...item, quantity: newQuantity };
+        }
+        return item;
+      }).filter(item => item.quantity > 0)
+    );
+
+    try {
+      if (newQuantity <= 0) {
+        // Remove item
+        await removeCartItem(foodId); // Using foodId for API
+      } else {
+        // Update quantity
+        await updateCartQuantity(foodId, newQuantity); // Using foodId for API
+      }
+      // Refresh cart silently to get updated calculations from server
+      await loadCart(false);
+    } catch (error) {
+      console.log("Error updating quantity:", error);
+      // Revert or force reload on error
+      await loadCart(false);
+    }
+  };
+
+  if (loading && cartItems.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#FDFBF7] justify-center items-center">
+        <StatusBar style="dark" />
+        <Text>Loading Cart...</Text>
+      </SafeAreaView>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -83,17 +140,22 @@ export default function CardScreen() {
       >
         {cartItems.map((item) => (
           <CartItem
-            key={item.id}
-            {...item}
-            onIncrement={() => updateQuantity(item.id, 1)}
-            onDecrement={() => updateQuantity(item.id, -1)}
+            key={item.cartItemId || item.id}
+            id={item.id}
+            name={item.name}
+            price={item.price}
+            image={item.image}
+            quantity={item.quantity}
+            onIncrement={() => handleUpdateQuantity(item.foodId, item.cartItemId, 1, item.quantity)}
+            onDecrement={() => handleUpdateQuantity(item.foodId, item.cartItemId, -1, item.quantity)}
+            onRemove={() => handleUpdateQuantity(item.foodId, item.cartItemId, -item.quantity, item.quantity)}
           />
         ))}
       </ScrollView>
 
       {/* Footer */}
       <View className="absolute bottom-24 left-4 right-4 bg-transparent flex-row items-center justify-between">
-        <Text className="text-2xl font-bold text-gray-900">${total.toFixed(2)}</Text>
+        <Text className="text-2xl font-bold text-gray-900">${subtotal.toFixed(2)}</Text>
         <TouchableOpacity
           onPress={() => router.push('/screens/card/confirm-order')}
           className="bg-yellow-400 px-8 py-4 rounded-2xl shadow-md">

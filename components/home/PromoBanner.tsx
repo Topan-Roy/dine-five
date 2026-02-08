@@ -1,89 +1,96 @@
+import { useStore } from "@/stores/stores";
 import { Image } from "expo-image";
-import React from "react";
-import { Dimensions, FlatList, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Dimensions, FlatList, Text, TouchableOpacity, View } from "react-native";
 
 const { width } = Dimensions.get("window");
 
-const PROMOS = [
-  {
-    id: "1",
-    title: "35% OFF on Burgers!",
-    subtitle: "Order your favorites now",
-    buttonText: "Buy now",
-    backgroundColor: "#FFE69C",
-    bgImage: require("@/assets/images/promo-bg.svg"),
-    frontImage: require("@/assets/images/promo-fron.svg"),
-    buttonColor: "#FFC107",
-  },
-  {
-    id: "2",
-    title: "20% OFF on Pizza!",
-    subtitle: "Delicious pepperoni",
-    buttonText: "Order Now",
-    backgroundColor: "#DCFCE7",
-    bgImage: require("@/assets/images/promo-bg.svg"),
-    frontImage: require("@/assets/images/promo-fron.svg"),
-    buttonColor: "#22C55E",
-  },
-  {
-    id: "3",
-    title: "Free Drinks!",
-    subtitle: "With every combo",
-    buttonText: "Get Deal",
-    backgroundColor: "#DBEAFE",
-    bgImage: require("@/assets/images/promo-bg.svg"),
-    frontImage: require("@/assets/images/promo-fron.svg"),
-    buttonColor: "#3B82F6",
-  },
-];
-
 export const PromoBanner = () => {
-  const renderItem = ({ item }: { item: typeof PROMOS[0] }) => (
-    <View style={{ width: width * 0.85 }} className="mr-4">
-      <View
-        style={{ backgroundColor: item.backgroundColor }}
-        className="rounded-3xl p-5 flex-row items-center justify-between overflow-hidden relative min-h-[160px]"
-      >
-        <View className="z-10 flex-1 pr-4">
-          <Text className="text-xl font-bold text-gray-900 mb-1 leading-tight">
-            {item.title}
-          </Text>
-          <Text className="text-sm text-gray-600 mb-4 font-medium">
-            {item.subtitle}
-          </Text>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={{ backgroundColor: item.buttonColor }}
-            className="px-6 py-3 rounded-xl self-start shadow-sm"
-          >
-            <Text className="text-gray-900 font-bold text-sm">{item.buttonText}</Text>
-          </TouchableOpacity>
-        </View>
+  const [banners, setBanners] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { fetchBanners } = useStore() as any;
 
-        <View className="absolute -right-2 top-0 bottom-0 justify-center w-[45%]">
-          <View className="w-[150px] h-[140px] justify-center items-center">
-            <Image
-              source={item.bgImage}
-              className="absolute inset-0 w-full h-full"
-              contentFit="contain"
-            />
-            <Image
-              source={item.frontImage}
-              contentFit="contain"
-              style={{ height: 126, width: 100 }}
-            />
+  useEffect(() => {
+    const loadBanners = async () => {
+      try {
+        const data = await fetchBanners();
+        setBanners(data || []);
+      } catch (error) {
+        console.error("Error loading banners:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadBanners();
+  }, []);
+
+  if (loading) {
+    return (
+      <View className="mt-6 h-[160px] justify-center items-center">
+        <ActivityIndicator color="#FFC107" size="large" />
+      </View>
+    );
+  }
+
+  if (banners.length === 0) return null;
+
+  const renderItem = ({ item }: { item: any }) => {
+    return (
+      <View style={{ width: width * 0.88 }} className="mr-4">
+        <View
+          style={{ backgroundColor: "#FFE69C" }}
+          className="rounded-[32px] flex-row items-center justify-between overflow-hidden relative min-h-[160px] p-6"
+        >
+          {/* Text Content */}
+          <View className="z-10 flex-1 pr-2">
+            <Text
+              numberOfLines={2}
+              className="text-[20px] font-bold text-[#332701] mb-1 leading-tight"
+            >
+              {item.title}
+            </Text>
+            <Text className="text-sm text-[#332701] opacity-70 mb-4 font-medium">
+              {item.title}
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={{ backgroundColor: "#FFC107" }}
+              className="px-6 py-2.5 rounded-xl self-start shadow-sm"
+            >
+              <Text className="text-[#332701] font-bold text-base">Buy now</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Floating Image */}
+          <View className="absolute right-[-10] top-0 bottom-0 w-[50%] items-center justify-center">
+            {/* Main Product Image with a soft shadow to create depth */}
+            <View style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.2,
+              shadowRadius: 12,
+              elevation: 6,
+            }}>
+              <Image
+                source={{ uri: item.bannerImage }}
+                style={{ width: 160, height: 160 }}
+                contentFit="contain"
+                transition={700}
+                cachePolicy="memory-disk"
+              />
+            </View>
           </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View className="mt-6">
       <FlatList
-        data={PROMOS}
+        data={banners}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}

@@ -21,6 +21,7 @@ export const CartItem = ({
   quantity,
   onIncrement,
   onDecrement,
+  onRemove,
 }: CartItemProps) => {
   return (
     <View className="flex-row items-center bg-white p-3 rounded-2xl mb-4 shadow-sm border border-gray-100">

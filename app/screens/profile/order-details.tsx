@@ -20,7 +20,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function OrderDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { submitReview, isLoading } = useStore() as any;
+  const { submitReview, fetchReviewByOrderId, updateReview, isLoading } = useStore() as any;
+  const [existingReviewId, setExistingReviewId] = useState<string | null>(null);
   const currentState = (params.state as string) || "pending"; // default to pending for demo
 
   // State for Rating Modal
@@ -29,23 +30,56 @@ export default function OrderDetailsScreen() {
   const [review, setReview] = useState("");
 
   useEffect(() => {
-    if (params.autoRate === "true" && ["picked_up", "delivered", "completed"].includes(currentState)) {
+    const checkExistingReview = async () => {
+      const orderId = (params._id as string) || (params.orderId as string);
+      if (
+        orderId &&
+        ["picked_up", "delivered", "completed"].includes(currentState)
+      ) {
+        console.log("Checking for existing review for order:", orderId);
+        const result = await fetchReviewByOrderId(orderId);
+
+        // Handling different possible response structures
+        const reviews = result?.data || result;
+        const reviewData = Array.isArray(reviews) ? reviews[0] : reviews;
+
+        if (reviewData && reviewData._id && (reviewData.orderId === orderId || reviewData.orderId?._id === orderId)) {
+          console.log("Found existing review:", reviewData._id);
+          setExistingReviewId(reviewData._id);
+          setRating(reviewData.rating || 0);
+          setReview(reviewData.comment || "");
+        }
+      }
+    };
+
+    checkExistingReview();
+
+    if (
+      params.autoRate === "true" &&
+      ["picked_up", "delivered", "completed"].includes(currentState)
+    ) {
       setRateModalVisible(true);
     }
-  }, [params.autoRate, currentState]);
+  }, [params.autoRate, currentState, params._id, params.orderId]);
 
-  const isCancelable = [
-    "pending",
-    "preparing",
-    "ready",
-    "ready_for_pickup",
-  ].includes(currentState.toLowerCase()) && !["completed", "delivered", "picked_up"].includes(currentState.toLowerCase());
+
+  //  change 
+
+  //  const isCancelable =
+  //     ["pending", "preparing", "ready", "ready_for_pickup"].includes(
+  //       currentState.toLowerCase(),
+  //     ) &&
+  //     !["completed", "delivered", "picked_up"].includes(
+  //       currentState.toLowerCase(),
+  //     );
+  const isCancelable = currentState.toLowerCase() === "pending";
 
   const handleCancelPress = () => {
     if (isCancelable) {
+      const targetId = (params._id as string) || (params.orderId as string);
       router.push({
         pathname: "/screens/profile/cancel-reason",
-        params: { orderId: params.orderId },
+        params: { orderId: targetId },
       });
     }
   };
@@ -57,43 +91,70 @@ export default function OrderDetailsScreen() {
     }
 
     if (rating === 0) {
-      Alert.alert("Rating Required", "Please select a star rating before submitting.");
+      Alert.alert(
+        "Rating Required",
+        "Please select a star rating before submitting.",
+      );
       return;
     }
 
     try {
-      // Prioritize the MongoDB _id as the sample response shows the API expects it
+      // Prioritize the MongoDB _id (e.g. 69878a...)
       const orderIdToSend = (params._id as string) || (params.orderId as string);
-
-      console.log("Submitting review for ID:", orderIdToSend, "with rating:", rating);
 
       if (!orderIdToSend) {
         Alert.alert("Error", "Order ID not found");
         return;
       }
 
-      const result = await submitReview(orderIdToSend, rating, review);
+      let result;
+      if (existingReviewId) {
+        result = await updateReview(existingReviewId, rating, review);
+      } else {
+        result = await submitReview(orderIdToSend, rating, review);
+      }
 
       if (result.success) {
-        Alert.alert("Success", "Thank you for your feedback! Your review has been submitted.");
+        Alert.alert(
+          "Success",
+          existingReviewId
+            ? "Your review has been updated successfully!"
+            : "Thank you for your feedback! Your review has been submitted.",
+        );
+
+        // If it was a new review, store the ID so next time they open it's in edit mode
+        if (!existingReviewId && result.data?._id) {
+          setExistingReviewId(result.data._id);
+        }
+
         setRateModalVisible(false);
-        setRating(0);
-        setReview("");
       }
     } catch (error: any) {
       // Detailed error handling based on server response logs
       const errorMsg = error.message || "";
 
-      if (errorMsg.includes("completed orders") || errorMsg.includes("NOT_COMPLETED")) {
+      if (
+        errorMsg.includes("completed orders") ||
+        errorMsg.includes("NOT_COMPLETED")
+      ) {
         Alert.alert(
           "Review Not Available",
-          "Your order hasn't been fully processed by the system yet. Please try again once the order status is finalized."
+          "Your order hasn't been fully processed by the system yet. Please try again once the order status is finalized.",
         );
-      } else if (errorMsg.toLowerCase().includes("already") || errorMsg.toLowerCase().includes("exists")) {
-        Alert.alert("Already Reviewed", "You have already submitted a review for this order.");
+      } else if (
+        errorMsg.toLowerCase().includes("already") ||
+        errorMsg.toLowerCase().includes("exists")
+      ) {
+        Alert.alert(
+          "Already Reviewed",
+          "You have already submitted a review for this order.",
+        );
         setRateModalVisible(false);
       } else {
-        Alert.alert("Review Error", errorMsg || "Something went wrong. Please try again.");
+        Alert.alert(
+          "Review Error",
+          errorMsg || "Something went wrong. Please try again.",
+        );
       }
     }
   };
@@ -104,8 +165,9 @@ export default function OrderDetailsScreen() {
       { title: "Order prepared", active: currentState !== "pending" }, // vaguely mapping to images
       {
         title: "Order is ready for pickup",
-        active:
-          ["ready", "ready_for_pickup", "picked_up"].includes(currentState),
+        active: ["ready", "ready_for_pickup", "picked_up"].includes(
+          currentState,
+        ),
       },
       {
         title: "Order picked up",
@@ -138,7 +200,9 @@ export default function OrderDetailsScreen() {
               </Text>
             </View>
           ) : (
-            <Text className={`${currentState !== "pending" ? "text-gray-400" : "text-gray-200"} font-bold text-base`}>
+            <Text
+              className={`${currentState !== "pending" ? "text-gray-400" : "text-gray-200"} font-bold text-base`}
+            >
               Order prepared
             </Text>
           )}
@@ -185,7 +249,9 @@ export default function OrderDetailsScreen() {
                 className="mt-3 border border-yellow-400 bg-yellow-50 rounded-xl py-3 px-6 flex-row items-center justify-center w-56 shadow-sm"
               >
                 <Ionicons name="star" size={20} color="#FFC107" />
-                <Text className="font-bold text-[#332701] ml-2 text-base">Rate the food!</Text>
+                <Text className="font-bold text-[#332701] ml-2 text-base">
+                  Rate the food!
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -348,8 +414,10 @@ export default function OrderDetailsScreen() {
               disabled={isLoading}
               className={`w-full py-4 rounded-2xl items-center mt-4 ${isLoading ? "bg-gray-100" : "bg-[#E9EDF7]"}`}
             >
-              <Text className={`font-bold text-lg ${isLoading ? "text-gray-400" : "text-[#9CA3AF]"}`}>
-                {isLoading ? "Submitting..." : "Rate"}
+              <Text
+                className={`font-bold text-lg ${isLoading ? "text-gray-400" : "text-[#9CA3AF]"}`}
+              >
+                {isLoading ? "Submitting..." : (existingReviewId ? "Update" : "Rate")}
               </Text>
             </TouchableOpacity>
           </View>

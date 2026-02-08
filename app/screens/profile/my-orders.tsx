@@ -205,7 +205,11 @@ export default function MyOrdersScreen() {
                   onPress={() => {
                     router.push({
                       pathname: "/screens/profile/order-details",
-                      params: { orderId: order.orderId, state: order.status },
+                      params: {
+                        orderId: order.orderId,
+                        _id: order._id,
+                        state: order.status
+                      },
                     });
                   }}
                   className="bg-[#FFFFFF] py-3 rounded-xl items-center border border-[#E3E6F0]"
