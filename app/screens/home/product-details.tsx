@@ -2,10 +2,11 @@ import { ViewCart } from "@/components/home/ViewCart";
 import { CustomerReviews } from "@/components/product/CustomerReviews";
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProductDetails() {
@@ -117,7 +118,7 @@ export default function ProductDetails() {
         <Image
           source={{ uri: product.image }}
           className="w-full h-full"
-          resizeMode="cover"
+          contentFit="cover"
         />
         <View className="absolute w-full h-full bg-black/10" />
       </View>
@@ -256,7 +257,7 @@ export default function ProductDetails() {
           </View>
 
           {/* Customer Reviews */}
-          <CustomerReviews />
+          <CustomerReviews reviews={reviewsData} />
         </View>
       </ScrollView>
 

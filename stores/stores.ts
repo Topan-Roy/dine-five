@@ -233,6 +233,65 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  googleLogin: async (data: { idToken: string; requestedRole?: string }) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/auth/google`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            idToken: data.idToken,
+            requestedRole: data.requestedRole || "CUSTOMER",
+          }),
+        },
+      );
+
+      const result = await response.json();
+      console.log("Google login result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Google login failed");
+      }
+
+      // Extract user and session data based on the provided JSON structure
+      const user = result.data?.user || result.user || result.data;
+      const session = result.data?.session || result.session;
+
+      const accessToken =
+        session?.accessToken || result.accessToken || result.data?.accessToken;
+      const refreshToken =
+        session?.refreshToken ||
+        result.refreshToken ||
+        result.data?.refreshToken;
+
+      if (user && accessToken) {
+        await (get() as any).persistAuthData(
+          user,
+          accessToken,
+          refreshToken,
+        );
+
+        set({
+          user: user,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+          isLoading: false,
+        });
+
+        return result.data || result;
+      } else {
+        throw new Error("Invalid response format: User or token is missing");
+      }
+    } catch (error: any) {
+      console.log("googleLogin error", error);
+      set({ error: error.message, isLoading: false });
+      throw error;
+    }
+  },
+
   verifyOTP: async (data: { email: string; code: string }) => {
     set({ isLoading: true, error: null });
 
@@ -1084,7 +1143,7 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  submitReview: async (orderId: string, rating: number, comment: string) => {
+  submitReview: async (orderId: string, foodId: string, rating: number, comment: string) => {
     set({ isLoading: true, error: null });
     try {
       const { accessToken } = get() as any;
@@ -1099,7 +1158,7 @@ export const useStore = create((set, get) => ({
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ orderId, rating, comment }),
+          body: JSON.stringify({ orderId, foodId, rating, comment }),
         },
       );
 

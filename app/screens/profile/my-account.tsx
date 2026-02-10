@@ -1,5 +1,6 @@
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -8,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   Modal,
   ScrollView,
   Text,
@@ -182,7 +182,7 @@ export default function MyAccountScreen() {
                     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
                 }}
                 className="w-full h-full"
-                resizeMode="cover"
+                contentFit="cover"
               />
             </View>
             {isEditing && (
