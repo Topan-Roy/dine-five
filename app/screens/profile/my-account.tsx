@@ -20,7 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyAccountScreen() {
   const router = useRouter();
-  const { user, updateProfile } = useStore() as any;
+  const { user, updateProfile, fetchProfile } = useStore() as any;
   const [isEditing, setIsEditing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,12 +41,12 @@ export default function MyAccountScreen() {
 
   // Filter state initialized with user data
   const [formData, setFormData] = useState({
-    name: user?.name || user?.fullName || "Theresa Webb",
-    email: user?.email || "michael.mitc@example.com",
-    phone: user?.phone || "555-0128",
+    name: user?.name || user?.fullName || "John Doe",
+    email: user?.email || "john.doe@example.com",
+    phone: user?.phone || "1234567890",
     phonePrefix: "+1",
-    dob: "12-10-1996",
-    address: "King kong",
+    dateOfBirth: (user?.dateOfBirth || user?.dob || "1995-02-01").split("T")[0],
+    address: user?.address || "123 Main St, New York",
   });
 
   // Keep form synced with store user data
@@ -57,11 +57,16 @@ export default function MyAccountScreen() {
         name: user?.name || user?.fullName || prev.name,
         email: user.email || prev.email,
         phone: user.phone || prev.phone,
-        dob: user.dob || prev.dob,
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split("T")[0] : (user.dob ? user.dob.split("T")[0] : prev.dateOfBirth),
         address: user.address || prev.address,
       }));
     }
   }, [user]);
+
+  // Fetch latest profile on mount
+  React.useEffect(() => {
+    fetchProfile();
+  }, []);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -93,14 +98,14 @@ export default function MyAccountScreen() {
         const form = new FormData();
         form.append("name", formData.name);
         form.append("phone", fullPhone);
-        form.append("dob", formData.dob);
+        form.append("dateOfBirth", formData.dateOfBirth);
         form.append("address", formData.address);
 
         const filename = selectedImage.split("/").pop() || "profile.jpg";
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : `image`;
 
-        form.append("photo", {
+        form.append("profilePic", {
           uri: selectedImage,
           name: filename,
           type,
@@ -110,7 +115,7 @@ export default function MyAccountScreen() {
         dataToUpdate = {
           name: formData.name,
           phone: fullPhone,
-          dob: formData.dob,
+          dateOfBirth: formData.dateOfBirth,
           address: formData.address,
         };
       }
@@ -177,11 +182,13 @@ export default function MyAccountScreen() {
                 source={{
                   uri:
                     selectedImage ||
+                    user?.profilePic ||
                     user?.photo ||
+                    user?.avatar ||
                     user?.image ||
                     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
                 }}
-                className="w-full h-full"
+                style={{ width: "100%", height: "100%" }}
                 contentFit="cover"
               />
             </View>
@@ -269,14 +276,14 @@ export default function MyAccountScreen() {
             <View className="bg-white p-4 rounded-xl border border-gray-100">
               {isEditing ? (
                 <TextInput
-                  value={formData.dob}
-                  onChangeText={(t) => handleChange("dob", t)}
-                  placeholder="DD-MM-YYYY"
+                  value={formData.dateOfBirth}
+                  onChangeText={(t) => handleChange("dateOfBirth", t)}
+                  placeholder="YYYY-MM-DD"
                   className="text-base font-normal text-gray-900 p-0"
                 />
               ) : (
                 <Text className="text-base font-normal text-gray-900">
-                  {formData.dob}
+                  {formData.dateOfBirth}
                 </Text>
               )}
             </View>

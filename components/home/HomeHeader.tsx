@@ -15,10 +15,10 @@ export const HomeHeader = () => {
                 <Image
                     source={{
                         uri:
-                            user?.photo ||
-                            user?.image ||
                             user?.profilePic ||
+                            user?.photo ||
                             user?.avatar ||
+                            user?.image ||
                             "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
                     }}
                     contentFit="cover"

@@ -514,7 +514,7 @@ export const useStore = create((set, get) => ({
 
       // Extract updated data
       const updatedData =
-        result.data || result.user || (result.success ? result : null);
+        result.data?.user || result.user || result.data;
 
       if (updatedData) {
         const currentUser = (get() as any).user;

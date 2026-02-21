@@ -14,9 +14,33 @@ export const PromoBanner = () => {
     const loadBanners = async () => {
       try {
         const data = await fetchBanners();
-        setBanners(data || []);
+        if (data && data.length > 0) {
+          setBanners(data);
+        } else {
+          // Fallback static banners if API returns empty
+          setBanners([
+            {
+              _id: "static-1",
+              title: "Special Offer: 50% Off",
+              bannerImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500",
+            },
+            {
+              _id: "static-2",
+              title: "Free Delivery Today",
+              bannerImage: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500",
+            }
+          ]);
+        }
       } catch (error) {
         console.error("Error loading banners:", error);
+        // Fallback on error
+        setBanners([
+          {
+            _id: "static-err",
+            title: "Delicious Food Awaits",
+            bannerImage: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500",
+          }
+        ]);
       } finally {
         setLoading(false);
       }
