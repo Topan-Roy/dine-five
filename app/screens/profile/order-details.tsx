@@ -22,14 +22,32 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function OrderDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { submitReview, fetchReviewByOrderId, updateReview, isLoading } = useStore() as any;
+  const { submitReview, fetchReviewByOrderId, updateReview, fetchOrderDetails, isLoading } = useStore() as any;
   const [existingReviewId, setExistingReviewId] = useState<string | null>(null);
-  const currentState = (params.state as string) || "pending"; // default to pending for demo
+  const currentState = (params.state as string) || "pending";
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [orderData, setOrderData] = useState<any>(null);
 
   // State for Rating Modal
   const [rateModalVisible, setRateModalVisible] = useState(false);
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
+
+  useEffect(() => {
+    const loadOrderData = async () => {
+      const targetId = (params._id as string) || (params.orderId as string);
+      if (targetId) {
+        console.log("Fetching order details for:", targetId);
+        const data = await fetchOrderDetails(targetId);
+        if (data) {
+          setOrderData(data);
+          setOrderItems(data.items || []);
+        }
+      }
+    };
+
+    loadOrderData();
+  }, [params._id, params.orderId]);
 
   useEffect(() => {
     const checkExistingReview = async () => {
@@ -65,7 +83,7 @@ export default function OrderDetailsScreen() {
   }, [params.autoRate, currentState, params._id, params.orderId]);
 
 
-  //  change 
+  //  change
 
   //  const isCancelable =
   //     ["pending", "preparing", "ready", "ready_for_pickup"].includes(
@@ -278,7 +296,7 @@ export default function OrderDetailsScreen() {
         >
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900">Cancel order</Text>
+        <Text className="text-xl font-bold text-gray-900">Order details</Text>
       </View>
 
       <ScrollView className="flex-1 px-4">
@@ -290,9 +308,11 @@ export default function OrderDetailsScreen() {
             </View>
             <View>
               <Text className="text-base font-bold text-gray-900">
-                Restaurant Food
+                {orderData?.providerId?.fullName || "Restaurant Food"}
               </Text>
-              <Text className="text-gray-500 text-sm">Jan 12, 2026</Text>
+              <Text className="text-gray-500 text-sm">
+                {orderData ? new Date(orderData.createdAt).toLocaleDateString() : "Loading..."}
+              </Text>
             </View>
           </View>
 
@@ -335,7 +355,7 @@ export default function OrderDetailsScreen() {
               <Text className="text-gray-500 text-base">Pickup at</Text>
             </View>
             <Text className="text-gray-900 font-bold text-sm underline">
-              123 Main Street
+              {orderData?.providerId?.address || "Restaurant Address"}
             </Text>
           </View>
 
@@ -344,26 +364,34 @@ export default function OrderDetailsScreen() {
               <Ionicons name="card-outline" size={20} color="#666" />
               <Text className="text-gray-500 text-base">Amount Paid</Text>
             </View>
-            <Text className="text-gray-900 font-bold text-base">$32.12</Text>
+            <Text className="text-gray-900 font-bold text-base">
+              ${orderData?.totalPrice || params.totalPrice || "0.00"}
+            </Text>
           </View>
         </View>
 
         {/* Order Items */}
         <Text className="font-bold text-gray-900 mb-4">Your Order</Text>
-        <View className="flex-row gap-4 mb-10">
-          {[1, 2, 3].map((i) => (
-            <View key={i} className="items-center">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-4 mb-10">
+          {orderItems.map((item, index) => (
+            <View key={item._id || index} className="items-center mr-4">
               <Image
                 source={{
-                  uri: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150",
+                  uri: item.foodId?.image || item.foodId?.foodImage || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150",
                 }}
                 className="w-16 h-16 rounded-xl mb-1"
                 resizeMode="cover"
               />
-              <Text className="text-sm text-gray-500">x2</Text>
+              <Text className="text-xs font-bold text-gray-800" numberOfLines={1} style={{ width: 64, textAlign: 'center' }}>
+                {item.foodId?.foodName || "Food"}
+              </Text>
+              <Text className="text-xs text-gray-500">x{item.quantity}</Text>
             </View>
           ))}
-        </View>
+          {orderItems.length === 0 && (
+            <Text className="text-gray-400 italic">No items found</Text>
+          )}
+        </ScrollView>
       </ScrollView>
 
       {/* Rate Modal */}

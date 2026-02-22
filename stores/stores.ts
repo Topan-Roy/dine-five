@@ -1630,6 +1630,37 @@ export const useStore = create((set, get) => ({
 
   clearError: () => set({ error: null }),
 
+  fetchOrderDetails: async (orderId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/orders/${orderId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch order details");
+      }
+
+      set({ isLoading: false });
+      return result.data;
+    } catch (error: any) {
+      console.log("fetchOrderDetails error:", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
   fetchCategories: async () => {
     try {
       const response = await fetch(
