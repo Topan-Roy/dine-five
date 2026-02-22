@@ -152,7 +152,7 @@ export const useStore = create((set, get) => ({
         throw new Error("Invalid response format: User data is missing");
       }
     } catch (error: any) {
-      console.log("signup error", error);
+      console.log("signup error details:", error.message);
       set({ error: error.message, isLoading: false });
       return null;
     }
@@ -202,7 +202,13 @@ export const useStore = create((set, get) => ({
       if (user) {
         // If we already have a user, merge them to avoid losing fields like email/role
         const currentUser = (get() as any).user;
-        const mergedUser = currentUser ? { ...currentUser, ...user } : user;
+        const userData = { ...user };
+
+        // Sync name/fullName
+        if (userData.fullName && !userData.name) userData.name = userData.fullName;
+        if (userData.name && !userData.fullName) userData.fullName = userData.name;
+
+        const mergedUser = currentUser ? { ...currentUser, ...userData } : userData;
 
         await (get() as any).persistAuthData(
           mergedUser,
@@ -216,6 +222,9 @@ export const useStore = create((set, get) => ({
           refreshToken: refreshToken,
           isLoading: false,
         });
+
+        // Proactively fetch latest profile to ensure we have updated data
+        (get() as any).fetchProfile();
 
         return result.data || result;
       } else {
@@ -268,18 +277,26 @@ export const useStore = create((set, get) => ({
         result.data?.refreshToken;
 
       if (user && accessToken) {
+        const userData = { ...user };
+        // Sync name/fullName
+        if (userData.fullName && !userData.name) userData.name = userData.fullName;
+        if (userData.name && !userData.fullName) userData.fullName = userData.name;
+
         await (get() as any).persistAuthData(
-          user,
+          userData,
           accessToken,
           refreshToken,
         );
 
         set({
-          user: user,
+          user: userData,
           accessToken: accessToken,
           refreshToken: refreshToken,
           isLoading: false,
         });
+
+        // Proactively fetch latest profile to ensure we have updated data
+        (get() as any).fetchProfile();
 
         return result.data || result;
       } else {
@@ -520,7 +537,12 @@ export const useStore = create((set, get) => ({
         const currentUser = (get() as any).user;
 
         // Ensure updatedData is actually an object before spreading
-        const finalData = typeof updatedData === "object" ? updatedData : {};
+        const finalData = typeof updatedData === "object" ? { ...updatedData } : {};
+
+        // Sync name/fullName in updated data
+        if (finalData.fullName && !finalData.name) finalData.name = finalData.fullName;
+        if (finalData.name && !finalData.fullName) finalData.fullName = finalData.name;
+
         const mergedUser = { ...currentUser, ...finalData };
 
         // Persist updated user
@@ -570,8 +592,13 @@ export const useStore = create((set, get) => ({
 
       const latestUser = result.data || result.user;
       if (latestUser) {
+        const userData = { ...latestUser };
+        // Sync name/fullName
+        if (userData.fullName && !userData.name) userData.name = userData.fullName;
+        if (userData.name && !userData.fullName) userData.fullName = userData.name;
+
         const currentUser = (get() as any).user;
-        const mergedUser = { ...currentUser, ...latestUser };
+        const mergedUser = { ...currentUser, ...userData };
 
         await (get() as any).persistAuthData(
           mergedUser,
