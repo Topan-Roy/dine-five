@@ -8,6 +8,9 @@ import {
   ActivityIndicator,
   Alert,
   ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -46,71 +49,81 @@ const ForgotPassword = () => {
   return (
     <View className="flex-1">
       <StatusBar style="auto" />
-      <ImageBackground
-        source={require("@/assets/images/Screenshot.png")}
-        resizeMode="cover"
-        style={{ flex: 1, width: "100%", height: "100%" }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
       >
-        <View className="flex-1 items-center justify-center">
-          <Image
-            source={require("@/assets/images/logo.jpg")}
-            contentFit="contain"
-            style={{
-              height: 200,
-              width: 200,
-              backgroundColor: "#00000010",
-              paddingBottom: 5,
-              borderRadius: 100,
-            }}
-          />
-        </View>
-        {/* Forgot Password form */}
-        {/* Forgot Password form */}
-        <View
-          className="bg-white pt-8 px-6 pb-10 rounded-t-3xl"
-          style={{
-            borderTopWidth: 2,
-            borderLeftWidth: 2,
-            borderRightWidth: 2,
-            borderColor: "#F59E0B",
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-          }}
+        <ImageBackground
+          source={require("@/assets/images/Screenshot.png")}
+          resizeMode="cover"
+          style={{ flex: 1, width: "100%", height: "100%" }}
         >
-          <Text className="text-2xl font-bold text-center mb-4">
-            Forgot Password?
-          </Text>
-          <Text className="text-gray-600 text-center mb-6">
-            Don't worry! It happens. Please enter the email address associated
-            with your account.
-          </Text>
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="flex-1 items-center justify-center">
+              <Image
+                source={require("@/assets/images/logo.jpg")}
+                contentFit="contain"
+                style={{
+                  height: 200,
+                  width: 200,
+                  backgroundColor: "#00000010",
+                  paddingBottom: 5,
+                  borderRadius: 100,
+                }}
+              />
+            </View>
+            {/* Forgot Password form */}
+            <View
+              className="bg-white pt-8 px-6 pb-10 rounded-t-3xl"
+              style={{
+                borderTopWidth: 2,
+                borderLeftWidth: 2,
+                borderRightWidth: 2,
+                borderColor: "#F59E0B",
+                borderTopLeftRadius: 28,
+                borderTopRightRadius: 28,
+              }}
+            >
+              <Text className="text-2xl font-bold text-center mb-4">
+                Forgot Password?
+              </Text>
+              <Text className="text-gray-600 text-center mb-6">
+                Don't worry! It happens. Please enter the email address associated
+                with your account.
+              </Text>
 
-          {/* Email input */}
-          <View className="mb-4">
-            <Text className="text-gray-700 mb-2">Email Address</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              placeholderTextColor="#9CA3AF"
-              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-700"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          {/* Continue button */}
-          <View className="mt-14 mb-4">
-            {isLoading ? (
-              <View className="items-center py-4 bg-[#D32F1E] rounded-full">
-                <ActivityIndicator color="white" />
+              {/* Email input */}
+              <View className="mb-4">
+                <Text className="text-gray-700 mb-2">Email Address</Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Enter your email"
+                  placeholderTextColor="#9CA3AF"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-700"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
               </View>
-            ) : (
-              <GradientButton title="Continue" onPress={handleSendEmail} />
-            )}
-          </View>
-        </View>
-      </ImageBackground>
+
+              {/* Continue button */}
+              <View className="mt-14 mb-4">
+                {isLoading ? (
+                  <View className="items-center py-4 bg-[#D32F1E] rounded-full">
+                    <ActivityIndicator color="white" />
+                  </View>
+                ) : (
+                  <GradientButton title="Continue" onPress={handleSendEmail} />
+                )}
+              </View>
+            </View>
+          </ScrollView>
+        </ImageBackground>
+      </KeyboardAvoidingView>
     </View>
   );
 };

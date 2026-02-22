@@ -5,7 +5,7 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { ActivityIndicator, ImageBackground, Text, View } from "react-native";
+import { ActivityIndicator, ImageBackground, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 
 const VerifyOTP = () => {
   const { email } = useLocalSearchParams<{ email: string }>();
@@ -46,70 +46,82 @@ const VerifyOTP = () => {
   return (
     <View className="flex-1">
       <StatusBar style="auto" />
-      <ImageBackground
-        source={require("@/assets/images/Screenshot.png")}
-        resizeMode="cover"
-        style={{ flex: 1, width: "100%", height: "100%" }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 25}
+        className="flex-1"
       >
-        <View className="flex-1 items-center justify-center">
-          <Image
-            source={require("@/assets/images/logo.jpg")}
-            contentFit="contain"
-            style={{
-              height: 200,
-              width: 200,
-              backgroundColor: "#00000010",
-              paddingBottom: 5,
-              borderRadius: 100,
-            }}
-          />
-        </View>
-        {/* OTP Verification form */}
-        {/* <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl"> */}
-        {/* Forgot Password form */}
-        <View
-          className="bg-white pt-8 px-6 pb-10 rounded-t-3xl"
-          style={{
-            borderTopWidth: 2,
-            borderLeftWidth: 2,
-            borderRightWidth: 2,
-            borderColor: "#F59E0B",
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-          }}
+        <ImageBackground
+          source={require("@/assets/images/Screenshot.png")}
+          resizeMode="cover"
+          style={{ flex: 1, width: "100%", height: "100%" }}
         >
-          <Text className="text-2xl font-bold text-center mb-4">
-            Enter Verification OTP
-          </Text>
-          <Text className="text-gray-600 text-center mb-2">
-            We have sent a verification code to:
-          </Text>
-          <Text className="text-gray-900 font-bold text-center mb-6">
-            {email || "your email address"}
-          </Text>
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="flex-1 items-center justify-center">
+              <Image
+                source={require("@/assets/images/logo.jpg")}
+                contentFit="contain"
+                style={{
+                  height: 200,
+                  width: 200,
+                  backgroundColor: "#00000010",
+                  paddingBottom: 5,
+                  borderRadius: 100,
+                }}
+              />
+            </View>
+            {/* OTP Verification form */}
+            {/* <View className="pt-5 px-5 pb-10 bg-white/90 rounded-t-2xl"> */}
+            {/* Forgot Password form */}
+            <View
+              className="bg-white pt-8 px-6 pb-10 rounded-t-3xl"
+              style={{
+                borderTopWidth: 2,
+                borderLeftWidth: 2,
+                borderRightWidth: 2,
+                borderColor: "#F59E0B",
+                borderTopLeftRadius: 28,
+                borderTopRightRadius: 28,
+              }}
+            >
+              <Text className="text-2xl font-bold text-center mb-4">
+                Enter Verification OTP
+              </Text>
+              <Text className="text-gray-600 text-center mb-2">
+                We have sent a verification code to:
+              </Text>
+              <Text className="text-gray-900 font-bold text-center mb-6">
+                {email || "your email address"}
+              </Text>
 
-          {/* OTP Input Fields */}
-          <CustomInput
-            label="Enter Verification Code"
-            className="mt-2"
-            placeholder="123456"
-            value={code}
-            onChangeText={setCode}
-            keyboardType="number-pad"
-          />
+              {/* OTP Input Fields */}
+              <CustomInput
+                label="Enter Verification Code"
+                className="mt-2"
+                placeholder="123456"
+                value={code}
+                onChangeText={setCode}
+                keyboardType="number-pad"
+              />
 
-          {/* Verify button */}
-          <View className="mt-14 mb-4">
-            {isLoading ? (
-              <View className="items-center py-4 bg-yellow-400 rounded-full">
-                <ActivityIndicator color="black" />
+              {/* Verify button */}
+              <View className="mt-14 mb-4">
+                {isLoading ? (
+                  <View className="items-center py-4 bg-yellow-400 rounded-full">
+                    <ActivityIndicator color="black" />
+                  </View>
+                ) : (
+                  <GradientButton title="Verify" onPress={handleVerifyOTP} />
+                )}
               </View>
-            ) : (
-              <GradientButton title="Verify" onPress={handleVerifyOTP} />
-            )}
-          </View>
-        </View>
-      </ImageBackground>
+            </View>
+          </ScrollView>
+        </ImageBackground>
+      </KeyboardAvoidingView>
     </View>
   );
 };

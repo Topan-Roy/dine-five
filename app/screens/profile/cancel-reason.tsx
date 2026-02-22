@@ -5,6 +5,8 @@ import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -53,31 +55,37 @@ export default function CancelOrderScreen() {
         <Text className="text-xl font-bold text-gray-900">Cancel order</Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
-        <Text className="text-xl font-bold text-gray-900 mb-2">
-          We are sorry to hear this
-        </Text>
-        <Text className="text-gray-500 leading-6 mb-6">
-          Tell us why you choose to cancel your order, is the reason from our
-          side?{"\n"}
-          Write down your reason to cancel your order:
-        </Text>
-
-        <View className="bg-white p-4 rounded-2xl border border-gray-100 h-48">
-          <TextInput
-            placeholder="Write here..."
-            multiline
-            textAlignVertical="top"
-            value={reason}
-            onChangeText={setReason}
-            maxLength={220}
-            className="flex-1 text-base text-gray-900"
-          />
-          <Text className="text-right text-gray-400 text-sm mt-2">
-            {reason.length} / 220
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        className="flex-1"
+      >
+        <ScrollView className="flex-1 px-6">
+          <Text className="text-xl font-bold text-gray-900 mb-2">
+            We are sorry to hear this
           </Text>
-        </View>
-      </ScrollView>
+          <Text className="text-gray-500 leading-6 mb-6">
+            Tell us why you choose to cancel your order, is the reason from our
+            side?{"\n"}
+            Write down your reason to cancel your order:
+          </Text>
+
+          <View className="bg-white p-4 rounded-2xl border border-gray-100 h-48">
+            <TextInput
+              placeholder="Write here..."
+              multiline
+              textAlignVertical="top"
+              value={reason}
+              onChangeText={setReason}
+              maxLength={220}
+              className="flex-1 text-base text-gray-900"
+            />
+            <Text className="text-right text-gray-400 text-sm mt-2">
+              {reason.length} / 220
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Footer */}
       <View className="p-6">

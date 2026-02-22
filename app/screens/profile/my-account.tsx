@@ -9,7 +9,9 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -173,146 +175,152 @@ export default function MyAccountScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-6">
-        {/* User Avatar */}
-        <View className="items-center mb-8">
-          <View className="relative">
-            <View className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden">
-              <Image
-                source={{
-                  uri:
-                    selectedImage ||
-                    user?.profilePic ||
-                    user?.photo ||
-                    user?.avatar ||
-                    user?.image ||
-                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
-                }}
-                style={{ width: "100%", height: "100%" }}
-                contentFit="cover"
-              />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        className="flex-1"
+      >
+        <ScrollView className="flex-1 px-6">
+          {/* User Avatar */}
+          <View className="items-center mb-8">
+            <View className="relative">
+              <View className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden">
+                <Image
+                  source={{
+                    uri:
+                      selectedImage ||
+                      user?.profilePic ||
+                      user?.photo ||
+                      user?.avatar ||
+                      user?.image ||
+                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
+                  }}
+                  style={{ width: "100%", height: "100%" }}
+                  contentFit="cover"
+                />
+              </View>
+              {isEditing && (
+                <TouchableOpacity
+                  onPress={pickImage}
+                  className="absolute bottom-0 right-0 bg-gray-900 w-8 h-8 rounded-full items-center justify-center border-2 border-white"
+                >
+                  <Ionicons name="camera" size={14} color="#fff" />
+                </TouchableOpacity>
+              )}
             </View>
-            {isEditing && (
-              <TouchableOpacity
-                onPress={pickImage}
-                className="absolute bottom-0 right-0 bg-gray-900 w-8 h-8 rounded-full items-center justify-center border-2 border-white"
-              >
-                <Ionicons name="camera" size={14} color="#fff" />
-              </TouchableOpacity>
-            )}
+            <Text className="text-2xl font-bold text-gray-900 text-center mt-4">
+              {formData.name}
+            </Text>
+            <Text className="text-gray-500 text-sm text-center mt-1">
+              {formData.email}
+            </Text>
           </View>
-          <Text className="text-2xl font-bold text-gray-900 text-center mt-4">
-            {formData.name}
-          </Text>
-          <Text className="text-gray-500 text-sm text-center mt-1">
-            {formData.email}
-          </Text>
-        </View>
 
-        {/* Form Fields */}
-        <View className="space-y-5">
-          {/* Name Field (shown as read-only label in view mode, could be input in edit mode) */}
-          {isEditing ? (
-            <View>
-              <Text className="text-gray-500 text-sm mb-1 ml-1">Name</Text>
-              <TextInput
-                value={formData.name}
-                onChangeText={(t) => handleChange("name", t)}
-                className="bg-white p-4 rounded-xl border border-gray-100 text-base font-normal text-gray-900"
-              />
-            </View>
-          ) : (
-            <View className="bg-white p-4 rounded-xl border border-gray-100">
-              <Text className="text-base font-normal text-gray-900">
-                {formData.name}
-              </Text>
-            </View>
-          )}
-
-          {/* Phone Field */}
-          <View className="mt-4">
-            {isEditing && (
-              <Text className="text-gray-500 text-sm mb-1 ml-1">
-                Phone Number
-              </Text>
-            )}
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={() => isEditing && setShowCountryPicker(true)}
-                disabled={!isEditing}
-                className="bg-white p-4 rounded-xl border border-gray-100 flex-row items-center justify-center gap-2"
-              >
+          {/* Form Fields */}
+          <View className="space-y-5">
+            {/* Name Field (shown as read-only label in view mode, could be input in edit mode) */}
+            {isEditing ? (
+              <View>
+                <Text className="text-gray-500 text-sm mb-1 ml-1">Name</Text>
+                <TextInput
+                  value={formData.name}
+                  onChangeText={(t) => handleChange("name", t)}
+                  className="bg-white p-4 rounded-xl border border-gray-100 text-base font-normal text-gray-900"
+                />
+              </View>
+            ) : (
+              <View className="bg-white p-4 rounded-xl border border-gray-100">
                 <Text className="text-base font-normal text-gray-900">
-                  {formData.phonePrefix}
+                  {formData.name}
                 </Text>
-                {isEditing && (
-                  <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
-                )}
-              </TouchableOpacity>
-              <View className="flex-1 bg-white p-4 rounded-xl border border-gray-100 justify-center">
+              </View>
+            )}
+
+            {/* Phone Field */}
+            <View className="mt-4">
+              {isEditing && (
+                <Text className="text-gray-500 text-sm mb-1 ml-1">
+                  Phone Number
+                </Text>
+              )}
+              <View className="flex-row gap-3">
+                <TouchableOpacity
+                  onPress={() => isEditing && setShowCountryPicker(true)}
+                  disabled={!isEditing}
+                  className="bg-white p-4 rounded-xl border border-gray-100 flex-row items-center justify-center gap-2"
+                >
+                  <Text className="text-base font-normal text-gray-900">
+                    {formData.phonePrefix}
+                  </Text>
+                  {isEditing && (
+                    <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+                  )}
+                </TouchableOpacity>
+                <View className="flex-1 bg-white p-4 rounded-xl border border-gray-100 justify-center">
+                  {isEditing ? (
+                    <TextInput
+                      value={formData.phone}
+                      onChangeText={(t) => handleChange("phone", t)}
+                      keyboardType="phone-pad"
+                      className="text-base font-normal text-gray-900 p-0"
+                    />
+                  ) : (
+                    <Text className="text-base font-normal text-gray-900">
+                      {formData.phone}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            {/* DOB Field */}
+            <View className="mt-4">
+              {isEditing && (
+                <Text className="text-gray-500 text-sm mb-1 ml-1">
+                  Date of Birth
+                </Text>
+              )}
+              <View className="bg-white p-4 rounded-xl border border-gray-100">
                 {isEditing ? (
                   <TextInput
-                    value={formData.phone}
-                    onChangeText={(t) => handleChange("phone", t)}
-                    keyboardType="phone-pad"
+                    value={formData.dateOfBirth}
+                    onChangeText={(t) => handleChange("dateOfBirth", t)}
+                    placeholder="YYYY-MM-DD"
                     className="text-base font-normal text-gray-900 p-0"
                   />
                 ) : (
                   <Text className="text-base font-normal text-gray-900">
-                    {formData.phone}
+                    {formData.dateOfBirth}
                   </Text>
                 )}
               </View>
             </View>
-          </View>
 
-          {/* DOB Field */}
-          <View className="mt-4">
-            {isEditing && (
-              <Text className="text-gray-500 text-sm mb-1 ml-1">
-                Date of Birth
-              </Text>
-            )}
-            <View className="bg-white p-4 rounded-xl border border-gray-100">
-              {isEditing ? (
-                <TextInput
-                  value={formData.dateOfBirth}
-                  onChangeText={(t) => handleChange("dateOfBirth", t)}
-                  placeholder="YYYY-MM-DD"
-                  className="text-base font-normal text-gray-900 p-0"
-                />
-              ) : (
-                <Text className="text-base font-normal text-gray-900">
-                  {formData.dateOfBirth}
-                </Text>
+            {/* Address Field */}
+            <View className="mt-4">
+              {isEditing && (
+                <Text className="text-gray-500 text-sm mb-1 ml-1">Address</Text>
               )}
+              <View className="bg-white p-4 rounded-xl border border-gray-100 flex-row justify-between items-center">
+                {isEditing ? (
+                  <TextInput
+                    value={formData.address}
+                    onChangeText={(t) => handleChange("address", t)}
+                    className="flex-1 text-base font-normal text-gray-900 p-0"
+                  />
+                ) : (
+                  <Text className="text-base font-normal text-gray-900">
+                    Address - {formData.address}
+                  </Text>
+                )}
+                {!isEditing && (
+                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                )}
+              </View>
             </View>
           </View>
-
-          {/* Address Field */}
-          <View className="mt-4">
-            {isEditing && (
-              <Text className="text-gray-500 text-sm mb-1 ml-1">Address</Text>
-            )}
-            <View className="bg-white p-4 rounded-xl border border-gray-100 flex-row justify-between items-center">
-              {isEditing ? (
-                <TextInput
-                  value={formData.address}
-                  onChangeText={(t) => handleChange("address", t)}
-                  className="flex-1 text-base font-normal text-gray-900 p-0"
-                />
-              ) : (
-                <Text className="text-base font-normal text-gray-900">
-                  Address - {formData.address}
-                </Text>
-              )}
-              {!isEditing && (
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-              )}
-            </View>
-          </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Country Code Picker Modal */}
       <Modal

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -101,6 +102,21 @@ export default function CustomerSupportScreen() {
       console.log("loadData error:", error);
     }
   };
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   const refreshMessages = async () => {
     if (!conversationId) return;
@@ -377,13 +393,15 @@ export default function CustomerSupportScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 25}
         className="flex-1"
       >
         <ScrollView
           ref={scrollViewRef}
           className="flex-1 px-6"
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingVertical: 20 }}
           onContentSizeChange={() =>
             scrollViewRef.current?.scrollToEnd({ animated: true })
