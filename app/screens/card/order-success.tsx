@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
@@ -7,15 +7,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OrderSuccessScreen() {
     const router = useRouter();
+    const { amount, address, paymentMethod } = useLocalSearchParams<{ amount: string; address: string; paymentMethod: string }>();
 
     const handleBackToHome = () => {
-        // Navigate to tabs root (index) and reset stack roughly or just push to /
-        // router.replace does not exist on plain expo-router cleanly for tabs sometimes, 
-        // but router.dismissAll() + replace or navigate is common.
-        // Easiest is navigate to root.
         router.dismissAll();
         router.navigate('/(tabs)');
     };
+
+    const isCOD = paymentMethod === "Cash On Delivery";
 
     return (
         <SafeAreaView className="flex-1 bg-[#FDFBF7] justify-between">
@@ -58,17 +57,25 @@ export default function OrderSuccessScreen() {
                     <View className="flex-row justify-between items-center mt-4">
                         <View className="flex-row items-center">
                             <Ionicons name="location-outline" size={20} color="#666" style={{ marginRight: 8 }} />
-                            <Text className="text-gray-500 text-base">Pickup from</Text>
+                            <Text className="text-gray-500 text-base">Delivery to</Text>
                         </View>
-                        <Text className="text-gray-900 font-bold text-base">Home</Text>
+                        <Text numberOfLines={1} className="text-gray-900 font-bold text-base flex-1 text-right ml-4">
+                            {address || "Home"}
+                        </Text>
                     </View>
 
                     <View className="flex-row justify-between items-center mt-4">
                         <View className="flex-row items-center">
                             <Ionicons name="card-outline" size={20} color="#666" style={{ marginRight: 8 }} />
-                            <Text className="text-gray-500 text-base">Amount Paid</Text>
+                            <Text className="text-gray-500 text-base">
+                                {isCOD ? "Amount to Pay" : "Amount Paid"}
+                            </Text>
                         </View>
-                        <Text className="text-gray-900 font-bold text-base">$32.12</Text>
+                        <Text className="text-gray-900 font-bold text-base">${amount || "0.00"}</Text>
+                    </View>
+
+                    <View className="flex-row justify-between items-center mt-2">
+                        <Text className="text-gray-400 text-xs ml-7">Method: {paymentMethod || "Not specified"}</Text>
                     </View>
                 </View>
             </View>
@@ -78,7 +85,7 @@ export default function OrderSuccessScreen() {
                 <TouchableOpacity
                     onPress={handleBackToHome}
                     className="bg-yellow-400 w-full py-4 rounded-2xl shadow-md items-center">
-                    <Text className="text-gray-900 font-bold text-lg">Bake to home</Text>
+                    <Text className="text-gray-900 font-bold text-lg">Back to home</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>

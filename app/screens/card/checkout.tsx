@@ -67,7 +67,14 @@ export default function CheckoutScreen() {
       if (result && result.success) {
         // Clear the cart after successful order
         await clearCart();
-        router.push("/screens/card/order-success");
+        router.push({
+          pathname: "/screens/card/order-success",
+          params: {
+            amount: cartTotal.toFixed(2),
+            address: "123 Main St, Apt 4B, New York, NY",
+            paymentMethod: selectedCard
+          }
+        });
       } else {
         Alert.alert("Error", result?.message || "Failed to place order");
       }
