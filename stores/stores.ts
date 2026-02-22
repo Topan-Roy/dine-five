@@ -984,7 +984,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/chat/conversations?limit=${limit}`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/chat/conversations?limit=${limit}`,
         {
           method: "GET",
           headers: {
@@ -1008,6 +1008,38 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  createConversation: async (providerId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/chat/conversations`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ providerId }),
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to create conversation");
+      }
+
+      set({ isLoading: false });
+      return result.data;
+    } catch (error: any) {
+      console.log("createConversation error", error);
+      set({ error: error.message, isLoading: false });
+      throw error;
+    }
+  },
+
   fetchMessages: async (conversationId: string, page = 1, limit = 20) => {
     set({ isLoading: true, error: null });
     try {
@@ -1015,7 +1047,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/chat/conversations/${conversationId}/messages?page=${page}&limit=${limit}`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/chat/conversations/${conversationId}/messages?page=${page}&limit=${limit}`,
         {
           method: "GET",
           headers: {
@@ -1063,10 +1095,10 @@ export const useStore = create((set, get) => ({
         body = JSON.stringify({ message });
       }
 
-      console.log("Sending POST to:", `${process.env.EXPO_PUBLIC_API_URL}/api/chat/conversations/${conversationId}/messages`);
+      console.log("Sending POST to:", `${process.env.EXPO_PUBLIC_API_URL}/api/v1/chat/conversations/${conversationId}/messages`);
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/chat/conversations/${conversationId}/messages`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/chat/conversations/${conversationId}/messages`,
         {
           method: "POST",
           headers: {
@@ -1130,7 +1162,7 @@ export const useStore = create((set, get) => ({
       console.log("--------------------------------");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/chat/message/customer-to-provider`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/chat/message/customer-to-admin`,
         {
           method: "POST",
           headers: {

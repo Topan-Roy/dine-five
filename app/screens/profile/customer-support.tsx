@@ -26,6 +26,7 @@ export default function CustomerSupportScreen() {
   const {
     fetchMessages,
     fetchConversations,
+    createConversation,
     sendMessage,
     sendMessageToProvider,
     user,
@@ -36,7 +37,7 @@ export default function CustomerSupportScreen() {
     (params.conversationId as string) || null,
   );
   const [providerId] = useState<string | null>(
-    (params.providerId as string) || "69714abce548ab10b90c0e50",
+    (params.providerId as string) || "69814b5b4d784da531fb6517",
   );
 
   const [message, setMessage] = useState("");
@@ -44,41 +45,60 @@ export default function CustomerSupportScreen() {
     { uri: string; type: "image" | "video" }[]
   >([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [prevMessageCount, setPrevMessageCount] = useState(0);
+
+  // Auto-scroll when new messages arrive
+  useEffect(() => {
+    if (messages.length > prevMessageCount) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+      setPrevMessageCount(messages.length);
+    }
+  }, [messages.length]);
 
   useEffect(() => {
     loadData();
 
-    // Set up polling for new messages every 5 seconds
+    // Set up polling for new messages every 3 seconds for better real-time feel
     const interval = setInterval(() => {
       if (conversationId) {
         refreshMessages();
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [conversationId]);
 
   const loadData = async () => {
-    if (conversationId) {
-      await refreshMessages();
-    } else {
-      // Try to find if there's an existing conversation
-      const result = await fetchConversations();
-      const convs = result?.conversations || [];
+    try {
+      if (conversationId) {
+        await refreshMessages();
+      } else if (providerId) {
+        // Try to find if there's an existing conversation or create a new one
+        console.log("Creating/Fetching conversation for providerId:", providerId);
+        const data = await createConversation(providerId);
+        console.log("createConversation data:", JSON.stringify(data, null, 2));
 
-      if (convs.length > 0) {
-        // Find existing conversation with this provider or take the first one
-        const targetConv = providerId
-          ? convs.find(
-            (c: any) =>
-              c.providerId === providerId || c.provider?.id === providerId,
-          )
-          : convs[0];
+        if (data) {
+          const id = data.id || data._id;
+          console.log("Extracted conversationId:", id);
+          if (id) {
+            setConversationId(id);
+          }
+        }
+      } else {
+        // Fallback: try to fetch all conversations
+        const result = await fetchConversations();
+        const convs = result?.conversations || result || [];
 
-        if (targetConv) {
+        if (convs.length > 0) {
+          const targetConv = convs[0];
           setConversationId(targetConv.id || targetConv._id);
         }
       }
+    } catch (error) {
+      console.log("loadData error:", error);
     }
   };
 
@@ -91,10 +111,13 @@ export default function CustomerSupportScreen() {
         const formattedMessages = rawMessages.map((m: any) => ({
           id: m.id || m._id || m.messageId || Math.random().toString(),
           text: m.content || m.text || m.message || "",
-          // If sender role is PROVIDER, it's support (Left side)
-          isSupport: m.sender?.role
-            ? m.sender.role === "PROVIDER"
-            : (m.senderId !== user?.id && m.senderId !== user?._id),
+          // Improved isSupport logic: True if sender is Admin, Super Admin, Provider or not the current user
+          isSupport:
+            m.sender?.role === "ADMIN" ||
+            m.sender?.role === "SUPER_ADMIN" ||
+            m.sender?.role === "PROVIDER" ||
+            m.senderId === providerId ||
+            (!!m.senderId && m.senderId !== user?.id && m.senderId !== user?._id),
           time: new Date(m.createdAt).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
