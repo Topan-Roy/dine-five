@@ -1629,4 +1629,28 @@ export const useStore = create((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  fetchCategories: async () => {
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/categories`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch categories");
+      }
+
+      return result.data || [];
+    } catch (error: any) {
+      console.log("fetchCategories error:", error);
+      return [];
+    }
+  },
 }));

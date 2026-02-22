@@ -1,8 +1,7 @@
+import { useStore } from "@/stores/stores";
 import { useRouter } from "expo-router";
-import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-
-const CATEGORIES = ["All", "Burger", "Pizza", "Donut", "Drinks", "Tacos"];
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export const Categories = ({
   activeCategory,
@@ -12,25 +11,36 @@ export const Categories = ({
   onCategoryChange: (cat: string) => void;
 }) => {
   const router = useRouter();
-  // const { fetchCatagori, categories } = useStore() as any;
+  const { fetchCategories } = useStore() as any;
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // useEffect(() => {
-  //   fetchCatagori();
-  // }, []);
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategories();
+        // Add "All" category at the beginning
+        setCategories([{ _id: "all", categoryName: "All" }, ...data]);
+      } catch (error) {
+        console.error("Error loading categories:", error);
+        setCategories([{ _id: "all", categoryName: "All" }]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCategories();
+  }, []);
 
-  // useEffect(() => {
-  //   if (categories?.length) {
-  //     categories.forEach((cat: any) => {
-  //       console.log("Category Name:", cat.categoryName);
-  //     });
-  //   }
-  // }, [categories]);
   return (
     <View className="mt-4">
       <View className="flex-row items-center justify-between px-4 py-2">
-        <Text className="text-base font-medium text-[#1F2A33]">
-          Top Categories
-        </Text>
+        <TouchableOpacity
+          onPress={() => router.push("/screens/home/all-categories")}
+        >
+          <Text className="text-base font-medium text-[#1F2A33]">
+            Top Categories
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => router.push("/screens/home/all-categories")}
         >
@@ -38,28 +48,34 @@ export const Categories = ({
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, marginTop: 16 }}
-      >
-        {CATEGORIES.map((cat, index) => {
-          const isActive = activeCategory === cat;
-          return (
-            <TouchableOpacity
-              key={index}
-              onPress={() => onCategoryChange(cat)}
-              className={`mr-3 px-6 py-2.5 rounded-full border ${isActive ? "bg-yellow-400 border-yellow-400" : "bg-white border-gray-200"}`}
-            >
-              <Text
-                className={`${isActive ? "text-[#1F2A33] font-medium text-base" : "text-[#70756B]"}`}
+      {loading ? (
+        <View className="h-12 justify-center items-center">
+          <ActivityIndicator color="#FFC107" />
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, marginTop: 16 }}
+        >
+          {categories.map((cat, index) => {
+            const isActive = activeCategory === cat.categoryName;
+            return (
+              <TouchableOpacity
+                key={cat._id || index}
+                onPress={() => onCategoryChange(cat.categoryName)}
+                className={`mr-3 px-6 py-2.5 rounded-full border ${isActive ? "bg-yellow-400 border-yellow-400" : "bg-white border-gray-200"}`}
               >
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+                <Text
+                  className={`text-sm ${isActive ? "text-[#1F2A33] font-bold" : "text-[#70756B]"}`}
+                >
+                  {cat.categoryName}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
     </View>
   );
 };
