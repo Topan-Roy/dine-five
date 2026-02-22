@@ -1,13 +1,18 @@
 import { useStore } from "@/stores/stores";
 import { Image } from "expo-image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Dimensions, FlatList, Text, TouchableOpacity, View } from "react-native";
 
 const { width } = Dimensions.get("window");
+const ITEM_WIDTH = width * 0.88;
+const ITEM_SPACING = 16;
+const SNAP_THRESHOLD = ITEM_WIDTH + ITEM_SPACING;
 
 export const PromoBanner = () => {
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
   const { fetchBanners } = useStore() as any;
 
   useEffect(() => {
@@ -33,7 +38,6 @@ export const PromoBanner = () => {
         }
       } catch (error) {
         console.error("Error loading banners:", error);
-        // Fallback on error
         setBanners([
           {
             _id: "static-err",
@@ -48,6 +52,34 @@ export const PromoBanner = () => {
     loadBanners();
   }, []);
 
+  // Auto-sliding logic
+  useEffect(() => {
+    if (banners.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % banners.length;
+        flatListRef.current?.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+        });
+        return nextIndex;
+      });
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [banners]);
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      setCurrentIndex(viewableItems[0].index);
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({
+    viewAreaCoveragePercentThreshold: 50,
+  }).current;
+
   if (loading) {
     return (
       <View className="mt-6 h-[160px] justify-center items-center">
@@ -60,7 +92,7 @@ export const PromoBanner = () => {
 
   const renderItem = ({ item }: { item: any }) => {
     return (
-      <View style={{ width: width * 0.88 }} className="mr-4">
+      <View style={{ width: ITEM_WIDTH }} className="mr-4">
         <View
           style={{ backgroundColor: "#FFE69C" }}
           className="rounded-[32px] flex-row items-center justify-between overflow-hidden relative min-h-[160px] p-6"
@@ -87,7 +119,6 @@ export const PromoBanner = () => {
 
           {/* Floating Image */}
           <View className="absolute right-[-10] top-0 bottom-0 w-[50%] items-center justify-center">
-            {/* Main Product Image with a soft shadow to create depth */}
             <View style={{
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 10 },
@@ -112,15 +143,34 @@ export const PromoBanner = () => {
   return (
     <View className="mt-6">
       <FlatList
+        ref={flatListRef}
         data={banners}
         renderItem={renderItem}
         keyExtractor={(item) => item._id}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        snapToInterval={width * 0.85 + 16}
+        snapToInterval={SNAP_THRESHOLD}
         decelerationRate="fast"
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        getItemLayout={(data, index) => ({
+          length: SNAP_THRESHOLD,
+          offset: SNAP_THRESHOLD * index,
+          index,
+        })}
       />
+
+      {/* Pagination Dots */}
+      <View className="flex-row justify-center mt-3">
+        {banners.map((_, index) => (
+          <View
+            key={index}
+            className={`h-1.5 rounded-full mx-1 ${currentIndex === index ? "w-6 bg-[#FFC107]" : "w-1.5 bg-gray-300"
+              }`}
+          />
+        ))}
+      </View>
     </View>
   );
 };

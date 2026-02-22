@@ -1318,10 +1318,10 @@ export const useStore = create((set, get) => ({
   fetchBanners: async () => {
     try {
       const { accessToken } = get() as any;
-      if (!accessToken) throw new Error("No access token found");
+      //   if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/banners/active`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/admin/banners?status=ACTIVE&page=1&limit=10`,
         {
           method: "GET",
           headers: {
@@ -1332,11 +1332,13 @@ export const useStore = create((set, get) => ({
       );
 
       const result = await response.json();
+      console.log("fetchBanners full result:", JSON.stringify(result, null, 2));
+
       if (!response.ok) {
         throw new Error(result.message || "Failed to fetch banners");
       }
 
-      return result.data;
+      return result.banners || result.data || [];
     } catch (error: any) {
       console.log("fetchBanners error:", error);
       return [];
