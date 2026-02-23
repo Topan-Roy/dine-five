@@ -103,10 +103,12 @@ export const PromoBanner = () => {
               numberOfLines={2}
               className="text-[20px] font-bold text-[#332701] mb-1 leading-tight"
             >
-              {item.title}
+              {(item.title || "").split(/\s+/).slice(0, 2).join(" ")}
+              {(item.title || "").split(/\s+/).length > 2 ? "..." : ""}
             </Text>
             <Text className="text-sm text-[#332701] opacity-70 mb-4 font-medium">
-              {item.title}
+              {(item.title || "").split(/\s+/).slice(0, 2).join(" ")}
+              {(item.title || "").split(/\s+/).length > 2 ? "..." : ""}
             </Text>
             <TouchableOpacity
               activeOpacity={0.8}
