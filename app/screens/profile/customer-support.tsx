@@ -28,6 +28,7 @@ export default function CustomerSupportScreen() {
     fetchMessages,
     fetchConversations,
     createConversation,
+    createSupportTicket,
     sendMessage,
     sendMessageToProvider,
     user,
@@ -69,7 +70,7 @@ export default function CustomerSupportScreen() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [conversationId]);
+  }, [conversationId, user]);
 
   const loadData = async () => {
     try {
@@ -87,6 +88,18 @@ export default function CustomerSupportScreen() {
           if (id) {
             setConversationId(id);
           }
+        }
+
+        // Create support ticket when entering
+        if (user) {
+          console.log("Creating support ticket for user:", user?.id || user?._id);
+          createSupportTicket({
+            userId: user?.id || user?._id,
+            userType: "Customer",
+            subject: "Cannot update menu items",
+            description: "I am trying to change the price of my pizza but it failsgfgtgertertretrert.",
+            priority: "Medium",
+          }).catch((err: any) => console.log("Silent ticket creation error:", err));
         }
       } else {
         // Fallback: try to fetch all conversations

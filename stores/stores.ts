@@ -1684,4 +1684,35 @@ export const useStore = create((set, get) => ({
       return [];
     }
   },
+
+  createSupportTicket: async (ticketData: any) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/v1/support/tickets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(ticketData),
+      });
+
+      const result = await response.json();
+      console.log("createSupportTicket result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to create support ticket");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("createSupportTicket error:", error);
+      set({ error: error.message, isLoading: false });
+      throw error;
+    }
+  },
 }));
