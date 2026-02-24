@@ -27,6 +27,8 @@ export const useStore = create((set, get) => ({
   isInitialized: false,
   resetToken: null as string | null,
   favorites: [] as string[],
+  cartCount: 0,
+  cartSubtotal: 0,
 
   // // this is for user profile
   // userProfile: async () => {
@@ -1413,6 +1415,10 @@ export const useStore = create((set, get) => ({
       }
 
       set({ isLoading: false });
+
+      // Update global cart summary after adding
+      const cartData = await (get() as any).fetchCart();
+
       return result;
     } catch (error: any) {
       console.log("addToCart error:", error);
@@ -1443,7 +1449,11 @@ export const useStore = create((set, get) => ({
         throw new Error(result.message || "Failed to fetch cart");
       }
 
-      set({ isLoading: false });
+      set({
+        isLoading: false,
+        cartCount: result.data?.items?.length || 0,
+        cartSubtotal: result.data?.subtotal || 0
+      });
       return result.data;
     } catch (error: any) {
       console.log("fetchCart error:", error);
@@ -1502,6 +1512,7 @@ export const useStore = create((set, get) => ({
       }
 
       set({ isLoading: false });
+      await (get() as any).fetchCart();
       return result;
     } catch (error: any) {
       console.log("updateCartQuantity error:", error);
@@ -1534,6 +1545,7 @@ export const useStore = create((set, get) => ({
       }
 
       set({ isLoading: false });
+      await (get() as any).fetchCart();
       return result;
     } catch (error: any) {
       console.log("removeCartItem error:", error);
@@ -1564,7 +1576,7 @@ export const useStore = create((set, get) => ({
         throw new Error(result.message || "Failed to clear cart");
       }
 
-      set({ isLoading: false });
+      set({ isLoading: false, cartCount: 0, cartSubtotal: 0 });
       return result;
     } catch (error: any) {
       console.log("clearCart error:", error);

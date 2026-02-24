@@ -64,8 +64,8 @@ export default function ConfirmOrderScreen() {
         }
     };
 
-    const deliveryFee = 3.99;
-    const total = subtotal + deliveryFee;
+    const platformFee = 3.99;
+    const total = subtotal + platformFee;
 
     if (cartItems.length === 0) {
         return (
@@ -127,6 +127,14 @@ export default function ConfirmOrderScreen() {
                     <View className="flex-row justify-between mb-2">
                         <Text className="text-gray-500 text-base">Subtotal</Text>
                         <Text className="text-gray-900 font-bold text-base">${subtotal.toFixed(2)}</Text>
+                    </View>
+                    <View className="flex-row justify-between mb-2">
+                        <Text className="text-gray-500 text-base">Tax</Text>
+                        <Text className="text-gray-900 font-bold text-base">$0.00</Text>
+                    </View>
+                    <View className="flex-row justify-between mb-2 border-b border-gray-100 pb-2">
+                        <Text className="text-gray-500 text-base">Platform Fee</Text>
+                        <Text className="text-gray-900 font-bold text-base">$3.99</Text>
                     </View>
                     <View className="flex-row justify-between pt-2 border-t border-gray-200">
                         <Text className="text-gray-900 text-lg font-bold">Total</Text>

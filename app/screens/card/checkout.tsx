@@ -25,7 +25,7 @@ export default function CheckoutScreen() {
       if (cartData) {
         setCartRawData(cartData);
         setCartSubtotal(cartData.subtotal || 0);
-        setCartTotal((cartData.subtotal || 0) + 3.99); // Delivery fee
+        setCartTotal((cartData.subtotal || 0) + 3.99); // Platform fee
       }
     };
     loadCartData();
@@ -151,7 +151,11 @@ export default function CheckoutScreen() {
             <Text className="text-gray-900 font-bold text-base">${cartSubtotal.toFixed(2)}</Text>
           </View>
           <View className="flex-row justify-between mb-4">
-            <Text className="text-gray-500 text-base">Delivery Fee</Text>
+            <Text className="text-gray-500 text-base">Tax</Text>
+            <Text className="text-gray-900 font-bold text-base">$0.00</Text>
+          </View>
+          <View className="flex-row justify-between mb-4">
+            <Text className="text-gray-500 text-base">Platform Fee</Text>
             <Text className="text-gray-900 font-bold text-base">$3.99</Text>
           </View>
           <View className="flex-row justify-between text-lg pt-4 border-t border-gray-100">

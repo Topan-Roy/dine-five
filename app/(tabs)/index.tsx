@@ -4,6 +4,7 @@ import { PopularItems } from "@/components/home/PopularItems";
 import { PromoBanner } from "@/components/home/PromoBanner";
 import { SearchBar } from "@/components/home/SearchBar";
 import { ViewCart } from "@/components/home/ViewCart";
+import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -13,8 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const [count, setCount] = React.useState(0);
-  const [total, setTotal] = React.useState(0);
+  const { cartCount, cartSubtotal, fetchCart } = useStore() as any;
 
   const [searchText, setSearchText] = React.useState("");
   const [filterModalVisible, setFilterModalVisible] = React.useState(false);
@@ -27,10 +27,14 @@ export default function HomeScreen() {
     }
   }, [params.category]);
 
-  const handleAddItem = (price: string) => {
-    setCount((prev) => prev + 1);
-    setTotal((prev) => prev + parseFloat(price));
+  const handleAddItem = async (price: string) => {
+    // This is now handled by the stores.ts logic when addToCart is called
+    await fetchCart();
   };
+
+  React.useEffect(() => {
+    fetchCart();
+  }, []);
 
   return (
     <View className="flex-1 bg-[#FDFBF7]">
@@ -98,7 +102,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </Modal>
         </ScrollView>
-        <ViewCart count={count} total={total} />
+        <ViewCart count={cartCount} total={cartSubtotal} />
       </View>
     </View>
   );

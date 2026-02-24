@@ -1,3 +1,5 @@
+import { ViewCart } from "@/components/home/ViewCart";
+import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -61,6 +63,11 @@ export default function HotelDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const { cartCount, cartSubtotal, fetchCart } = useStore() as any;
+
+  React.useEffect(() => {
+    fetchCart();
+  }, []);
 
   // Parse params
   const hotelId = params.id ? parseInt(params.id as string) : 0;
@@ -212,6 +219,7 @@ export default function HotelDetailsScreen() {
           </View>
         </View>
       </ScrollView>
+      <ViewCart count={cartCount} total={cartSubtotal} />
     </View>
   );
 }

@@ -2,18 +2,26 @@ import { ViewCart } from "@/components/home/ViewCart";
 import { CustomerReviews } from "@/components/product/CustomerReviews";
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProductDetails() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { addFavorite, removeFavorite, addToCart, favorites, fetchFavorites, fetchReviewsByFoodId } =
-    useStore() as any;
+  const {
+    addFavorite,
+    removeFavorite,
+    addToCart,
+    favorites,
+    fetchFavorites,
+    fetchReviewsByFoodId,
+    cartCount,
+    cartSubtotal,
+    fetchCart
+  } = useStore() as any;
   const {
     id,
     foodId,
@@ -40,7 +48,6 @@ export default function ProductDetails() {
             setReviewsData(result.data);
             setTotalReviews(result.meta?.total || result.data.length || 0);
 
-            // Calculate average rating if not provided by backend
             if (result.data.length > 0) {
               const total = result.data.reduce((sum: number, review: any) => sum + (review.rating || 0), 0);
               const avg = total / result.data.length;
@@ -58,18 +65,20 @@ export default function ProductDetails() {
   const product: any = {
     id: productId,
     foodId: (foodId as string) || (id as string) || "1",
-    name: (name as string) || "Pepperoni Cheese Pizza",
-    price: (price as string) || "5.99",
-    image:
-      (image as string) ||
-      "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500",
-    rating: averageRating || parseFloat(params.rating as string) || 0,
-    reviews: totalReviews,
+    name: (name as string) || "Delicious Food Item",
+    price: (price as string) || "0.00",
+    image: (image as string && (image as string).includes('http'))
+      ? image
+      : (image as string && (image as string).includes('base64'))
+        ? image
+        : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500",
+    rating: averageRating > 0 ? averageRating : (parseFloat(params.rating as string) || 0),
+    reviews: totalReviews || 0,
     calories: 300,
     time: 25,
     description:
       (description as string) ||
-      "A classic favorite! Indulge in a crispy, thin crust topped with rich tomato sauce, layers of gooey mozzarella cheese, and delicious pepperoni slices. Perfectly baked with a hint of herbs for a mouth-watering experience in every bite.",
+      "Savor the rich flavors and fresh ingredients of this expertly prepared dish. Every bite is crafted to offer a perfect balance of taste and texture, ensuring a truly satisfying dining experience.",
     restaurantName: (restaurantName as string) || "The Gourmet Kitchen",
     restaurantProfile: (restaurantProfile as string) || "",
   };
@@ -77,15 +86,16 @@ export default function ProductDetails() {
   const isFav =
     favorites.includes(product.id) || favorites.includes(product.foodId);
   const [quantity, setQuantity] = useState(1);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
+    fetchCart();
     if (favorites.length === 0) {
       fetchFavorites();
     }
   }, []);
 
   const handleToggleFavorite = async () => {
-    console.log("Toggling favorite for foodId:", product.foodId);
     if (isFav) {
       await removeFavorite(product.foodId);
     } else {
@@ -97,11 +107,8 @@ export default function ProductDetails() {
     try {
       const result = await addToCart(product, quantity);
       if (result) {
-        // Only navigate if successful
         router.push("/(tabs)/card");
       } else {
-        // Handle error (alert is shown inside addToCart via console for now, assuming user will see toast/alert in future)
-        // You might want to add a visible alert here
         alert("Failed to add to cart. Please try again.");
       }
     } catch (error) {
@@ -113,36 +120,26 @@ export default function ProductDetails() {
     <View className="flex-1 bg-white">
       <StatusBar style="light" />
 
-      {/* Fixed Background Image */}
-      <View className="absolute top-0 w-full h-[45vh]">
-        <Image
-          source={{ uri: product.image }}
-          className="w-full h-full"
-          contentFit="cover"
-        />
-        <View className="absolute w-full h-full bg-black/10" />
-      </View>
-
-      {/* Fixed Header Actions */}
+      {/* Floating Header Buttons */}
       <SafeAreaView className="absolute top-0 w-full z-50">
-        <View className="flex-row justify-between px-4 pt-4">
+        <View className="flex-row justify-between px-6 pt-2">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+            className="w-11 h-11 bg-white rounded-full items-center justify-center shadow-lg"
           >
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <View className="flex-row gap-3">
-            <TouchableOpacity className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full items-center justify-center border border-white/30">
-              <Ionicons name="share-social-outline" size={20} color="#fff" />
+            <TouchableOpacity className="w-11 h-11 bg-black/20 backdrop-blur-md rounded-full items-center justify-center border border-white/20">
+              <Ionicons name="share-social-outline" size={22} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleToggleFavorite}
-              className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full items-center justify-center border border-white/30"
+              className="w-11 h-11 bg-black/20 backdrop-blur-md rounded-full items-center justify-center border border-white/20"
             >
               <Ionicons
                 name={isFav ? "heart" : "heart-outline"}
-                size={20}
+                size={22}
                 color={isFav ? "#EF4444" : "#fff"}
               />
             </TouchableOpacity>
@@ -150,118 +147,125 @@ export default function ProductDetails() {
         </View>
       </SafeAreaView>
 
-      {/* Scrollable Content */}
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        {/* Spacer to push content down below visible image area */}
-        <View className="h-[40vh]" />
+        {/* Product Image Section - Inside ScrollView */}
+        <View className="h-[45vh] w-full bg-gray-200">
+          <Image
+            source={{ uri: product.image }}
+            className="w-full h-full"
+            resizeMode="cover"
+          />
+          <View className="absolute inset-0 bg-black/5" />
 
-        {/* White Content Container */}
-        <View className="flex-1 bg-white rounded-t-3xl px-6 pt-8 pb-32 min-h-screen">
-          {/* Stats Row */}
-          <View className="flex-row justify-between mb-6 border border-[#E3E6F0] rounded-lg p-3 bg-white shadow-sm">
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="star" size={14} color="#FFC107" />
+          {/* Pagination Dots */}
+          <View className="absolute bottom-12 w-full flex-row justify-center gap-2">
+            <View className="w-2.5 h-2.5 rounded-full bg-[#FFC107]" />
+            <View className="w-2.5 h-2.5 rounded-full bg-white/60" />
+            <View className="w-2.5 h-2.5 rounded-full bg-white/60" />
+          </View>
+        </View>
+
+        {/* Info Card Container */}
+        <View className="flex-1 bg-white -mt-8 rounded-t-[32px] px-6 pt-8 pb-32">
+          {/* Stats Bar */}
+          <View className="flex-row items-center justify-around py-4 border border-[#F2F4F7] rounded-xl mb-6 shadow-sm bg-white">
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="star" size={16} color="#FFC107" />
               <Text className="text-sm font-bold text-[#1F2A33]">
                 {product.rating}
               </Text>
-              <Text className="text-sm font-normal text-[#7A7A7A]">
-                ({product.reviews} Reviews)
-              </Text>
+              <Text className="text-xs text-[#7A7A7A]">Reviews</Text>
             </View>
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="flame" size={16} color="#F97316" />
-              <Text className="text-sm font-normal text-[#7A7A7A]">
+            <View className="w-[1px] h-4 bg-[#F2F4F7]" />
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="flame" size={18} color="#F97316" />
+              <Text className="text-sm font-medium text-[#7A7A7A]">
                 {product.calories}kcal
               </Text>
             </View>
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="time" size={16} color="#24B5D4" />
-              <Text className="text-sm font-normal text-[#7A7A7A]">
+            <View className="w-[1px] h-4 bg-[#F2F4F7]" />
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="time" size={18} color="#24B5D4" />
+              <Text className="text-sm font-medium text-[#7A7A7A]">
                 {product.time}mins
               </Text>
             </View>
           </View>
 
-          {/* Restaurant Info */}
-          {/* <View className="flex-row items-center gap-3 mb-4">
-            {product.restaurantProfile ? (
-              <Image
-                source={{ uri: product.restaurantProfile }}
-                className="w-10 h-10 rounded-full bg-gray-100"
-              />
-            ) : (
-              <View className="w-10 h-10 rounded-full bg-yellow-100 items-center justify-center">
-                <Ionicons name="restaurant" size={18} color="#FFC107" />
-              </View>
-            )}
-            <Text className="text-sm font-medium text-gray-700">
-              {product.restaurantName}
-            </Text>
-          </View> */}
-
           {/* Title & Quantity */}
           <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-lg font-medium text-[#363A33] w-[60%]">
+            <Text className="text-[20px] font-bold text-[#1F2A33] flex-1 mr-4">
               {product.name}
             </Text>
-            <View className="flex-row items-center  rounded-full px-2 py-1">
+            <View className="flex-row items-center bg-transparent">
               <TouchableOpacity
                 onPress={() => quantity > 1 && setQuantity((q) => q - 1)}
                 className="w-10 h-10 items-center justify-center bg-[#FFF3CD] rounded-full"
               >
-                <Text className="text-lg font-bold text-[#332701]">-</Text>
+                <Ionicons name="remove" size={20} color="#332701" />
               </TouchableOpacity>
-              <Text className="mx-4 text-lg font-medium text-[#1F2A33]">
+              <Text className="mx-4 text-lg font-bold text-[#1F2A33]">
                 {quantity}
               </Text>
               <TouchableOpacity
                 onPress={() => setQuantity((q) => q + 1)}
-                className="w-10 h-10  items-center justify-center bg-[#FFF3CD] rounded-full"
+                className="w-10 h-10 items-center justify-center bg-[#FFF3CD] rounded-full"
               >
-                <Text className="text-lg font-bold text-[#332701]">+</Text>
+                <Ionicons name="add" size={20} color="#332701" />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Description */}
-          <Text className="text-[#7A7A7A] text-sm font-normal leading-6 mb-8">
-            {product.description}
-            <Text className="text-[#363A33] font-bold"> Read more...</Text>
+          <Text className="text-[#7A7A7A] text-[15px] leading-6 mb-8">
+            {isExpanded || product.description.length <= 150
+              ? product.description
+              : `${product.description.substring(0, 150)}...`}
+            {product.description.length > 150 && (
+              <Text
+                onPress={() => setIsExpanded(!isExpanded)}
+                className="text-[#FFC107] font-bold"
+              >
+                {isExpanded ? " See less" : " Read more..."}
+              </Text>
+            )}
           </Text>
 
           {/* Price & Add Button */}
           <View className="flex-row items-center justify-between mb-8">
-            <Text className="text-2xl font-semibold text-[#363A33]">
+            <Text className="text-3xl font-bold text-[#1F2A33]">
               ${product.price}
             </Text>
-            <TouchableOpacity
-              onPress={handleAddToCart}
-              className="bg-yellow-400 px-8 py-4 rounded-2xl shadow-md"
-            >
-              <Text className="text-[#1F2A33] font-medium text-base">
-                Add to card
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleAddToCart}
-              className="bg-yellow-400 px-8 py-4 rounded-2xl shadow-md"
-            >
-              <Text className="text-[#1F2A33] font-medium text-base">
-                Buy now
-              </Text>
-            </TouchableOpacity>
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={handleAddToCart}
+                className="bg-[#FFE69C] px-6 py-4 rounded-2xl"
+              >
+                <Text className="text-[#332701] font-bold text-base">
+                  Add to card
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleAddToCart}
+                className="bg-yellow-400 px-8 py-4 rounded-2xl shadow-md"
+              >
+                <Text className="text-[#1F2A33] font-bold text-base">
+                  Buy now
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Customer Reviews */}
+          {/* Customer Reviews Section */}
           <CustomerReviews reviews={reviewsData} />
         </View>
       </ScrollView>
 
-      <ViewCart count={quantity} total={quantity * parseFloat(product.price)} />
+      <ViewCart count={cartCount} total={cartSubtotal} />
     </View>
   );
 }
