@@ -1204,7 +1204,7 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  submitReview: async (orderId: string, foodId: string, rating: number, comment: string) => {
+  submitReview: async (orderId: string, rating: number, comment: string, foodId?: string) => {
     set({ isLoading: true, error: null });
     try {
       const { accessToken } = get() as any;
@@ -1219,7 +1219,7 @@ export const useStore = create((set, get) => ({
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ orderId, foodId, rating, comment }),
+          body: JSON.stringify({ orderId, rating, comment, ...(foodId ? { foodId } : {}) }),
         },
       );
 

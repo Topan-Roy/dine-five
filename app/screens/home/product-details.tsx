@@ -29,6 +29,7 @@ export default function ProductDetails() {
     price,
     image,
     description,
+    productDescription,
     restaurantName,
     restaurantProfile,
   } = params;
@@ -77,8 +78,9 @@ export default function ProductDetails() {
     calories: 300,
     time: 25,
     description:
-      (description as string) ||
-      "Savor the rich flavors and fresh ingredients of this expertly prepared dish. Every bite is crafted to offer a perfect balance of taste and texture, ensuring a truly satisfying dining experience.",
+      (productDescription as string)?.trim() ||
+      (description as string)?.trim() ||
+      "Experience the authentic taste of our special preparation, made with fresh ingredients and traditional recipes.",
     restaurantName: (restaurantName as string) || "The Gourmet Kitchen",
     restaurantProfile: (restaurantProfile as string) || "",
   };

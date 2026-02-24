@@ -13,6 +13,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,7 +25,6 @@ export default function OrderDetailsScreen() {
   const params = useLocalSearchParams();
   const { submitReview, fetchReviewByOrderId, updateReview, fetchOrderDetails, isLoading } = useStore() as any;
   const [existingReviewId, setExistingReviewId] = useState<string | null>(null);
-  const currentState = (params.state as string) || "pending";
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [orderData, setOrderData] = useState<any>(null);
 
@@ -32,6 +32,8 @@ export default function OrderDetailsScreen() {
   const [rateModalVisible, setRateModalVisible] = useState(false);
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
+
+  const currentState = (orderData?.status || orderData?.orderStatus || params.state || "pending").toLowerCase();
 
   useEffect(() => {
     const loadOrderData = async () => {
@@ -92,14 +94,16 @@ export default function OrderDetailsScreen() {
   //     !["completed", "delivered", "picked_up"].includes(
   //       currentState.toLowerCase(),
   //     );
-  const isCancelable = currentState.toLowerCase() === "pending";
+  const isCancelable = currentState === "pending";
 
   const handleCancelPress = () => {
     if (isCancelable) {
-      const targetId = (params._id as string) || (params.orderId as string);
+      // Prioritize the human-readable orderId for cancellation, as some backend
+      // services query specifically by that field.
+      const cancelId = (params.orderId as string) || (params._id as string);
       router.push({
         pathname: "/screens/profile/cancel-reason",
-        params: { orderId: targetId },
+        params: { orderId: cancelId },
       });
     }
   };
@@ -190,7 +194,7 @@ export default function OrderDetailsScreen() {
         ),
       },
       {
-        title: "Order picked up",
+        title: "Order picked up and delivered",
         active: ["picked_up", "delivered"].includes(currentState),
       },
     ];
@@ -262,7 +266,7 @@ export default function OrderDetailsScreen() {
           {["picked_up", "delivered", "completed"].includes(currentState) ? (
             <View>
               <Text className="font-bold text-gray-900 text-base">
-                Order picked up
+                Order picked up and delivered
               </Text>
               <TouchableOpacity
                 onPress={() => setRateModalVisible(true)}
@@ -276,7 +280,7 @@ export default function OrderDetailsScreen() {
             </View>
           ) : (
             <Text className="text-gray-200 font-bold text-base">
-              Order picked up
+              Order picked up and delivered
             </Text>
           )}
         </View>
@@ -405,57 +409,63 @@ export default function OrderDetailsScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
         >
-          <View className="flex-1 bg-black/50 items-center justify-center px-6">
-            <View className="bg-white w-full rounded-3xl p-6 items-center">
-              <Text className="text-xl font-bold text-gray-900 mb-2">
-                Did you like the food!
-              </Text>
-              <Text className="text-gray-500 text-center mb-6">
-                Please rate this food so, that we can improve it!
-              </Text>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setRateModalVisible(false)}
+            className="flex-1 bg-black/50 items-center justify-center px-6"
+          >
+            <TouchableWithoutFeedback>
+              <View className="bg-white w-full rounded-3xl p-6 items-center">
+                <Text className="text-xl font-bold text-gray-900 mb-2">
+                  Did you like the food!
+                </Text>
+                <Text className="text-gray-500 text-center mb-6">
+                  Please rate this food so, that we can improve it!
+                </Text>
 
-              <View className="flex-row gap-3 mb-8">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity key={star} onPress={() => setRating(star)}>
-                    <Ionicons
-                      name={star <= rating ? "star" : "star-outline"}
-                      size={32}
-                      color={star <= rating ? "#FFC107" : "#9CA3AF"}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View className="w-full mb-2">
-                <View className="w-full border border-gray-100 rounded-2xl p-4 bg-gray-50/50 min-h-[100px]">
-                  <TextInput
-                    placeholder="Write here..."
-                    placeholderTextColor="#9CA3AF"
-                    multiline
-                    maxLength={120}
-                    value={review}
-                    onChangeText={setReview}
-                    style={{ textAlignVertical: "top", fontSize: 16 }}
-                  />
+                <View className="flex-row gap-3 mb-8">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                      <Ionicons
+                        name={star <= rating ? "star" : "star-outline"}
+                        size={32}
+                        color={star <= rating ? "#FFC107" : "#9CA3AF"}
+                      />
+                    </TouchableOpacity>
+                  ))}
                 </View>
-                <Text className="text-right text-gray-400 text-xs mt-2">
-                  {review.length} / 120
-                </Text>
-              </View>
 
-              <TouchableOpacity
-                onPress={handleReviewSubmit}
-                disabled={isLoading}
-                className={`w-full py-4 rounded-2xl items-center mt-4 ${isLoading ? "bg-gray-100" : "bg-[#E9EDF7]"}`}
-              >
-                <Text
-                  className={`font-bold text-lg ${isLoading ? "text-gray-400" : "text-[#9CA3AF]"}`}
+                <View className="w-full mb-2">
+                  <View className="w-full border border-gray-100 rounded-2xl p-4 bg-gray-50/50 min-h-[100px]">
+                    <TextInput
+                      placeholder="Write here..."
+                      placeholderTextColor="#9CA3AF"
+                      multiline
+                      maxLength={120}
+                      value={review}
+                      onChangeText={setReview}
+                      style={{ textAlignVertical: "top", fontSize: 16 }}
+                    />
+                  </View>
+                  <Text className="text-right text-gray-400 text-xs mt-2">
+                    {review.length} / 120
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleReviewSubmit}
+                  disabled={isLoading}
+                  className={`w-full py-4 rounded-2xl items-center mt-4 ${isLoading ? "bg-gray-100" : (rating > 0 ? "bg-[#FFC107]" : "bg-[#E9EDF7]")}`}
                 >
-                  {isLoading ? "Submitting..." : (existingReviewId ? "Update" : "Rate")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                  <Text
+                    className={`font-bold text-lg ${isLoading ? "text-gray-400" : (rating > 0 ? "text-[#332701]" : "text-[#9CA3AF]")}`}
+                  >
+                    {isLoading ? "Submitting..." : (existingReviewId ? "Update" : "Rate")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </TouchableOpacity>
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>

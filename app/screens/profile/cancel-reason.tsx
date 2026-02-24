@@ -27,8 +27,16 @@ export default function CancelOrderScreen() {
       return;
     }
 
+    if (reason.trim().length < 3) {
+      Alert.alert(
+        "Reason Required",
+        "Please provide a reason for cancellation (at least 3 characters)."
+      );
+      return;
+    }
+
     console.log("Attempting to cancel order:", orderId);
-    const result = await cancelOrder(orderId as string, reason);
+    const result = await cancelOrder(orderId as string, reason.trim());
 
     if (result) {
       Alert.alert("Success", "Order cancelled successfully");

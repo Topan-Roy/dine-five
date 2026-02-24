@@ -85,6 +85,7 @@ export const PopularItems = ({
                   restaurantName: item.provider || "",
                   restaurantProfile: "",
                   isFavorite: "false",
+                  productDescription: item.productDescription || "",
                 },
               });
             }}
