@@ -29,6 +29,7 @@ export const useStore = create((set, get) => ({
   favorites: [] as string[],
   cartCount: 0,
   cartSubtotal: 0,
+  foodProviderMap: {} as Record<string, string>,
 
   // // this is for user profile
   // userProfile: async () => {
@@ -711,6 +712,20 @@ export const useStore = create((set, get) => ({
       }
 
       set({ isLoading: false });
+
+      // Build a map of foodId -> providerId for later use in checkout
+      if (Array.isArray(result.data)) {
+        const newMap = { ...(get() as any).foodProviderMap };
+        result.data.forEach((item: any) => {
+          const fid = item.id || item._id;
+          const pid = item.providerID || item.providerId || (item.provider?._id) || (typeof item.provider === 'string' ? item.provider : null);
+          if (fid && pid) {
+            newMap[fid] = pid;
+          }
+        });
+        set({ foodProviderMap: newMap });
+      }
+
       return result.data;
     } catch (error: any) {
       console.log("fetchFeed error", error);
@@ -1238,18 +1253,15 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  fetchReviewByOrderId: async (identifier: string) => {
+  fetchReviewByOrderId: async (orderId: string) => {
     try {
       const { accessToken } = get() as any;
       if (!accessToken) throw new Error("No access token found");
 
-      // Check if identifier is an orderId or a specific reviewId
-      // For now, let's support both: filtering by orderId and direct fetch by reviewId
-      const url = identifier.length > 20
-        ? `${process.env.EXPO_PUBLIC_API_URL}/api/v1/reviews/${identifier}`
-        : `${process.env.EXPO_PUBLIC_API_URL}/api/v1/reviews?orderId=${identifier}`;
+      // We always query by orderId to find the existing review
+      const url = `${process.env.EXPO_PUBLIC_API_URL}/api/v1/reviews?orderId=${orderId}`;
 
-      console.log("Fetching review from:", url);
+      console.log("Searching for existing review for order at:", url);
 
       const response = await fetch(
         url,
@@ -1263,12 +1275,11 @@ export const useStore = create((set, get) => ({
       );
 
       const responseText = await response.text();
-      console.log("Fetch Review Raw:", responseText);
-
-      const result = JSON.parse(responseText);
       if (!response.ok) {
         return null;
       }
+
+      const result = JSON.parse(responseText);
       return result;
     } catch (error) {
       console.log("fetchReviewByOrderId error:", error);

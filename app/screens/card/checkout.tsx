@@ -8,7 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { fetchCart, createOrder, clearCart } = useStore() as any;
+  const { fetchCart, createOrder, clearCart, foodProviderMap } = useStore() as any;
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState("Cash On Delivery");
   const [cartTotal, setCartTotal] = useState(0);
@@ -42,12 +42,24 @@ export default function CheckoutScreen() {
       // Extract required fields from cartRawData
       // Based on error log: providerId (string), items (array), totalPrice (number) are required
 
-      // We assume each item has a provider. For now taking from first item as orders are usually per provider.
+      // Each item has a provider. We MUST use the provider's actual ID.
       const firstItem = cartRawData.items[0];
-      const providerId = firstItem.foodId.provider || firstItem.foodId.providerId || firstItem.foodId._id; // Fallback if not explicit
+      const foodId = firstItem.foodId?._id || firstItem.foodId?.id || firstItem.foodId;
+
+      const providerId =
+        firstItem.providerID ||
+        firstItem.foodId?.providerID ||
+        firstItem.providerId ||
+        firstItem.foodId?.providerId ||
+        firstItem.foodId?.provider?._id ||
+        (typeof firstItem.foodId?.provider === 'string' && firstItem.foodId.provider.length > 20 ? firstItem.foodId.provider : undefined) ||
+        foodProviderMap[foodId]; // Global map lookup as fallback
+      if (!providerId) {
+        console.error("CRITICAL: providerId missing from item data", JSON.stringify(firstItem, null, 2));
+      }
 
       const formattedItems = cartRawData.items.map((item: any) => ({
-        foodId: item.foodId._id || item.foodId,
+        foodId: item.foodId?._id || item.foodId?.id || item.foodId,
         quantity: item.quantity,
         price: item.price
       }));
@@ -61,6 +73,7 @@ export default function CheckoutScreen() {
       };
 
       console.log("Submitting Order Data:", JSON.stringify(orderData, null, 2));
+      console.log("First Item Food Data:", JSON.stringify(firstItem.foodId, null, 2));
 
       const result = await createOrder(orderData);
 

@@ -61,12 +61,15 @@ export default function OrderDetailsScreen() {
         console.log("Checking for existing review for order:", orderId);
         const result = await fetchReviewByOrderId(orderId);
 
-        // Handling different possible response structures
-        const reviews = result?.data || result;
-        const reviewData = Array.isArray(reviews) ? reviews[0] : reviews;
+        // Handling different possible response structures based on your JSON example
+        let reviewData = null;
+        if (result?.data) {
+          // If result.data is an array (likely), take the first one. Otherwise take object.
+          reviewData = Array.isArray(result.data) ? result.data[0] : result.data;
+        }
 
-        if (reviewData && reviewData._id && (reviewData.orderId === orderId || reviewData.orderId?._id === orderId)) {
-          console.log("Found existing review:", reviewData._id);
+        if (reviewData && reviewData._id) {
+          console.log("Found existing review ID:", reviewData._id);
           setExistingReviewId(reviewData._id);
           setRating(reviewData.rating || 0);
           setReview(reviewData.comment || "");
@@ -139,6 +142,10 @@ export default function OrderDetailsScreen() {
       }
 
       if (result.success) {
+        const reviewId = existingReviewId || result.data?._id;
+        console.log("SUCCESS: Review operation completed.");
+        console.log("Review ID:", reviewId);
+
         Alert.alert(
           "Success",
           existingReviewId
@@ -146,9 +153,9 @@ export default function OrderDetailsScreen() {
             : "Thank you for your feedback! Your review has been submitted.",
         );
 
-        // If it was a new review, store the ID so next time they open it's in edit mode
-        if (!existingReviewId && result.data?._id) {
-          setExistingReviewId(result.data._id);
+        // Store the ID so next time they open it's in edit mode
+        if (reviewId) {
+          setExistingReviewId(reviewId);
         }
 
         setRateModalVisible(false);
@@ -167,13 +174,27 @@ export default function OrderDetailsScreen() {
         );
       } else if (
         errorMsg.toLowerCase().includes("already") ||
-        errorMsg.toLowerCase().includes("exists")
+        errorMsg.toLowerCase().includes("exists") ||
+        errorMsg.toLowerCase().includes("duplicate") ||
+        errorMsg.includes("E11000")
       ) {
-        Alert.alert(
-          "Already Reviewed",
-          "You have already submitted a review for this order.",
-        );
-        setRateModalVisible(false);
+        console.log("Detected duplicate review. Attempting to recover ID...");
+        // Re-check for existing review to recover the ID
+        const orderId = (params._id as string) || (params.orderId as string);
+        const result = await fetchReviewByOrderId(orderId);
+        const reviewData = Array.isArray(result?.data) ? result.data[0] : result?.data;
+
+        if (reviewData?._id) {
+          setExistingReviewId(reviewData._id);
+          Alert.alert(
+            "Already Reviewed",
+            "You have already submitted a review. You can now update your previous review instead.",
+            [{ text: "OK" }]
+          );
+        } else {
+          Alert.alert("Already Reviewed", "You have already submitted a review for this order.");
+          setRateModalVisible(false);
+        }
       } else {
         Alert.alert(
           "Review Error",
@@ -312,7 +333,7 @@ export default function OrderDetailsScreen() {
             </View>
             <View>
               <Text className="text-base font-bold text-gray-900">
-                {orderData?.providerId?.fullName || "Restaurant Food"}
+                {orderData?.providerInfo?.fullName || orderData?.providerId?.fullName || ""}
               </Text>
               <Text className="text-gray-500 text-sm">
                 {orderData ? new Date(orderData.createdAt).toLocaleDateString() : "Loading..."}

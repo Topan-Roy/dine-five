@@ -32,6 +32,7 @@ export default function ProductDetails() {
     productDescription,
     restaurantName,
     restaurantProfile,
+    providerId: paramProviderId,
   } = params;
   const productId = (id as string) || (foodId as string) || "1";
 
@@ -83,6 +84,7 @@ export default function ProductDetails() {
       "Experience the authentic taste of our special preparation, made with fresh ingredients and traditional recipes.",
     restaurantName: (restaurantName as string) || "The Gourmet Kitchen",
     restaurantProfile: (restaurantProfile as string) || "",
+    providerId: paramProviderId as string,
   };
 
   const isFav =

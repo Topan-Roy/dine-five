@@ -24,7 +24,8 @@ export default function ConfirmOrderScreen() {
                 price: item.price,
                 image: item.foodId.image,
                 quantity: item.quantity,
-                foodId: item.foodId._id // Keep reference to foodId
+                foodId: item.foodId?._id || item.foodId?.id || item.foodId,
+                providerId: item.providerID || item.foodId?.providerID || item.providerId || item.foodId?.providerId || item.foodId?.provider?._id
             }));
             setCartItems(formattedItems);
             setSubtotal(cartData.subtotal || 0);

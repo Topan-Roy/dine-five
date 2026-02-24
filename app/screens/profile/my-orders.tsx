@@ -178,14 +178,14 @@ export default function MyOrdersScreen() {
                   <View className="flex-row justify-between mb-0.5">
                     <Text className="text-sm text-[#7A7A7A]">Provider</Text>
                     <Text className="text-sm font-medium text-[#1F2A33]">
-                      {order.providerId?.fullName || "Dine Five"}
+                      {order.providerInfo?.fullName || order.providerId?.fullName || ""}
                     </Text>
                   </View>
 
                   <View className="flex-row justify-between mb-0.5">
-                    <Text className="text-sm text-[#7A7A7A]">Items</Text>
+                    <Text className="text-sm text-[#7A7A7A]">Quantity</Text>
                     <Text className="text-sm font-medium text-[#1F2A33]">
-                      {order.items?.length || 0} items
+                      {order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0}
                     </Text>
                   </View>
 
@@ -194,7 +194,7 @@ export default function MyOrdersScreen() {
                       Total price paid
                     </Text>
                     <Text className="text-sm font-bold text-[#FFC107]">
-                      ${order.totalPrice}
+                      ${Number(order.totalPrice).toFixed(2)}
                     </Text>
                   </View>
                 </View>
