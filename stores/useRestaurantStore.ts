@@ -21,6 +21,7 @@ interface RestaurantState {
   selectedRestaurant: Restaurant | null;
   cuisineFilter: string | undefined;
   radiusMeters: number; // slider value in meters
+  locationWatcher: Location.LocationSubscription | null;
 
   // Actions
   fetchLocation: () => Promise<void>;
@@ -28,6 +29,8 @@ interface RestaurantState {
   setSelectedRestaurant: (restaurant: Restaurant | null) => void;
   setCuisineFilter: (cuisine: string | undefined) => void;
   setRadiusMeters: (radius: number) => void;
+  startWatchingLocation: () => Promise<void>;
+  stopWatchingLocation: () => void;
 }
 
 export const useRestaurantStore = create<RestaurantState>((set) => ({
@@ -40,6 +43,7 @@ export const useRestaurantStore = create<RestaurantState>((set) => ({
   selectedRestaurant: null,
   cuisineFilter: undefined,
   radiusMeters: 1000,
+  locationWatcher: null,
 
   // ─── Fetch Location ──────────────────────────────────────────────────────────
   fetchLocation: async () => {
@@ -75,6 +79,41 @@ export const useRestaurantStore = create<RestaurantState>((set) => ({
       set({ location: { latitude: 23.780704, longitude: 90.407756 } });
     } finally {
       set({ locationLoading: false });
+    }
+  },
+
+  startWatchingLocation: async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') return;
+
+    // Clear existing watcher if any
+    const existingWatcher = useRestaurantStore.getState().locationWatcher;
+    if (existingWatcher) {
+      existingWatcher.remove();
+    }
+
+    const watcher = await Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.Balanced,
+        distanceInterval: 10, // Update every 10 meters
+      },
+      (location) => {
+        set({
+          location: {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          },
+        });
+      }
+    );
+    set({ locationWatcher: watcher });
+  },
+
+  stopWatchingLocation: () => {
+    const watcher = useRestaurantStore.getState().locationWatcher;
+    if (watcher) {
+      watcher.remove();
+      set({ locationWatcher: null });
     }
   },
 
