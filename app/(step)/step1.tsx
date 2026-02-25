@@ -39,8 +39,8 @@ const step1 = () => {
         </ImageBackground>
       </View>
 
-      {/* Bottom section - 280px height with white background */}
-      <View className="h-[280px] bg-white px-6 pt-8 pb-12">
+      {/* Bottom section - increased height and reduced pb to move button up */}
+      <View className="h-[320px] bg-white px-6 pt-8 pb-6">
         {/* Progress indicators above title */}
         <View className="flex-row justify-center gap-2 mb-4">
           <View className="w-10 h-2 bg-yellow-400 rounded-full" />

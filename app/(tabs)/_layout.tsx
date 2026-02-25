@@ -9,7 +9,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: {
           position: "absolute",
-          bottom: 20,
+          bottom: 40,
           width: "60%",
           marginHorizontal: "20%",
           backgroundColor: "rgba(255, 255, 255, 0.70)", // 90% transparent white
@@ -40,9 +40,8 @@ export default function TabsLayout() {
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <View
-              className={`items-center justify-center ${
-                focused ? "bg-yellow-400 h-12 w-12 rounded-full" : ""
-              }`}
+              className={`items-center justify-center ${focused ? "bg-yellow-400 h-12 w-12 rounded-full" : ""
+                }`}
             >
               <Ionicons
                 name={focused ? "home" : "home-outline"}
@@ -60,9 +59,8 @@ export default function TabsLayout() {
           title: "Location",
           tabBarIcon: ({ color, focused }) => (
             <View
-              className={`items-center justify-center ${
-                focused ? "bg-yellow-400 h-12 w-12 rounded-full" : ""
-              }`}
+              className={`items-center justify-center ${focused ? "bg-yellow-400 h-12 w-12 rounded-full" : ""
+                }`}
             >
               <Ionicons
                 name={focused ? "location" : "location-outline"}
@@ -80,9 +78,8 @@ export default function TabsLayout() {
           title: "Card",
           tabBarIcon: ({ color, focused }) => (
             <View
-              className={`items-center justify-center ${
-                focused ? "bg-yellow-400 h-12 w-12 rounded-full" : ""
-              }`}
+              className={`items-center justify-center ${focused ? "bg-yellow-400 h-12 w-12 rounded-full" : ""
+                }`}
             >
               <Ionicons
                 name={focused ? "cart" : "cart-outline"}
@@ -100,9 +97,8 @@ export default function TabsLayout() {
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
             <View
-              className={`items-center justify-center ${
-                focused ? "bg-yellow-400 h-12 w-12 rounded-full" : ""
-              }`}
+              className={`items-center justify-center ${focused ? "bg-yellow-400 h-12 w-12 rounded-full" : ""
+                }`}
             >
               <Ionicons
                 name={focused ? "person" : "person-outline"}

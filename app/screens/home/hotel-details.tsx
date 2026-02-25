@@ -70,7 +70,7 @@ export default function HotelDetailsScreen() {
   }, []);
 
   // Parse params
-  const hotelId = params.id ? parseInt(params.id as string) : 0;
+  const hotelId = params.id as string;
   const hotelName = (params.name as string) || "Hotel Details";
   const hotelImage = params.image as string;
   const hotelRating = params.rating as string;
@@ -78,7 +78,7 @@ export default function HotelDetailsScreen() {
   const hotelDelivery = params.delivery as string;
   const hotelCategories = params.categories as string;
 
-  const products = HOTEL_PRODUCTS.filter((item) => item.hotelId === hotelId);
+  const products = HOTEL_PRODUCTS.filter((item) => String(item.hotelId) === String(hotelId));
 
   return (
     <View className="flex-1 bg-[#FDFBF7]">

@@ -1,11 +1,11 @@
 import { signInWithGoogle } from "@/services/socialAuth";
 import { useStore } from "@/stores/stores";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -69,7 +69,11 @@ export default function GoogleLogin() {
             {isBusy ? (
               <ActivityIndicator color="#1F1F1F" />
             ) : (
-              <Ionicons name="logo-google" size={20} color="#DB4437" />
+              <Image
+                source={{ uri: "https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-suite-everything-you-need-know-about-google-newest-0.png" }}
+                style={{ width: 24, height: 24 }}
+                resizeMode="contain"
+              />
             )}
             <Text style={styles.providerButtonText}>
               {isBusy ? "Processing..." : "Continue with Google"}
@@ -78,9 +82,9 @@ export default function GoogleLogin() {
         </Pressable>
       </View>
 
-      <Text style={styles.footnote}>
+      {/* <Text style={styles.footnote}>
         Use native build (`npx expo run:android`), not Expo Go.
-      </Text>
+      </Text> */}
     </View>
   );
 }
@@ -94,11 +98,11 @@ const typeFace = Platform.select({
 const styles = StyleSheet.create({
   outerContainer: {
     width: '100%',
-    marginTop: 20,
+    marginTop: -25,
     position: 'relative',
     overflow: 'hidden',
     borderRadius: 24,
-    padding: 2, // for border effect
+    padding: 10, // for border effect
   },
   buttonStack: {
     width: '100%',
