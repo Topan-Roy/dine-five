@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
@@ -145,6 +145,25 @@ export default function LocationScreen() {
           showsMyLocationButton={false}
           onPress={() => setSelectedRestaurant(null)}
         >
+          {/* 📍 Route Line - Only shows when a restaurant is clicked */}
+          {selectedRestaurant && location && (
+            <Polyline
+              coordinates={[
+                {
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                },
+                {
+                  latitude: selectedRestaurant.location.lat,
+                  longitude: selectedRestaurant.location.lng,
+                },
+              ]}
+              strokeColor="#0F73F7"
+              strokeWidth={5}
+              lineDashPattern={[0]}
+            />
+          )}
+
           {restaurants.map((item, idx) => (
             <Marker
               key={`${item.providerId}-${idx}`}
@@ -152,12 +171,24 @@ export default function LocationScreen() {
               onPress={() => setSelectedRestaurant(item)}
             >
               <View className="items-center">
-                <View className={`p-2 rounded-full border-2 shadow-lg ${selectedRestaurant?.providerId === item.providerId ? 'bg-[#FFC107] border-white' : 'bg-white border-[#FFC107]'}`}>
-                  <Ionicons name="restaurant" size={20} color={selectedRestaurant?.providerId === item.providerId ? 'white' : '#FFC107'} />
+                <View className={`rounded-full border-2 shadow-xl ${selectedRestaurant?.providerId === item.providerId ? 'border-[#FFC107] p-0.5 bg-white' : 'p-2 bg-white border-[#FFC107]'}`}>
+                  {selectedRestaurant?.providerId === item.providerId ? (
+                    <Image
+                      source={{ uri: item.profile || 'https://via.placeholder.com/150' }}
+                      style={{ width: 40, height: 40, borderRadius: 20 }}
+                    />
+                  ) : (
+                    <Ionicons name="restaurant" size={20} color="#FFC107" />
+                  )}
                 </View>
-                <View className="bg-white px-2 py-0.5 rounded-full mt-1 border border-gray-100 shadow-sm">
-                  <Text className="text-[10px] font-bold text-gray-800">{item.distance < 1 ? `${Math.round(item.distance * 1000)}m` : `${item.distance.toFixed(1)}km`}</Text>
-                </View>
+                {/* 📍 Click korle durutto dekhabe - Premium Yellow Badge */}
+                {selectedRestaurant?.providerId === item.providerId && (
+                  <View className="bg-yellow-400 px-3 py-1 rounded-full mt-2 border-2 border-white shadow-2xl">
+                    <Text className="text-[14px] font-black text-gray-900">
+                      {item.distance < 1 ? `${Math.round(item.distance * 1000)}m` : `${item.distance.toFixed(1)}km`}
+                    </Text>
+                  </View>
+                )}
               </View>
             </Marker>
           ))}
