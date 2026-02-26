@@ -182,7 +182,7 @@ export default function ProductDetails() {
               <Text className="text-sm font-bold text-[#1F2A33]">
                 {product.rating}
               </Text>
-              <Text className="text-xs text-[#7A7A7A]">Reviews</Text>
+              <Text className="text-xs text-[#7A7A7A]">({product.reviews} Reviews)</Text>
             </View>
             <View className="w-[1px] h-4 bg-[#F2F4F7]" />
             <View className="flex-row items-center gap-1.5">
