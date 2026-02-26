@@ -1596,6 +1596,75 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  createPaymentIntent: async (payload: {
+    providerId: string;
+    items: { foodId: string; quantity: number }[];
+  }) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { accessToken } = get() as any;
+      if (!accessToken) throw new Error("No access token found");
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/stripe/create-payment-intent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const result = await response.json();
+      console.log("createPaymentIntent result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to create payment intent");
+      }
+
+      set({ isLoading: false });
+      return result;
+    } catch (error: any) {
+      console.log("createPaymentIntent error:", error);
+      set({ error: error.message, isLoading: false });
+      return null;
+    }
+  },
+
+  fetchStripeConfig: async () => {
+    try {
+      const { accessToken } = get() as any;
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/stripe/config`,
+        {
+          method: "GET",
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        },
+      );
+
+      const result = await response.json();
+      console.log("fetchStripeConfig result:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch Stripe config");
+      }
+
+      return result;
+    } catch (error: any) {
+      console.log("fetchStripeConfig error:", error);
+      return null;
+    }
+  },
+
+
+
+
+
   createOrder: async (orderData: any) => {
     set({ isLoading: true, error: null });
     try {

@@ -1,14 +1,32 @@
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
+import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function CheckoutScreen() {
+function CheckoutContent() {
   const router = useRouter();
-  const { fetchCart, createOrder, clearCart, foodProviderMap } = useStore() as any;
+  const {
+    fetchCart,
+    createOrder,
+    clearCart,
+    foodProviderMap,
+    createPaymentIntent,
+  } = useStore() as any;
+
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState("Cash On Delivery");
   const [cartTotal, setCartTotal] = useState(0);
@@ -16,8 +34,11 @@ export default function CheckoutScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [cartRawData, setCartRawData] = useState<any>(null);
 
-  // Payment methods
-  const CARDS = ["Cash On Delivery", "Mastercard - Daniel Jones", "Visa - Daniel Jones"];
+  const CARDS = [
+    "Cash On Delivery",
+    "Mastercard - Daniel Jones",
+    "Visa - Daniel Jones",
+  ];
 
   useEffect(() => {
     const loadCartData = async () => {
@@ -25,26 +46,26 @@ export default function CheckoutScreen() {
       if (cartData) {
         setCartRawData(cartData);
         setCartSubtotal(cartData.subtotal || 0);
-        setCartTotal((cartData.subtotal || 0) + 3.99); // Platform fee
+        setCartTotal((cartData.subtotal || 0) + 3.99);
       }
     };
     loadCartData();
   }, []);
 
   const handlePlaceOrder = async () => {
-    if (!cartRawData || !cartRawData.items || cartRawData.items.length === 0) {
+    if (!cartRawData?.items?.length) {
       Alert.alert("Error", "Your cart is empty");
       return;
     }
 
     setIsLoading(true);
-    try {
-      // Extract required fields from cartRawData
-      // Based on error log: providerId (string), items (array), totalPrice (number) are required
 
-      // Each item has a provider. We MUST use the provider's actual ID.
+    try {
       const firstItem = cartRawData.items[0];
-      const foodId = firstItem.foodId?._id || firstItem.foodId?.id || firstItem.foodId;
+      const foodId =
+        firstItem.foodId?._id ||
+        firstItem.foodId?.id ||
+        firstItem.foodId;
 
       const providerId =
         firstItem.providerID ||
@@ -52,48 +73,95 @@ export default function CheckoutScreen() {
         firstItem.providerId ||
         firstItem.foodId?.providerId ||
         firstItem.foodId?.provider?._id ||
-        (typeof firstItem.foodId?.provider === 'string' && firstItem.foodId.provider.length > 20 ? firstItem.foodId.provider : undefined) ||
-        foodProviderMap[foodId]; // Global map lookup as fallback
+        foodProviderMap?.[foodId];
+
       if (!providerId) {
-        console.error("CRITICAL: providerId missing from item data", JSON.stringify(firstItem, null, 2));
+        Alert.alert("Error", "Provider not found");
+        return;
       }
 
+      // ==========================
+      // 💳 STRIPE PAYMENT SECTION
+      // ==========================
+      const shouldUseStripe = selectedCard !== "Cash On Delivery";
+
+      if (shouldUseStripe) {
+        const itemsForPaymentIntent = cartRawData.items.map((item: any) => ({
+          foodId:
+            item.foodId?._id ||
+            item.foodId?.id ||
+            item.foodId,
+          quantity: item.quantity,
+        }));
+
+        const paymentIntentResult = await createPaymentIntent({
+          providerId,
+          items: itemsForPaymentIntent,
+        });
+
+        const clientSecret =
+          paymentIntentResult?.data?.clientSecret;
+
+        if (!clientSecret) {
+          Alert.alert("Payment Error", "Failed to create payment intent");
+          return;
+        }
+
+        const initResult = await initPaymentSheet({
+          merchantDisplayName: "Dine Five",
+          paymentIntentClientSecret: clientSecret,
+        });
+
+        if (initResult.error) {
+          Alert.alert("Payment Error", initResult.error.message);
+          return;
+        }
+
+        const paymentResult = await presentPaymentSheet();
+
+        if (paymentResult.error) {
+          Alert.alert("Payment Failed", paymentResult.error.message);
+          return;
+        }
+      }
+
+      // ==========================
+      // 🛒 CREATE ORDER
+      // ==========================
       const formattedItems = cartRawData.items.map((item: any) => ({
-        foodId: item.foodId?._id || item.foodId?.id || item.foodId,
+        foodId:
+          item.foodId?._id ||
+          item.foodId?.id ||
+          item.foodId,
         quantity: item.quantity,
-        price: item.price
+        price: item.price,
       }));
 
       const orderData = {
-        providerId: providerId,
+        providerId,
         items: formattedItems,
         totalPrice: cartTotal,
         paymentMethod: selectedCard,
-        logisticsType: "Delivery"
+        logisticsType: "Delivery",
       };
-
-      console.log("Submitting Order Data:", JSON.stringify(orderData, null, 2));
-      console.log("First Item Food Data:", JSON.stringify(firstItem.foodId, null, 2));
 
       const result = await createOrder(orderData);
 
-      if (result && result.success) {
-        // Clear the cart after successful order
+      if (result?.success) {
         await clearCart();
+
         router.push({
           pathname: "/screens/card/order-success",
           params: {
             amount: cartTotal.toFixed(2),
-            address: "123 Main St, Apt 4B, New York, NY",
-            paymentMethod: selectedCard
-          }
+            paymentMethod: selectedCard,
+          },
         });
       } else {
         Alert.alert("Error", result?.message || "Failed to place order");
       }
     } catch (error: any) {
-      console.log("Order placement error:", error);
-      Alert.alert("Error", error.message || "An unexpected error occurred");
+      Alert.alert("Error", error.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }
@@ -103,139 +171,103 @@ export default function CheckoutScreen() {
     <SafeAreaView className="flex-1 bg-[#FDFBF7]">
       <StatusBar style="dark" />
 
-      {/* Header */}
       <View className="flex-row items-center justify-center pt-2 pb-6 relative px-4">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="absolute left-4 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+          className="absolute left-4 w-10 h-10 bg-white rounded-full items-center justify-center"
         >
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900">Checkout</Text>
+        <Text className="text-xl font-bold">Checkout</Text>
       </View>
 
       <ScrollView className="flex-1 px-6">
-        {/* Pickup Address */}
-        <View className="mb-6">
-          <View className="flex-row items-start">
-            <Ionicons
-              name="location-outline"
-              size={24}
-              color="#666"
-              style={{ marginTop: 2, marginRight: 12 }}
-            />
-            <View className="flex-1">
-              <Text className="text-gray-500 text-sm mb-1">Delivery Address</Text>
-              <Text className="text-gray-900 font-bold text-base">
-                123 Main St, Apt 4B, New York, NY
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Payment Method */}
         <TouchableOpacity
           onPress={() => setModalVisible(true)}
           className="mb-8"
         >
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-start">
-              <Ionicons
-                name="card-outline"
-                size={24}
-                color="#666"
-                style={{ marginTop: 2, marginRight: 12 }}
-              />
-              <View>
-                <Text className="text-gray-500 text-sm mb-1">Payment Method</Text>
-                <Text className="text-gray-900 font-bold text-base">
-                  {selectedCard}
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
-          </View>
+          <Text className="text-gray-500 mb-1">Payment Method</Text>
+          <Text className="text-gray-900 font-bold">
+            {selectedCard}
+          </Text>
         </TouchableOpacity>
 
-        {/* Summary */}
-        <View className="mt-4 pt-6 border-t border-gray-100">
-          <View className="flex-row justify-between mb-4">
-            <Text className="text-gray-500 text-base">Subtotal</Text>
-            <Text className="text-gray-900 font-bold text-base">${cartSubtotal.toFixed(2)}</Text>
-          </View>
-          <View className="flex-row justify-between mb-4">
-            <Text className="text-gray-500 text-base">Tax</Text>
-            <Text className="text-gray-900 font-bold text-base">$0.00</Text>
-          </View>
-          <View className="flex-row justify-between mb-4">
-            <Text className="text-gray-500 text-base">Platform Fee</Text>
-            <Text className="text-gray-900 font-bold text-base">$3.99</Text>
-          </View>
-          <View className="flex-row justify-between text-lg pt-4 border-t border-gray-100">
-            <Text className="text-gray-900 text-lg font-bold">Total</Text>
-            <Text className="text-gray-900 text-xl font-bold">${cartTotal.toFixed(2)}</Text>
-          </View>
+        <View className="border-t pt-4">
+          <Text>Subtotal: ${cartSubtotal.toFixed(2)}</Text>
+          <Text>Platform Fee: $3.99</Text>
+          <Text className="text-xl font-bold mt-2">
+            Total: ${cartTotal.toFixed(2)}
+          </Text>
         </View>
       </ScrollView>
 
-      {/* Footer */}
-      <View className="absolute bottom-16 left-0 right-0 bg-[#FDFBF7] px-4 py-6 border-t border-gray-100 flex-row items-center justify-between">
-        <Text className="text-2xl font-bold text-gray-900">${cartTotal.toFixed(2)}</Text>
+      <View className="p-6 border-t">
         <TouchableOpacity
           onPress={handlePlaceOrder}
           disabled={isLoading}
-          className={`bg-yellow-400 px-10 py-4 rounded-2xl shadow-md ${isLoading ? 'opacity-70' : ''}`}
+          className="bg-yellow-400 py-4 rounded-xl items-center"
         >
           {isLoading ? (
-            <ActivityIndicator color="#000" />
+            <ActivityIndicator />
           ) : (
-            <Text className="text-gray-900 font-bold text-lg">Place Order</Text>
+            <Text className="font-bold text-lg">
+              Place Order
+            </Text>
           )}
         </TouchableOpacity>
       </View>
 
-      {/* Change Card Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      {/* Modal */}
+      <Modal visible={modalVisible} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl p-6 min-h-[40%]">
-            <View className="items-center mb-6">
-              <View className="w-12 h-1 bg-gray-300 rounded-full mb-4" />
-              <Text className="text-lg font-bold text-gray-900">
-                Choose Payment Method
-              </Text>
-            </View>
-
-            {CARDS.map((card, index) => (
+          <View className="bg-white p-6 rounded-t-3xl">
+            {CARDS.map((card, i) => (
               <TouchableOpacity
-                key={index}
+                key={i}
                 onPress={() => setSelectedCard(card)}
-                className="flex-row items-center justify-between bg-gray-50 p-4 rounded-xl mb-3"
+                className="p-4"
               >
-                <Text className="text-gray-900 font-medium">{card}</Text>
-                <View
-                  className={`w-5 h-5 rounded-full border-2 items-center justify-center ${selectedCard === card ? "border-[#FFC107]" : "border-gray-300"}`}
-                >
-                  {selectedCard === card && (
-                    <View className="w-2.5 h-2.5 rounded-full bg-[#FFC107]" />
-                  )}
-                </View>
+                <Text>{card}</Text>
               </TouchableOpacity>
             ))}
 
             <TouchableOpacity
               onPress={() => setModalVisible(false)}
-              className="bg-yellow-400 w-full py-4 rounded-2xl shadow-md mt-6 items-center"
+              className="bg-yellow-400 py-4 rounded-xl mt-4 items-center"
             >
-              <Text className="text-gray-900 font-bold text-lg">Confirm</Text>
+              <Text className="font-bold">Confirm</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+export default function CheckoutScreen() {
+  const { fetchStripeConfig } = useStore() as any;
+  const [publishableKey, setPublishableKey] = useState("");
+
+  useEffect(() => {
+    const loadKey = async () => {
+      const result = await fetchStripeConfig();
+      const key = result?.data?.publishableKey;
+      if (key) setPublishableKey(key);
+    };
+    loadKey();
+  }, []);
+
+  if (!publishableKey) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center">
+        <ActivityIndicator size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <StripeProvider publishableKey={publishableKey}>
+      <CheckoutContent />
+    </StripeProvider>
   );
 }

@@ -7,14 +7,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function OrderSuccessScreen() {
     const router = useRouter();
-    const { amount, address, paymentMethod } = useLocalSearchParams<{ amount: string; address: string; paymentMethod: string }>();
+
+    const {
+        amount = '0',
+        address = 'Home',
+        paymentMethod = 'Not specified',
+    } = useLocalSearchParams<{
+        amount?: string;
+        address?: string;
+        paymentMethod?: string;
+    }>();
 
     const handleBackToHome = () => {
         router.dismissAll();
         router.navigate('/(tabs)');
     };
 
-    const isCOD = paymentMethod === "Cash On Delivery";
+    const isCOD =
+        paymentMethod === 'Cash On Delivery' ||
+        paymentMethod === 'COD';
+
+    const formattedAmount = Number(amount).toFixed(2);
 
     return (
         <SafeAreaView className="flex-1 bg-[#FDFBF7] justify-between">
@@ -41,41 +54,73 @@ export default function OrderSuccessScreen() {
                 </Text>
 
                 <Text className="text-gray-500 text-center mb-12">
-                    Your order would be delivered in the{'\n'}30 mins atmost
+                    Your order will be delivered within{'\n'}30 minutes.
                 </Text>
 
                 {/* Details */}
-                <View className="w-full space-y-4">
+                <View className="w-full">
+
+                    {/* Estimated Time */}
                     <View className="flex-row justify-between items-center">
                         <View className="flex-row items-center">
-                            <Ionicons name="time-outline" size={20} color="#666" style={{ marginRight: 8 }} />
-                            <Text className="text-gray-500 text-base">Estimated time</Text>
+                            <Ionicons
+                                name="time-outline"
+                                size={20}
+                                color="#666"
+                                style={{ marginRight: 8 }}
+                            />
+                            <Text className="text-gray-500 text-base">
+                                Estimated time
+                            </Text>
                         </View>
-                        <Text className="text-gray-900 font-bold text-base">30mins</Text>
-                    </View>
-
-                    <View className="flex-row justify-between items-center mt-4">
-                        <View className="flex-row items-center">
-                            <Ionicons name="location-outline" size={20} color="#666" style={{ marginRight: 8 }} />
-                            <Text className="text-gray-500 text-base">Delivery to</Text>
-                        </View>
-                        <Text numberOfLines={1} className="text-gray-900 font-bold text-base flex-1 text-right ml-4">
-                            {address || "Home"}
+                        <Text className="text-gray-900 font-bold text-base">
+                            30 mins
                         </Text>
                     </View>
 
+                    {/* Delivery Address */}
                     <View className="flex-row justify-between items-center mt-4">
                         <View className="flex-row items-center">
-                            <Ionicons name="card-outline" size={20} color="#666" style={{ marginRight: 8 }} />
+                            <Ionicons
+                                name="location-outline"
+                                size={20}
+                                color="#666"
+                                style={{ marginRight: 8 }}
+                            />
                             <Text className="text-gray-500 text-base">
-                                {isCOD ? "Amount to Pay" : "Amount Paid"}
+                                Delivery to
                             </Text>
                         </View>
-                        <Text className="text-gray-900 font-bold text-base">${amount || "0.00"}</Text>
+                        <Text
+                            numberOfLines={1}
+                            className="text-gray-900 font-bold text-base flex-1 text-right ml-4">
+                            {address}
+                        </Text>
                     </View>
 
+                    {/* Payment Info */}
+                    <View className="flex-row justify-between items-center mt-4">
+                        <View className="flex-row items-center">
+                            <Ionicons
+                                name="card-outline"
+                                size={20}
+                                color="#666"
+                                style={{ marginRight: 8 }}
+                            />
+                            <Text className="text-gray-500 text-base">
+                                {isCOD ? 'Amount to Pay' : 'Amount Paid'}
+                            </Text>
+                        </View>
+                        <Text className="text-gray-900 font-bold text-base">
+                            ${formattedAmount}
+                        </Text>
+                    </View>
+
+                    {/* Payment Method */}
                     <View className="flex-row justify-between items-center mt-2">
-                        <Text className="text-gray-400 text-xs ml-7">Method: {paymentMethod || "Not specified"}</Text>
+                        <Text className="text-gray-400 text-xs ml-7">
+                            Method: {paymentMethod}
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -85,7 +130,9 @@ export default function OrderSuccessScreen() {
                 <TouchableOpacity
                     onPress={handleBackToHome}
                     className="bg-yellow-400 w-full py-4 rounded-2xl shadow-md items-center">
-                    <Text className="text-gray-900 font-bold text-lg">Back to home</Text>
+                    <Text className="text-gray-900 font-bold text-lg">
+                        Back to Home
+                    </Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>

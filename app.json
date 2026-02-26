@@ -61,6 +61,13 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.mdalifk2002.DineFive",
+          "enableGooglePay": true
+        }
       ]
     ],
     "experiments": {
