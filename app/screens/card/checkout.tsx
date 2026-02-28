@@ -1,7 +1,7 @@
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
 import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
@@ -27,8 +27,11 @@ function CheckoutContent() {
 
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
+  const params = useLocalSearchParams<{ paymentMethod?: string }>();
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedCard, setSelectedCard] = useState("Cash On Delivery");
+  const [selectedCard, setSelectedCard] = useState(
+    params.paymentMethod === "CARD" ? "Visa - Daniel Jones" : "Cash On Delivery"
+  );
   const [cartTotal, setCartTotal] = useState(0);
   const [cartSubtotal, setCartSubtotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);

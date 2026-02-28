@@ -54,8 +54,8 @@ export default function LocationScreen() {
       mapRef.current?.animateToRegion({
         latitude: location.latitude,
         longitude: location.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
       }, 1000);
     }
   }, [location?.latitude, location?.longitude]);

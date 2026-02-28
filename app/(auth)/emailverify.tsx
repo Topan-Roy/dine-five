@@ -22,7 +22,7 @@ const EmailVerify = () => {
     type?: string;
   }>();
   const [code, setCode] = useState("");
-  const { isLoading, verifyOTP, verifyForgotOTP } = useStore() as any; // adjust according to your store
+  const { isLoading, verifyOTP, verifyForgotOTP } = useStore() as any;
 
   const handleEmailVerif = async () => {
     if (!code) {
@@ -85,7 +85,7 @@ const EmailVerify = () => {
           >
             <View className="flex-1 items-center justify-center">
               <Image
-                source={require("@/assets/images/logo.jpg")}
+                source={require("@/assets/icon.png")}
                 contentFit="contain"
                 style={{
                   height: 200,

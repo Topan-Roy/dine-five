@@ -205,8 +205,8 @@ export default function ConfirmOrderScreen() {
                     <TouchableOpacity
                         onPress={() => setSelectedPayment('COD')}
                         className={`p-4 rounded-xl mb-3 ${selectedPayment === 'COD'
-                                ? 'bg-yellow-200'
-                                : 'bg-white'
+                            ? 'bg-yellow-200'
+                            : 'bg-white'
                             }`}>
                         <Text>Cash on Delivery</Text>
                     </TouchableOpacity>
@@ -214,8 +214,8 @@ export default function ConfirmOrderScreen() {
                     <TouchableOpacity
                         onPress={() => setSelectedPayment('CARD')}
                         className={`p-4 rounded-xl ${selectedPayment === 'CARD'
-                                ? 'bg-yellow-200'
-                                : 'bg-white'
+                            ? 'bg-yellow-200'
+                            : 'bg-white'
                             }`}>
                         <Text>Card Payment</Text>
                     </TouchableOpacity>

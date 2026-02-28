@@ -25,7 +25,7 @@ const Login = () => {
           >
             <View className="flex-1 items-center justify-center">
               <Image
-                source={require("@/assets/images/logo.jpg")}
+                source={require("@/assets/icon.png")}
                 contentFit="contain"
                 style={{
                   height: 200,
