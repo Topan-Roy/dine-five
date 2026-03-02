@@ -1,10 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Location from "expo-location";
 import { create } from "zustand";
 
 const STORAGE_KEYS = {
   USER: "auth_user",
   ACCESS_TOKEN: "auth_access_token",
   REFRESH_TOKEN: "auth_refresh_token",
+  LOCATION: "user_location",
 };
 
 const translateApiMessage = (code: string) => {
@@ -32,6 +34,7 @@ export const useStore = create((set, get) => ({
   cartItems: [] as any[],
   toast: { visible: false, message: "", type: "success" as "success" | "error" | "info" },
   foodProviderMap: {} as Record<string, string>,
+  address: "Set location",
 
   // // this is for user profile
   // userProfile: async () => {
@@ -62,6 +65,10 @@ export const useStore = create((set, get) => ({
       const promises = [
         AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user)),
       ];
+
+      if (user?.address) {
+        promises.push(AsyncStorage.setItem(STORAGE_KEYS.LOCATION, user.address));
+      }
 
       if (accessToken) {
         promises.push(
@@ -95,15 +102,19 @@ export const useStore = create((set, get) => ({
 
       if (user) {
         const parsedUser = JSON.parse(user);
+        const storedLocation = await AsyncStorage.getItem(STORAGE_KEYS.LOCATION);
+
         set({
           user: parsedUser,
           accessToken: accessToken || null,
           refreshToken: refreshToken || null,
+          address: storedLocation || parsedUser.address || "Set location",
           isInitialized: true,
         });
         return { user: parsedUser, accessToken };
       } else {
-        set({ isInitialized: true });
+        const storedLocation = await AsyncStorage.getItem(STORAGE_KEYS.LOCATION);
+        set({ isInitialized: true, address: storedLocation || "Set location" });
         return { user: null, accessToken: null };
       }
     } catch (error) {
@@ -1827,6 +1838,42 @@ export const useStore = create((set, get) => ({
   },
 
   setToast: (toast: any) => set({ toast }),
+
+  updateUserLocation: async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        return "Permission denied";
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      const reverseGeocode = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+
+      if (reverseGeocode.length > 0) {
+        const addr = reverseGeocode[0];
+        const displayAddress = `${addr.name || addr.street || ''} ${addr.city || addr.subregion || ''}`.trim() || "Unknown Location";
+
+        set({ address: displayAddress });
+        await AsyncStorage.setItem(STORAGE_KEYS.LOCATION, displayAddress);
+
+        // If user is logged in, sync with profile
+        const currentUser = (get() as any).user;
+        if (currentUser) {
+          await (get() as any).updateProfile({ address: displayAddress });
+        }
+
+        return displayAddress;
+      }
+    } catch (error) {
+      console.log("updateUserLocation error:", error);
+      return null;
+    }
+  },
 }));
 
 

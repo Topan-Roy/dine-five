@@ -7,7 +7,11 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 export const HomeHeader = () => {
     const router = useRouter();
-    const { user } = useStore() as any;
+    const { user, address, updateUserLocation } = useStore() as any;
+
+    React.useEffect(() => {
+        updateUserLocation();
+    }, []);
 
     return (
         <View className="flex-row items-center justify-between px-4 pt-3  bg-[#FDFBF7]">
@@ -34,7 +38,7 @@ export const HomeHeader = () => {
                             numberOfLines={1}
                             className="text-xs text-gray-500 ml-1 max-w-[150px]"
                         >
-                            {user?.address || "Set location"}
+                            {address || "Set location"}
                         </Text>
                     </View>
                 </View>
