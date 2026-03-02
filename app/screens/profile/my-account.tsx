@@ -208,7 +208,7 @@ export default function MyAccountScreen() {
                 </TouchableOpacity>
               )}
             </View>
-            <Text className="text-2xl font-bold text-gray-900 text-center mt-4">
+            <Text className="text-xl font-bold text-gray-900 text-center mt-4">
               {formData.name}
             </Text>
             <Text className="text-gray-500 text-sm text-center mt-1">
