@@ -14,10 +14,12 @@ export const PopularItems = ({
   onAddItem,
   searchText = "",
   activeCategory = "All",
+  refreshKey = 0,
 }: {
   onAddItem: (item: any) => void;
   searchText?: string;
   activeCategory?: string;
+  refreshKey?: number;
 }) => {
   const router = useRouter();
   const { fetchFeed } = useStore() as any;
@@ -26,6 +28,7 @@ export const PopularItems = ({
 
   useEffect(() => {
     const loadFeed = async () => {
+      if (items.length === 0) setLoading(true);
       const data = await fetchFeed();
       if (Array.isArray(data)) {
         setItems(data);
@@ -38,7 +41,7 @@ export const PopularItems = ({
       setLoading(false);
     };
     loadFeed();
-  }, [fetchFeed]);
+  }, [fetchFeed, refreshKey]);
 
   const filteredItems = items.filter((item) => {
     const matchesSearch = (item.name || "")

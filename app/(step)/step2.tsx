@@ -17,13 +17,13 @@ const step2 = () => {
       {/* Full screen image background */}
       <View className="flex-1 relative">
         <ImageBackground
-          source={require("@/assets/images/stap2.png")}
+          source={require("@/assets/images/22.png")}
           resizeMode="cover"
           className="flex-1"
         >
           {/* Skip button */}
-          <View className="absolute top-12 right-6">
-            <TouchableOpacity onPress={() => router.push("/(step)/step2")}>
+          <View className="absolute top-12 right-3">
+            <TouchableOpacity onPress={() => router.push("/(step)/step4")}>
               <Text className="text-base font-medium text-[#FFCD39]">Skip</Text>
             </TouchableOpacity>
           </View>
@@ -31,9 +31,10 @@ const step2 = () => {
           {/* Progress indicators - Step 2 active */}
           <View className="flex-row justify-between items-center px-6 pt-14">
             <View className="flex-row gap-2">
-              <View className="w-28 h-2 bg-gray-400 rounded-full" />
-              <View className="w-28 h-2 bg-yellow-400 rounded-full" />
-              <View className="w-28 h-2 bg-gray-400 rounded-full" />
+              <View className="w-20 h-2 bg-gray-400 rounded-full" />
+              <View className="w-20 h-2 bg-yellow-400 rounded-full" />
+              <View className="w-20 h-2 bg-gray-400 rounded-full" />
+              <View className="w-20 h-2 bg-gray-400 rounded-full" />
             </View>
           </View>
         </ImageBackground>
@@ -46,17 +47,17 @@ const step2 = () => {
           <View className="w-6 h-2 bg-gray-200 rounded-full" />
           <View className="w-10 h-2 bg-yellow-400 rounded-full" />
           <View className="w-6 h-2 bg-gray-200 rounded-full" />
+          <View className="w-6 h-2 bg-gray-200 rounded-full" />
         </View>
 
         {/* Title */}
-        <Text className="text-4xl font-bold text-gray-900 mb-4 text-center">
-          High Quality, Lower Prices
+        <Text className="text-3xl font-bold text-gray-900 mb-4 text-center">
+          Good for You, Great for Local Shops
         </Text>
 
         {/* Description */}
         <Text className="text-base text-gray-600 leading-relaxed mb-8 text-center">
-          Eat well for less. Support your local shops and enjoy great flavors at
-          a fraction of the cost.
+          In an expensive economy, we help local businesses thrive by recouping ingredient costs. You get a fresh meal; they keep their doors open. It's a win-win.
         </Text>
 
         {/* Next button - full width */}

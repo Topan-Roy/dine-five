@@ -8,7 +8,7 @@ const ITEM_WIDTH = width * 0.88;
 const ITEM_SPACING = 16;
 const SNAP_THRESHOLD = ITEM_WIDTH + ITEM_SPACING;
 
-export const PromoBanner = () => {
+export const PromoBanner = ({ refreshKey = 0 }: { refreshKey?: number }) => {
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -17,6 +17,7 @@ export const PromoBanner = () => {
 
   useEffect(() => {
     const loadBanners = async () => {
+      if (banners.length === 0) setLoading(true);
       try {
         const data = await fetchBanners();
         if (data && data.length > 0) {
@@ -50,7 +51,7 @@ export const PromoBanner = () => {
       }
     };
     loadBanners();
-  }, []);
+  }, [fetchBanners, refreshKey]);
 
   // Auto-sliding logic
   useEffect(() => {

@@ -46,9 +46,11 @@ const HOTELS: HotelCard[] = [
 export const PopularHotels = ({
   searchText = "",
   activeCategory = "All",
+  refreshKey = 0,
 }: {
   searchText?: string;
   activeCategory?: string;
+  refreshKey?: number;
 }) => {
   const router = useRouter();
   const [hotels, setHotels] = React.useState<HotelCard[]>(HOTELS);
@@ -110,7 +112,7 @@ export const PopularHotels = ({
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   const filteredHotels = hotels.filter((hotel) => {
     const matchesSearch = hotel.name

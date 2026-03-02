@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { Alert, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Modal, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
@@ -20,6 +20,8 @@ export default function HomeScreen() {
   const [searchText, setSearchText] = React.useState("");
   const [filterModalVisible, setFilterModalVisible] = React.useState(false);
   const [activeCategory, setActiveCategory] = React.useState("All");
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
   const params = useLocalSearchParams();
 
   React.useEffect(() => {
@@ -46,6 +48,19 @@ export default function HomeScreen() {
     if (result) await fetchCart();
   };
 
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchCart();
+      // Incrementing refreshKey will force child components to remount and re-fetch their data
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchCart]);
+
   useFocusEffect(
     React.useCallback(() => {
       fetchCart();
@@ -64,6 +79,14 @@ export default function HomeScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#EAB308"]} // Yellow color to match theme
+              tintColor="#EAB308"
+            />
+          }
         >
           <HomeHeader />
           <SearchBar
@@ -71,7 +94,7 @@ export default function HomeScreen() {
             onSearch={setSearchText}
             onFilterPress={() => setFilterModalVisible(true)}
           />
-          <PromoBanner />
+          <PromoBanner refreshKey={refreshKey} />
           <Categories
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
@@ -81,9 +104,14 @@ export default function HomeScreen() {
             onAddItem={handleAddItem}
             searchText={searchText}
             activeCategory={activeCategory}
+            refreshKey={refreshKey}
           />
 
-          <PopularHotels searchText={searchText} activeCategory={activeCategory} />
+          <PopularHotels
+            searchText={searchText}
+            activeCategory={activeCategory}
+            refreshKey={refreshKey}
+          />
 
           <Modal
             animationType="fade"

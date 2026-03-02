@@ -2,7 +2,6 @@ import { useStore } from "@/stores/stores";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
-import { ImageBackground, View } from "react-native";
 
 const SplashScreen = () => {
   const { user, accessToken, initializeAuth } = useStore() as any;
@@ -32,22 +31,11 @@ const SplashScreen = () => {
 
 
   return (
-    <ImageBackground
-      source={require("@/assets/images/splash-screen.png")}
-      resizeMode="cover"
+    <Image
+      source={require("@/assets/images/image2.png")}
+      contentFit="cover"
       style={{ flex: 1, width: "100%", height: "100%" }}
-    >
-      <View className="flex-1 items-center justify-center">
-        <Image
-          source={require("@/assets/images/image1.jpg")}
-          contentFit="contain"
-          style={{
-            height: 320,
-            width: 320,
-          }}
-        />
-      </View>
-    </ImageBackground>
+    />
   );
 };
 
