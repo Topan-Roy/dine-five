@@ -22,7 +22,7 @@ export const PopularItems = ({
   refreshKey?: number;
 }) => {
   const router = useRouter();
-  const { fetchFeed } = useStore() as any;
+  const { fetchFeed, cartItems } = useStore() as any;
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,6 +57,13 @@ export const PopularItems = ({
     return !!(matchesSearch && matchesCategory);
   });
 
+  const isItemInCart = (itemId: string) => {
+    return (cartItems || []).some((cartItem: any) => {
+      const cartFoodId = cartItem?.foodId?._id || cartItem?.foodId?.id || cartItem?.foodId;
+      return String(cartFoodId) === String(itemId);
+    });
+  };
+
   if (loading) {
     return (
       <View className="py-10 items-center justify-center">
@@ -70,70 +77,83 @@ export const PopularItems = ({
   return (
     <View className="px-4">
       <View className="flex-row flex-wrap justify-between">
-        {filteredItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            activeOpacity={0.9}
-            onPress={() => {
-              router.push({
-                pathname: "/screens/home/product-details",
-                params: {
-                  id: item.id,
-                  foodId: item.id,
-                  name: item.name,
-                  price: (item.price ?? 0).toString(),
-                  image: item.image || "",
-                  rating: (item.rating ?? 0).toString(),
-                  reviews: "0",
-                  restaurantName: item.provider || "",
-                  restaurantProfile: "",
-                  isFavorite: "false",
-                  productDescription: item.productDescription || "",
-                  providerId: item.providerID || item.providerId || "",
-                },
-              });
-            }}
-            className="w-[48%] mt-4 bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100"
-          >
-            <View className="relative">
-              <Image
-                source={{ uri: item.image }}
-                className="w-full h-32 rounded-xl"
-                resizeMode="cover"
-              />
-              {item.inStock === true && (
-                <View className="absolute top-2 left-2 bg-yellow-400 px-2 py-0.5 rounded-full shadow-sm">
-                  <Text className="text-[10px] font-bold text-[#332701]">New</Text>
-                </View>
-              )}
-            </View>
+        {filteredItems.map((item) => {
+          const inCart = isItemInCart(item.id || item._id);
 
-            <Text
-              numberOfLines={2}
-              className="text-sm font-bold text-[#122511] mt-2 leading-tight h-8"
+          return (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.9}
+              onPress={() => {
+                if (inCart) {
+                  router.push("/(tabs)/card");
+                  return;
+                }
+                router.push({
+                  pathname: "/screens/home/product-details",
+                  params: {
+                    id: item.id,
+                    foodId: item.id,
+                    name: item.name,
+                    price: (item.price ?? 0).toString(),
+                    image: item.image || "",
+                    rating: (item.rating ?? 0).toString(),
+                    reviews: "0",
+                    restaurantName: item.provider || "",
+                    restaurantProfile: "",
+                    isFavorite: "false",
+                    productDescription: item.productDescription || "",
+                    providerId: item.providerID || item.providerId || "",
+                    serviceFee: (item.serviceFee ?? 0).toString(),
+                  },
+                });
+              }}
+              className="w-[48%] mt-4 bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100"
             >
-              {item.name}
-            </Text>
-
-
-            <View className="flex-row items-center justify-between mt-2">
-              <View className="bg-[#FFE69C] px-3 py-1 rounded-full">
-                <Text className="text-sm font-bold text-[#332701]">
-                  ${item.price}
-                </Text>
+              <View className="relative">
+                <Image
+                  source={{ uri: item.image }}
+                  className="w-full h-32 rounded-xl"
+                  resizeMode="cover"
+                />
+                {item.inStock === true && (
+                  <View className="absolute top-2 left-2 bg-yellow-400 px-2 py-0.5 rounded-full shadow-sm">
+                    <Text className="text-[10px] font-bold text-[#332701]">New</Text>
+                  </View>
+                )}
               </View>
-              <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onAddItem(item);
-                }}
-                className="w-8 h-8 bg-yellow-400 rounded-full items-center justify-center shadow-sm"
+
+              <Text
+                numberOfLines={2}
+                className="text-sm font-bold text-[#122511] mt-2 leading-tight h-8"
               >
-                <Ionicons name="add" size={20} color="#332701" />
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        ))}
+                {item.name}
+              </Text>
+
+
+              <View className="flex-row items-center justify-between mt-2">
+                <View className="bg-[#FFE69C] px-3 py-1 rounded-full">
+                  <Text className="text-sm font-bold text-[#332701]">
+                    ${item.price}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    if (inCart) {
+                      router.push("/(tabs)/card");
+                      return;
+                    }
+                    onAddItem(item);
+                  }}
+                  className={`w-8 h-8 ${inCart ? 'bg-green-500' : 'bg-yellow-400'} rounded-full items-center justify-center shadow-sm`}
+                >
+                  <Ionicons name={inCart ? "cart" : "add"} size={20} color={inCart ? "#fff" : "#332701"} />
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );

@@ -96,7 +96,7 @@ export const PromoBanner = ({ refreshKey = 0 }: { refreshKey?: number }) => {
       <View style={{ width: ITEM_WIDTH }} className="mr-4">
         <View
           style={{ backgroundColor: "#FFE69C" }}
-          className="rounded-[32px] flex-row items-center justify-between overflow-hidden relative min-h-[160px] p-6"
+          className="rounded-[32px] flex-row items-center justify-between overflow-hidden relative min-h-[160px] p-4"
         >
           {/* Text Content */}
           <View className="z-10 flex-1 pr-2">

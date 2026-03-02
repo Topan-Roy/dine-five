@@ -44,6 +44,7 @@ function CheckoutContent() {
     foodId?: string;
     quantity?: string;
     price?: string;
+    serviceFee?: string;
   }>();
 
   const isBuyNow = params.buyNow === "true";
@@ -77,6 +78,7 @@ function CheckoutContent() {
         {
           foodId,
           quantity: Math.max(1, Number(params.quantity || 1)),
+          serviceFee: Number(params.serviceFee || 0),
         },
       ],
       orderItems: [
@@ -84,10 +86,27 @@ function CheckoutContent() {
           foodId,
           quantity: Math.max(1, Number(params.quantity || 1)),
           price: Number(params.price || 0),
+          serviceFee: Number(params.serviceFee || 0),
         },
       ],
     };
-  }, [isBuyNow, params.providerId, params.foodId, params.quantity, params.price, foodProviderMap]);
+  }, [isBuyNow, params.providerId, params.foodId, params.quantity, params.price, params.serviceFee, foodProviderMap]);
+
+  const calculatedServiceFee = useMemo(() => {
+    if (isBuyNow && buyNowData) {
+      return buyNowData.orderItems.reduce((sum: number, item: any) => sum + (Number(item.serviceFee || 0) * item.quantity), 0);
+    }
+    if (cartRawData && cartRawData.items) {
+      return cartRawData.items.reduce((sum: number, item: any) => {
+        const fee = item.foodId?.serviceFee || item.serviceFee || 0;
+        return sum + (Number(fee) * item.quantity);
+      }, 0);
+    }
+    return 0;
+  }, [isBuyNow, buyNowData, cartRawData]);
+
+  const displayServiceFee = calculatedServiceFee;
+  const currentTotal = pricing.subtotal + displayServiceFee + pricing.stateTax;
 
   const CARDS = ["Mastercard - Daniel Jones", "Visa - Daniel Jones"];
 
@@ -102,7 +121,6 @@ function CheckoutContent() {
       firstItem.providerID ||
       firstItem.foodId?.providerID ||
       firstItem.providerId ||
-      firstItem.foodId?.providerId ||
       firstItem.foodId?.provider?._id ||
       foodProviderMap?.[foodId] ||
       "";
@@ -110,12 +128,14 @@ function CheckoutContent() {
     const itemsForPaymentIntent = cartData.items.map((item: any) => ({
       foodId: item.foodId?._id || item.foodId?.id || item.foodId,
       quantity: item.quantity,
+      serviceFee: item.foodId?.serviceFee || item.serviceFee || 0,
     }));
 
     const orderItems = cartData.items.map((item: any) => ({
       foodId: item.foodId?._id || item.foodId?.id || item.foodId,
       quantity: item.quantity,
       price: item.price,
+      serviceFee: item.foodId?.serviceFee || item.serviceFee || 0,
     }));
 
     return { providerId, itemsForPaymentIntent, orderItems };
@@ -189,8 +209,8 @@ function CheckoutContent() {
     const source = isBuyNow
       ? buyNowData
       : cartRawData?.items?.length
-      ? getProviderAndItems(cartRawData)
-      : null;
+        ? getProviderAndItems(cartRawData)
+        : null;
 
     if (!source || !source.itemsForPaymentIntent?.length) {
       Alert.alert("Error", "No items to checkout");
@@ -246,7 +266,7 @@ function CheckoutContent() {
       const orderData = {
         providerId: source.providerId,
         items: source.orderItems,
-        totalPrice: pricing.total,
+        totalPrice: currentTotal,
         paymentMethod: selectedCard,
         logisticsType: "Delivery",
       };
@@ -261,7 +281,7 @@ function CheckoutContent() {
         router.push({
           pathname: "/screens/card/order-success",
           params: {
-            amount: pricing.total.toFixed(2),
+            amount: currentTotal.toFixed(2),
             paymentMethod: selectedCard,
           },
         });
@@ -295,22 +315,37 @@ function CheckoutContent() {
           <Text className="text-gray-900 font-bold">{selectedCard}</Text>
         </TouchableOpacity>
 
-        <View className="border-t pt-4">
-          <Text>Text: ${pricing.textFee.toFixed(2)}</Text>
-          <Text>Subtotal: ${pricing.subtotal.toFixed(2)}</Text>
-          <Text>City Tax: ${pricing.stateTax.toFixed(2)}</Text>
-          <Text className="text-xl font-bold mt-2">Total: ${pricing.total.toFixed(2)}</Text>
+        <View className="border-t pt-4 space-y-2">
+          <View className="flex-row justify-between mb-2">
+            <Text className="text-gray-600">Subtotal</Text>
+            <Text className="text-gray-900">${pricing.subtotal.toFixed(2)}</Text>
+          </View>
+          <View className="flex-row justify-between mb-2">
+            <Text className="text-gray-600">Service Fee</Text>
+            <Text className="text-gray-900">${displayServiceFee.toFixed(2)}</Text>
+          </View>
+          <View className="flex-row justify-between mb-2">
+            <Text className="text-gray-600">City Tax</Text>
+            <Text className="text-gray-900">${pricing.stateTax.toFixed(2)}</Text>
+          </View>
+          <View className="flex-row justify-between mt-4 pt-4 border-t">
+            <Text className="text-xl font-bold">Total</Text>
+            <Text className="text-xl font-bold">${currentTotal.toFixed(2)}</Text>
+          </View>
         </View>
       </ScrollView>
 
-      <View className="p-6 border-t">
-        <TouchableOpacity
-          onPress={handlePlaceOrder}
-          disabled={isLoading}
-          className="bg-yellow-400 py-4 rounded-xl items-center"
-        >
-          {isLoading ? <ActivityIndicator /> : <Text className="font-bold text-lg">Place Order</Text>}
-        </TouchableOpacity>
+      <View className="p-6 border-t bg-[#FDFBF7]">
+        <View className="flex-row justify-between mb-4">
+          <Text className="text-2xl font-bold">${currentTotal.toFixed(2)}</Text>
+          <TouchableOpacity
+            onPress={handlePlaceOrder}
+            disabled={isLoading}
+            className="bg-yellow-400 px-10 py-4 rounded-2xl shadow-md"
+          >
+            {isLoading ? <ActivityIndicator color="#111" /> : <Text className="font-bold text-lg text-[#111]">Confirm & Pay</Text>}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Modal visible={modalVisible} transparent animationType="slide">
@@ -331,7 +366,7 @@ function CheckoutContent() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 

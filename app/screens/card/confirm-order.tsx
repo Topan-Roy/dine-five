@@ -35,6 +35,7 @@ export default function ConfirmOrderScreen() {
         image?: string;
         quantity?: string;
         providerId?: string;
+        serviceFee?: string;
     }>();
 
     const {
@@ -73,12 +74,13 @@ export default function ConfirmOrderScreen() {
             image: String(params.image || ''),
             quantity: qty,
             providerId: String(params.providerId || ''),
+            serviceFee: parseFloat(params.serviceFee || '0'),
         };
-    }, [isBuyNow, params.foodId, params.quantity, params.price, params.name, params.image, params.providerId]);
+    }, [isBuyNow, params.foodId, params.quantity, params.price, params.name, params.image, params.providerId, params.serviceFee]);
 
     const loadPricing = async (
         providerId: string,
-        itemsForPaymentIntent: { foodId: string; quantity: number }[],
+        itemsForPaymentIntent: { foodId: string; quantity: number; serviceFee?: number; price?: number }[],
         fallbackSubtotal: number
     ) => {
         if (!providerId || !itemsForPaymentIntent.length) {
@@ -135,7 +137,11 @@ export default function ConfirmOrderScreen() {
             const providerId = buyNowBaseItem.providerId || foodProviderMap?.[buyNowBaseItem.foodId] || '';
             await loadPricing(
                 providerId,
-                [{ foodId: buyNowBaseItem.foodId, quantity: buyNowBaseItem.quantity }],
+                [{
+                    foodId: buyNowBaseItem.foodId,
+                    quantity: buyNowBaseItem.quantity,
+                    serviceFee: buyNowBaseItem.serviceFee || 0
+                }],
                 localSubtotal
             );
             return;
@@ -158,6 +164,7 @@ export default function ConfirmOrderScreen() {
                     item.foodId?.providerId ||
                     item.foodId?.provider?._id ||
                     '',
+                serviceFee: item.foodId?.serviceFee || item.serviceFee || 0,
             }));
 
             setCartItems(formattedItems);
@@ -169,6 +176,7 @@ export default function ConfirmOrderScreen() {
             const itemsForPaymentIntent = formattedItems.map((item: any) => ({
                 foodId: item.foodId,
                 quantity: item.quantity,
+                serviceFee: item.serviceFee || 0,
             }));
 
             await loadPricing(providerId, itemsForPaymentIntent, localSubtotal);
@@ -233,7 +241,12 @@ export default function ConfirmOrderScreen() {
         }
     };
 
-    const total = pricing.total || subtotal;
+    const calculatedServiceFee = useMemo(() => {
+        return cartItems.reduce((sum, item) => sum + (Number(item.serviceFee || 0) * item.quantity), 0);
+    }, [cartItems]);
+
+    const displayServiceFee = calculatedServiceFee;
+    const total = subtotal + displayServiceFee + pricing.stateTax;
 
     const handleContinue = () => {
         if (!cartItems.length) {
@@ -243,11 +256,12 @@ export default function ConfirmOrderScreen() {
 
         if (isBuyNow) {
             const item = cartItems[0];
+            const pid = item.providerId || foodProviderMap?.[item.foodId] || '';
             router.push({
                 pathname: '/screens/card/checkout',
                 params: {
                     buyNow: 'true',
-                    providerId: String(providerId),
+                    providerId: String(pid),
                     foodId: String(item.foodId),
                     quantity: String(item.quantity),
                     price: String(item.price),
@@ -346,8 +360,8 @@ export default function ConfirmOrderScreen() {
                     </View>
 
                     <View className="flex-row justify-between mt-2">
-                        <Text>Text</Text>
-                        <Text>${pricing.textFee.toFixed(2)}</Text>
+                        <Text>Service Fee</Text>
+                        <Text>${displayServiceFee.toFixed(2)}</Text>
                     </View>
 
                     <View className="flex-row justify-between mt-2">

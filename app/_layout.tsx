@@ -1,5 +1,8 @@
+import { Toast } from "@/components/common/Toast";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 
 import { useStore } from "@/stores/stores";
@@ -15,9 +18,12 @@ export default function RootLayout() {
   if (!isInitialized) return null;
 
   return (
-    <>
-      <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }} />
-    </>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <Stack screenOptions={{ headerShown: false }} />
+        <Toast />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

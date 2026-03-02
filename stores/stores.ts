@@ -29,6 +29,8 @@ export const useStore = create((set, get) => ({
   favorites: [] as string[],
   cartCount: 0,
   cartSubtotal: 0,
+  cartItems: [] as any[],
+  toast: { visible: false, message: "", type: "success" as "success" | "error" | "info" },
   foodProviderMap: {} as Record<string, string>,
 
   // // this is for user profile
@@ -1427,6 +1429,9 @@ export const useStore = create((set, get) => ({
 
       set({ isLoading: false });
 
+      // Show toast on success
+      (get() as any).showToast(`${item.name || "Item"} added to cart`, "success");
+
       // Update global cart summary after adding
       const cartData = await (get() as any).fetchCart();
 
@@ -1434,6 +1439,7 @@ export const useStore = create((set, get) => ({
     } catch (error: any) {
       console.log("addToCart error:", error);
       set({ error: error.message, isLoading: false });
+      (get() as any).showToast(error.message || "Failed to add to cart", "error");
       return null;
     }
   },
@@ -1463,7 +1469,8 @@ export const useStore = create((set, get) => ({
       set({
         isLoading: false,
         cartCount: (result.data?.items || []).reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0),
-        cartSubtotal: Number(result.data?.subtotal || 0)
+        cartSubtotal: Number(result.data?.subtotal || 0),
+        cartItems: result.data?.items || [],
       });
       return result.data;
     } catch (error: any) {
@@ -1598,7 +1605,7 @@ export const useStore = create((set, get) => ({
 
   createPaymentIntent: async (payload: {
     providerId: string;
-    items: { foodId: string; quantity: number }[];
+    items: { foodId: string; quantity: number; serviceFee?: number; price?: number }[];
   }) => {
     set({ isLoading: true, error: null });
     try {
@@ -1807,6 +1814,19 @@ export const useStore = create((set, get) => ({
       throw error;
     }
   },
+
+  showToast: (message: string, type: "success" | "error" | "info" = "success") => {
+    set({ toast: { visible: true, message, type } });
+    setTimeout(() => {
+      set((state: any) => ({ toast: { ...state.toast, visible: false } }));
+    }, 3000);
+  },
+
+  hideToast: () => {
+    set((state: any) => ({ toast: { ...state.toast, visible: false } }));
+  },
+
+  setToast: (toast: any) => set({ toast }),
 }));
 
 

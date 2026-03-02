@@ -7,15 +7,16 @@ import { SearchBar } from "@/components/home/SearchBar";
 import { ViewCart } from "@/components/home/ViewCart";
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { Alert, Modal, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Modal, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { cartCount, cartSubtotal, fetchCart, addToCart } = useStore() as any;
+  const router = useRouter();
+  const { cartCount, cartSubtotal, fetchCart, addToCart, cartItems } = useStore() as any;
 
   const [searchText, setSearchText] = React.useState("");
   const [filterModalVisible, setFilterModalVisible] = React.useState(false);
@@ -31,21 +32,19 @@ export default function HomeScreen() {
   }, [params.category]);
 
   const handleAddItem = async (item: any) => {
-    const cartData = await fetchCart();
-    const targetFoodId = item?.foodId || item?._id || item?.id;
+    const targetFoodId = item?.id || item?.foodId || item?._id;
 
-    const alreadyInCart = (cartData?.items || []).some((cartItem: any) => {
-      const cartFoodId = cartItem?.foodId?._id || cartItem?.foodId?.id || cartItem?.foodId;
+    const alreadyInCart = (cartItems || []).some((cartItem: any) => {
+      const cartFoodId = cartItem?.foodId?._id || cartItem?.foodId?.id || cartItem?.foodId || cartItem?._id;
       return String(cartFoodId) === String(targetFoodId);
     });
 
     if (alreadyInCart) {
-      Alert.alert("Already Added", "This product is already in your cart.");
+      router.push("/(tabs)/card");
       return;
     }
 
     const result = await addToCart(item, 1);
-    if (result) await fetchCart();
   };
 
   const onRefresh = React.useCallback(async () => {
@@ -64,11 +63,8 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       fetchCart();
-      const intervalId = setInterval(() => {
-        fetchCart();
-      }, 3000);
-
-      return () => clearInterval(intervalId);
+      // Removed interval fetching because it was causing rate limit errors ("Too many cart requests").
+      return () => { };
     }, [fetchCart])
   );
 

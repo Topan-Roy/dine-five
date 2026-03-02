@@ -33,6 +33,7 @@ export default function ProductDetails() {
     restaurantName,
     restaurantProfile,
     providerId: paramProviderId,
+    serviceFee: paramServiceFee,
   } = params;
   const productId = (id as string) || (foodId as string) || "1";
 
@@ -85,6 +86,7 @@ export default function ProductDetails() {
     restaurantName: (restaurantName as string) || "The Gourmet Kitchen",
     restaurantProfile: (restaurantProfile as string) || "",
     providerId: paramProviderId as string,
+    serviceFee: parseFloat(paramServiceFee as string) || 0,
   };
 
   const isFav =
@@ -111,9 +113,12 @@ export default function ProductDetails() {
     try {
       const result = await addToCart(product, quantity);
       if (result) {
-        router.push("/(tabs)/card");
+        // Success toast is handled internally in addToCart
+        setTimeout(() => {
+          router.push("/(tabs)/card");
+        }, 1000);
       } else {
-        alert("Failed to add to cart. Please try again.");
+        // Error toast is handled internally in addToCart
       }
     } catch (error) {
       console.log("Error adding to cart:", error);
@@ -131,6 +136,7 @@ export default function ProductDetails() {
         image: String(product.image),
         quantity: String(quantity),
         providerId: String(product.providerId || ""),
+        serviceFee: String(product.serviceFee || 0),
       },
     });
   };

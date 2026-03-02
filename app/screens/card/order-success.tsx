@@ -27,7 +27,7 @@ export default function OrderSuccessScreen() {
         paymentMethod === 'Cash On Delivery' ||
         paymentMethod === 'COD';
 
-    const formattedAmount = Number(amount).toFixed(2);
+    const formattedAmount = Number(amount || 0).toFixed(2);
 
     return (
         <SafeAreaView className="flex-1 bg-[#FDFBF7] justify-between">
