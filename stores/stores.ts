@@ -1462,8 +1462,8 @@ export const useStore = create((set, get) => ({
 
       set({
         isLoading: false,
-        cartCount: result.data?.items?.length || 0,
-        cartSubtotal: result.data?.subtotal || 0
+        cartCount: (result.data?.items || []).reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0),
+        cartSubtotal: Number(result.data?.subtotal || 0)
       });
       return result.data;
     } catch (error: any) {
@@ -1808,3 +1808,5 @@ export const useStore = create((set, get) => ({
     }
   },
 }));
+
+

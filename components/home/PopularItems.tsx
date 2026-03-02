@@ -15,7 +15,7 @@ export const PopularItems = ({
   searchText = "",
   activeCategory = "All",
 }: {
-  onAddItem: (price: string) => void;
+  onAddItem: (item: any) => void;
   searchText?: string;
   activeCategory?: string;
 }) => {
@@ -122,7 +122,7 @@ export const PopularItems = ({
               <TouchableOpacity
                 onPress={(e) => {
                   e.stopPropagation();
-                  onAddItem((item.price ?? 0).toString());
+                  onAddItem(item);
                 }}
                 className="w-8 h-8 bg-yellow-400 rounded-full items-center justify-center shadow-sm"
               >
@@ -135,3 +135,4 @@ export const PopularItems = ({
     </View>
   );
 };
+

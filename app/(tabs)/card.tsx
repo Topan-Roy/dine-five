@@ -8,31 +8,6 @@ import React, { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Dummy data
-const INITIAL_CART = [
-  {
-    id: 1,
-    name: 'Cheese Burst Pizza',
-    price: '5.99',
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500',
-    quantity: 1
-  },
-  {
-    id: 2,
-    name: 'Cheese Burst Pizza',
-    price: '5.99',
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500',
-    quantity: 1
-  },
-  {
-    id: 3,
-    name: 'Cheese Burst Pizza',
-    price: '5.99',
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500',
-    quantity: 3
-  }
-];
-
 export default function CardScreen() {
   const router = useRouter();
   const { fetchCart, updateCartQuantity, removeCartItem } = useStore() as any;
@@ -43,23 +18,27 @@ export default function CardScreen() {
   const loadCart = async (showLoading = true) => {
     if (showLoading) setLoading(true);
     const cartData = await fetchCart();
+
     if (cartData && cartData.items) {
-      // Map API items to component structure if needed, or use directly
-      const formattedItems = cartData.items.map((item: any) => ({
-        id: item.foodId._id || item.foodId.id || item._id, // Cart Item ID or Food ID depending on API
-        cartItemId: item._id, // Actual item ID in cart array
-        name: item.foodId.title || item.foodId.name,
-        price: item.price,
-        image: item.foodId.image,
-        quantity: item.quantity,
-        foodId: item.foodId._id // Keep reference to foodId
-      }));
+      const formattedItems = cartData.items.map((item: any) => {
+        const foodId = item.foodId?._id || item.foodId?.id || item.foodId;
+        return {
+          id: foodId,
+          foodId,
+          name: item.foodId?.title || item.foodId?.name,
+          price: item.price,
+          image: item.foodId?.image,
+          quantity: item.quantity,
+        };
+      });
+
       setCartItems(formattedItems);
-      setSubtotal(cartData.subtotal || 0);
+      setSubtotal(Number(cartData.subtotal || 0));
     } else {
       setCartItems([]);
       setSubtotal(0);
     }
+
     if (showLoading) setLoading(false);
   };
 
@@ -67,32 +46,31 @@ export default function CardScreen() {
     loadCart();
   }, []);
 
-  const handleUpdateQuantity = async (foodId: string, cartItemId: string, delta: number, currentQuantity: number) => {
+  const handleUpdateQuantity = async (
+    foodId: string,
+    delta: number,
+    currentQuantity: number
+  ) => {
     const newQuantity = currentQuantity + delta;
 
-    // Optimistic Update
+    // Optimistic update by foodId so only one product updates.
     setCartItems(prevItems =>
-      prevItems.map(item => {
-        if (item.cartItemId === cartItemId) {
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      }).filter(item => item.quantity > 0)
+      prevItems
+        .map(item =>
+          item.foodId === foodId ? { ...item, quantity: newQuantity } : item
+        )
+        .filter(item => item.quantity > 0)
     );
 
     try {
       if (newQuantity <= 0) {
-        // Remove item
-        await removeCartItem(foodId); // Using foodId for API
+        await removeCartItem(foodId);
       } else {
-        // Update quantity
-        await updateCartQuantity(foodId, newQuantity); // Using foodId for API
+        await updateCartQuantity(foodId, newQuantity);
       }
-      // Refresh cart silently to get updated calculations from server
       await loadCart(false);
     } catch (error) {
-      console.log("Error updating quantity:", error);
-      // Revert or force reload on error
+      console.log('Error updating quantity:', error);
       await loadCart(false);
     }
   };
@@ -124,7 +102,6 @@ export default function CardScreen() {
     <SafeAreaView className="flex-1 bg-[#FDFBF7]">
       <StatusBar style="dark" />
 
-      {/* Header */}
       <View className="flex-row items-center justify-center pt-2 pb-6 relative px-4">
         <View className="flex-row items-center gap-2">
           <Ionicons name="cart-outline" size={24} color="#000" />
@@ -132,28 +109,36 @@ export default function CardScreen() {
         </View>
       </View>
 
-      {/* List */}
       <ScrollView
         className="flex-1 px-4"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        {cartItems.map((item) => (
+        {cartItems.map(item => (
           <CartItem
-            key={item.cartItemId || item.id}
+            key={item.foodId}
             id={item.id}
             name={item.name}
             price={item.price}
             image={item.image}
             quantity={item.quantity}
-            onIncrement={() => handleUpdateQuantity(item.foodId, item.cartItemId, 1, item.quantity)}
-            onDecrement={() => handleUpdateQuantity(item.foodId, item.cartItemId, -1, item.quantity)}
-            onRemove={() => handleUpdateQuantity(item.foodId, item.cartItemId, -item.quantity, item.quantity)}
+            onIncrement={() =>
+              handleUpdateQuantity(item.foodId, 1, item.quantity)
+            }
+            onDecrement={() =>
+              handleUpdateQuantity(item.foodId, -1, item.quantity)
+            }
+            onRemove={() =>
+              handleUpdateQuantity(
+                item.foodId,
+                -item.quantity,
+                item.quantity
+              )
+            }
           />
         ))}
       </ScrollView>
 
-      {/* Footer */}
       <View className="absolute bottom-24 left-4 right-4 bg-transparent flex-row items-center justify-between">
         <Text className="text-2xl font-bold text-gray-900">${subtotal.toFixed(2)}</Text>
         <TouchableOpacity

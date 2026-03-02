@@ -120,6 +120,21 @@ export default function ProductDetails() {
     }
   };
 
+  const handleBuyNow = () => {
+    router.push({
+      pathname: "/screens/card/confirm-order",
+      params: {
+        buyNow: "true",
+        foodId: String(product.foodId),
+        name: String(product.name),
+        price: String(product.price),
+        image: String(product.image),
+        quantity: String(quantity),
+        providerId: String(product.providerId || ""),
+      },
+    });
+  };
+
   return (
     <View className="flex-1 bg-white">
       <StatusBar style="light" />
@@ -254,7 +269,7 @@ export default function ProductDetails() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={handleAddToCart}
+                onPress={handleBuyNow}
                 className="bg-yellow-400 px-8 py-4 rounded-2xl shadow-md"
               >
                 <Text className="text-[#1F2A33] font-bold text-base">

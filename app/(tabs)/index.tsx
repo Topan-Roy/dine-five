@@ -1,20 +1,21 @@
 import { Categories } from "@/components/home/Categories";
 import { HomeHeader } from "@/components/home/HomeHeader";
+import { PopularHotels } from "@/components/home/PopularHotels";
 import { PopularItems } from "@/components/home/PopularItems";
 import { PromoBanner } from "@/components/home/PromoBanner";
 import { SearchBar } from "@/components/home/SearchBar";
 import { ViewCart } from "@/components/home/ViewCart";
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { cartCount, cartSubtotal, fetchCart } = useStore() as any;
+  const { cartCount, cartSubtotal, fetchCart, addToCart } = useStore() as any;
 
   const [searchText, setSearchText] = React.useState("");
   const [filterModalVisible, setFilterModalVisible] = React.useState(false);
@@ -27,14 +28,34 @@ export default function HomeScreen() {
     }
   }, [params.category]);
 
-  const handleAddItem = async (price: string) => {
-    // This is now handled by the stores.ts logic when addToCart is called
-    await fetchCart();
+  const handleAddItem = async (item: any) => {
+    const cartData = await fetchCart();
+    const targetFoodId = item?.foodId || item?._id || item?.id;
+
+    const alreadyInCart = (cartData?.items || []).some((cartItem: any) => {
+      const cartFoodId = cartItem?.foodId?._id || cartItem?.foodId?.id || cartItem?.foodId;
+      return String(cartFoodId) === String(targetFoodId);
+    });
+
+    if (alreadyInCart) {
+      Alert.alert("Already Added", "This product is already in your cart.");
+      return;
+    }
+
+    const result = await addToCart(item, 1);
+    if (result) await fetchCart();
   };
 
-  React.useEffect(() => {
-    fetchCart();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchCart();
+      const intervalId = setInterval(() => {
+        fetchCart();
+      }, 3000);
+
+      return () => clearInterval(intervalId);
+    }, [fetchCart])
+  );
 
   return (
     <View className="flex-1 bg-[#FDFBF7]">
@@ -61,6 +82,8 @@ export default function HomeScreen() {
             searchText={searchText}
             activeCategory={activeCategory}
           />
+
+          <PopularHotels searchText={searchText} activeCategory={activeCategory} />
 
           <Modal
             animationType="fade"

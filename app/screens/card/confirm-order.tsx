@@ -2,34 +2,145 @@ import { CartItem } from '@/components/card/CartItem';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useStore } from '@/stores/stores';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     ScrollView,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+type PricingBreakdown = {
+    subtotal: number;
+    platformFee: number;
+    stateTax: number;
+    textFee: number;
+    total: number;
+    city: string;
+    state: string;
+};
+
 export default function ConfirmOrderScreen() {
     const router = useRouter();
-    const { fetchCart, updateCartQuantity, removeCartItem } =
-        useStore() as any;
+    const params = useLocalSearchParams<{
+        buyNow?: string;
+        foodId?: string;
+        name?: string;
+        price?: string;
+        image?: string;
+        quantity?: string;
+        providerId?: string;
+    }>();
+
+    const {
+        fetchCart,
+        updateCartQuantity,
+        removeCartItem,
+        createPaymentIntent,
+        foodProviderMap,
+    } = useStore() as any;
+
+    const isBuyNow = params.buyNow === 'true';
 
     const [cartItems, setCartItems] = useState<any[]>([]);
     const [subtotal, setSubtotal] = useState(0);
+    const [pricing, setPricing] = useState<PricingBreakdown>({
+        subtotal: 0,
+        platformFee: 0,
+        stateTax: 0,
+        textFee: 0,
+        total: 0,
+        city: 'Unknown State',
+        state: 'Unknown State',
+    });
+    const [isPricingLoading, setIsPricingLoading] = useState(false);
 
-    const [coupon, setCoupon] = useState('');
-    const [discount, setDiscount] = useState(0);
-    const [selectedPayment, setSelectedPayment] = useState<'COD' | 'CARD'>(
-        'COD'
-    );
+    const buyNowBaseItem = useMemo(() => {
+        if (!isBuyNow || !params.foodId) return null;
+        const qty = Math.max(1, Number(params.quantity || 1));
+        const price = Number(params.price || 0);
+        return {
+            id: String(params.foodId),
+            cartItemId: String(params.foodId),
+            foodId: String(params.foodId),
+            name: String(params.name || 'Product'),
+            price,
+            image: String(params.image || ''),
+            quantity: qty,
+            providerId: String(params.providerId || ''),
+        };
+    }, [isBuyNow, params.foodId, params.quantity, params.price, params.name, params.image, params.providerId]);
+
+    const loadPricing = async (
+        providerId: string,
+        itemsForPaymentIntent: { foodId: string; quantity: number }[],
+        fallbackSubtotal: number
+    ) => {
+        if (!providerId || !itemsForPaymentIntent.length) {
+            setPricing((prev) => ({
+                ...prev,
+                subtotal: fallbackSubtotal,
+                total: fallbackSubtotal,
+            }));
+            return;
+        }
+
+        setIsPricingLoading(true);
+        try {
+            const paymentIntentResult = await createPaymentIntent({
+                providerId,
+                items: itemsForPaymentIntent,
+            });
+            const breakdown = paymentIntentResult?.data?.breakdown;
+
+            if (breakdown) {
+                setPricing({
+                    subtotal: Number(breakdown.subtotal || 0),
+                    platformFee: Number(breakdown.platformFee || 0),
+                    stateTax: Number(breakdown.stateTax || 0),
+                    textFee: Number(breakdown.textFee || 0),
+                    total: Number(breakdown.total || 0),
+                    city: breakdown.city || 'Unknown State',
+                    state: breakdown.state || 'Unknown State',
+                });
+            } else {
+                setPricing((prev) => ({
+                    ...prev,
+                    subtotal: fallbackSubtotal,
+                    total: fallbackSubtotal,
+                }));
+            }
+        } finally {
+            setIsPricingLoading(false);
+        }
+    };
 
     const loadCart = async () => {
+        if (isBuyNow) {
+            if (!buyNowBaseItem) {
+                setCartItems([]);
+                setSubtotal(0);
+                return;
+            }
+
+            const localSubtotal = Number((buyNowBaseItem.price * buyNowBaseItem.quantity).toFixed(2));
+            setCartItems([buyNowBaseItem]);
+            setSubtotal(localSubtotal);
+
+            const providerId = buyNowBaseItem.providerId || foodProviderMap?.[buyNowBaseItem.foodId] || '';
+            await loadPricing(
+                providerId,
+                [{ foodId: buyNowBaseItem.foodId, quantity: buyNowBaseItem.quantity }],
+                localSubtotal
+            );
+            return;
+        }
+
         const cartData = await fetchCart();
         if (cartData && cartData.items) {
             const formattedItems = cartData.items.map((item: any) => ({
@@ -39,12 +150,28 @@ export default function ConfirmOrderScreen() {
                 price: item.price,
                 image: item.foodId?.image,
                 quantity: item.quantity,
-                foodId:
-                    item.foodId?._id || item.foodId?.id || item.foodId,
+                foodId: item.foodId?._id || item.foodId?.id || item.foodId,
+                providerId:
+                    item.providerID ||
+                    item.foodId?.providerID ||
+                    item.providerId ||
+                    item.foodId?.providerId ||
+                    item.foodId?.provider?._id ||
+                    '',
             }));
 
             setCartItems(formattedItems);
-            setSubtotal(cartData.subtotal || 0);
+            const localSubtotal = Number(cartData.subtotal || 0);
+            setSubtotal(localSubtotal);
+
+            const first = formattedItems[0];
+            const providerId = first?.providerId || foodProviderMap?.[first?.foodId] || '';
+            const itemsForPaymentIntent = formattedItems.map((item: any) => ({
+                foodId: item.foodId,
+                quantity: item.quantity,
+            }));
+
+            await loadPricing(providerId, itemsForPaymentIntent, localSubtotal);
         } else {
             setCartItems([]);
             setSubtotal(0);
@@ -53,7 +180,7 @@ export default function ConfirmOrderScreen() {
 
     useEffect(() => {
         loadCart();
-    }, []);
+    }, [isBuyNow, params.foodId, params.quantity]);
 
     const handleUpdateQuantity = async (
         foodId: string,
@@ -62,6 +189,26 @@ export default function ConfirmOrderScreen() {
         currentQuantity: number
     ) => {
         const newQuantity = currentQuantity + delta;
+
+        if (isBuyNow) {
+            if (newQuantity <= 0) {
+                setCartItems([]);
+                setSubtotal(0);
+                return;
+            }
+
+            const updated = cartItems.map(item =>
+                item.cartItemId === cartItemId ? { ...item, quantity: newQuantity } : item
+            );
+            setCartItems(updated);
+
+            const item = updated[0];
+            const localSubtotal = Number((item.price * item.quantity).toFixed(2));
+            setSubtotal(localSubtotal);
+            const providerId = item.providerId || foodProviderMap?.[item.foodId] || '';
+            await loadPricing(providerId, [{ foodId: item.foodId, quantity: item.quantity }], localSubtotal);
+            return;
+        }
 
         setCartItems(prev =>
             prev
@@ -86,19 +233,7 @@ export default function ConfirmOrderScreen() {
         }
     };
 
-    const applyCoupon = () => {
-        if (coupon.trim().toLowerCase() === 'save10') {
-            const discountAmount = subtotal * 0.1;
-            setDiscount(discountAmount);
-            Alert.alert('Success', 'Coupon Applied (10% Discount)');
-        } else {
-            setDiscount(0);
-            Alert.alert('Invalid Coupon');
-        }
-    };
-
-    const platformFee = 3.99;
-    const total = subtotal + platformFee - discount;
+    const total = pricing.total || subtotal;
 
     const handleContinue = () => {
         if (!cartItems.length) {
@@ -106,12 +241,29 @@ export default function ConfirmOrderScreen() {
             return;
         }
 
+        if (isBuyNow) {
+            const item = cartItems[0];
+            router.push({
+                pathname: '/screens/card/checkout',
+                params: {
+                    buyNow: 'true',
+                    providerId: String(providerId),
+                    foodId: String(item.foodId),
+                    quantity: String(item.quantity),
+                    price: String(item.price),
+                    total: String(total),
+                    paymentMethod: 'CARD',
+                },
+            });
+            return;
+        }
+
         router.push({
             pathname: '/screens/card/checkout',
             params: {
-                total,
-                paymentMethod: selectedPayment,
-                discount,
+                total: String(total),
+                paymentMethod: 'CARD',
+                discount: '0',
             },
         });
     };
@@ -150,7 +302,7 @@ export default function ConfirmOrderScreen() {
                         key={item.cartItemId}
                         id={item.id}
                         name={item.name}
-                        price={item.price}
+                        price={String(item.price)}
                         image={item.image}
                         quantity={item.quantity}
                         onIncrement={() =>
@@ -180,65 +332,28 @@ export default function ConfirmOrderScreen() {
                     />
                 ))}
 
-                {/* Coupon Section */}
-                <View className="mt-6">
-                    <Text className="font-semibold mb-2">Coupon Code</Text>
-                    <View className="flex-row">
-                        <TextInput
-                            value={coupon}
-                            onChangeText={setCoupon}
-                            placeholder="Enter coupon"
-                            className="flex-1 bg-white px-4 py-3 rounded-l-xl border"
-                        />
-                        <TouchableOpacity
-                            onPress={applyCoupon}
-                            className="bg-black px-4 justify-center rounded-r-xl">
-                            <Text className="text-white font-bold">Apply</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Payment Method */}
                 <View className="mt-6">
                     <Text className="font-semibold mb-3">Payment Method</Text>
-
-                    <TouchableOpacity
-                        onPress={() => setSelectedPayment('COD')}
-                        className={`p-4 rounded-xl mb-3 ${selectedPayment === 'COD'
-                            ? 'bg-yellow-200'
-                            : 'bg-white'
-                            }`}>
-                        <Text>Cash on Delivery</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={() => setSelectedPayment('CARD')}
-                        className={`p-4 rounded-xl ${selectedPayment === 'CARD'
-                            ? 'bg-yellow-200'
-                            : 'bg-white'
-                            }`}>
+                    <TouchableOpacity className="p-4 rounded-xl bg-yellow-200">
                         <Text>Card Payment</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Summary */}
                 <View className="mt-8">
                     <View className="flex-row justify-between">
                         <Text>Subtotal</Text>
-                        <Text>${subtotal.toFixed(2)}</Text>
+                        <Text>${pricing.subtotal.toFixed(2)}</Text>
                     </View>
 
-                    <View className="flex-row justify-between">
-                        <Text>Platform Fee</Text>
-                        <Text>${platformFee.toFixed(2)}</Text>
+                    <View className="flex-row justify-between mt-2">
+                        <Text>Text</Text>
+                        <Text>${pricing.textFee.toFixed(2)}</Text>
                     </View>
 
-                    {discount > 0 && (
-                        <View className="flex-row justify-between">
-                            <Text>Discount</Text>
-                            <Text>- ${discount.toFixed(2)}</Text>
-                        </View>
-                    )}
+                    <View className="flex-row justify-between mt-2">
+                        <Text>City Tax</Text>
+                        <Text>${pricing.stateTax.toFixed(2)}</Text>
+                    </View>
 
                     <View className="flex-row justify-between mt-3 border-t pt-3">
                         <Text className="font-bold text-lg">Total</Text>
@@ -255,10 +370,16 @@ export default function ConfirmOrderScreen() {
                 </Text>
                 <TouchableOpacity
                     onPress={handleContinue}
+                    disabled={isPricingLoading}
                     className="bg-yellow-400 px-10 py-4 rounded-2xl">
-                    <Text className="font-bold text-lg">Continue</Text>
+                    {isPricingLoading ? (
+                        <ActivityIndicator color="#111" />
+                    ) : (
+                        <Text className="font-bold text-lg">Continue</Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
 }
+

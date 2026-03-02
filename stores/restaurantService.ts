@@ -49,6 +49,41 @@ const getAuthHeaders = (): Record<string, string> => {
   };
 };
 
+const normalizeRestaurant = (item: any): Restaurant | null => {
+  const lat = Number(item?.location?.lat);
+  const lng = Number(item?.location?.lng);
+
+  // Native map crashes easily on invalid coordinates. Drop bad records.
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+
+  const providerId = String(item?.providerId || item?._id || "").trim();
+  if (!providerId) {
+    return null;
+  }
+
+  const distance = Number(item?.distance);
+  const availableFoods = Number(item?.availableFoods);
+
+  return {
+    providerId,
+    restaurantName: String(item?.restaurantName || "Restaurant"),
+    location: { lat, lng },
+    distance: Number.isFinite(distance) ? distance : 0,
+    cuisine: Array.isArray(item?.cuisine) ? item.cuisine.filter(Boolean).map(String) : [],
+    restaurantAddress: String(item?.restaurantAddress || ""),
+    city: String(item?.city || ""),
+    state: String(item?.state || ""),
+    phoneNumber: String(item?.phoneNumber || ""),
+    contactEmail: String(item?.contactEmail || ""),
+    profile: String(item?.profile || ""),
+    isVerify: Boolean(item?.isVerify),
+    verificationStatus: String(item?.verificationStatus || "ACTIVE"),
+    availableFoods: Number.isFinite(availableFoods) ? availableFoods : 0,
+  };
+};
+
 export const restaurantService = {
   /**
    * POST /provider/nearby
@@ -68,30 +103,38 @@ export const restaurantService = {
 
     console.log("Nearby request payload:", JSON.stringify(body));
 
-    try {
-      const res = await fetch(`${BASE_URL}/provider/nearby`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(body),
-      });
+    const res = await fetch(`${BASE_URL}/provider/nearby`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(body),
+    });
 
-      console.log("Nearby response status:", res.status);
+    console.log("Nearby response status:", res.status);
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.log("Nearby Error Response Body:", errorText);
-        throw new Error(`Request failed with status ${res.status}: ${errorText}`);
-      }
-
-      const json: NearbyResponse = await res.json();
-      console.log("Nearby response data:", JSON.stringify(json));
-
-      if (!json.success) throw new Error(json.message ?? "Unknown API error");
-
-      return json;
-    } catch (error) {
-      console.log("Nearby request error:", error);
-      throw error;
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.log("Nearby Error Response Body:", errorText);
+      throw new Error(`Request failed with status ${res.status}: ${errorText}`);
     }
+
+    const json = (await res.json()) as NearbyResponse;
+
+    if (!json.success) {
+      throw new Error(json.message ?? "Unknown API error");
+    }
+
+    const normalized = (Array.isArray(json.data) ? json.data : [])
+      .map(normalizeRestaurant)
+      .filter((x): x is Restaurant => Boolean(x));
+
+    return {
+      ...json,
+      data: normalized,
+      pagination: {
+        total: json.pagination?.total ?? normalized.length,
+        page: json.pagination?.page ?? 1,
+        limit: json.pagination?.limit ?? normalized.length,
+      },
+    };
   },
 };
