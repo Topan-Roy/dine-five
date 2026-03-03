@@ -36,6 +36,8 @@ export default function ProductDetails() {
     providerId: paramProviderId,
     serviceFee: paramServiceFee,
   } = params;
+  console.log("Product details params:", params);
+
   const productId = (id as string) || (foodId as string) || "1";
 
   const [reviewsData, setReviewsData] = useState<any[]>([]);

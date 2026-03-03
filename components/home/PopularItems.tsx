@@ -74,6 +74,7 @@ export const PopularItems = ({
   }
 
   if (searchText && filteredItems.length === 0) return null;
+  console.log("filtered items", filteredItems)
 
   return (
     <View className="px-4">
