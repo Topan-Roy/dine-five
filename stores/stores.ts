@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   ACCESS_TOKEN: "auth_access_token",
   REFRESH_TOKEN: "auth_refresh_token",
   LOCATION: "user_location",
+  STATE: "user_state",
 };
 
 const translateApiMessage = (code: string) => {
@@ -35,7 +36,10 @@ export const useStore = create((set, get) => ({
   toast: { visible: false, message: "", type: "success" as "success" | "error" | "info" },
   foodProviderMap: {} as Record<string, string>,
   foodServiceFeeMap: {} as Record<string, number>,
+  foodPriceMap: {} as Record<string, number>,
   address: "Set location",
+  userState: null as string | null,
+  stateTaxInfo: null as any,
 
   // // this is for user profile
   // userProfile: async () => {
@@ -71,6 +75,11 @@ export const useStore = create((set, get) => ({
         promises.push(AsyncStorage.setItem(STORAGE_KEYS.LOCATION, user.address));
       }
 
+      const currentState = (get() as any).userState;
+      if (currentState) {
+        promises.push(AsyncStorage.setItem(STORAGE_KEYS.STATE, currentState));
+      }
+
       if (accessToken) {
         promises.push(
           AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken),
@@ -93,10 +102,11 @@ export const useStore = create((set, get) => ({
   // Add this function to initialize auth state from storage on app start
   initializeAuth: async () => {
     try {
-      const [user, accessToken, refreshToken] = await Promise.all([
+      const [user, accessToken, refreshToken, storedState] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.USER),
         AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
         AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN),
+        AsyncStorage.getItem(STORAGE_KEYS.STATE),
       ]);
 
       //   console.log("from storage", user, accessToken, refreshToken);
@@ -110,6 +120,7 @@ export const useStore = create((set, get) => ({
           accessToken: accessToken || null,
           refreshToken: refreshToken || null,
           address: storedLocation || parsedUser.address || "Set location",
+          userState: storedState || null,
           isInitialized: true,
         });
         return { user: parsedUser, accessToken };
@@ -731,20 +742,30 @@ export const useStore = create((set, get) => ({
       if (Array.isArray(result.data)) {
         const newMap = { ...(get() as any).foodProviderMap };
         const newFeeMap = { ...(get() as any).foodServiceFeeMap };
+        const newPriceMap = { ...(get() as any).foodPriceMap };
 
         result.data.forEach((item: any) => {
           const fid = item.id || item._id;
+
+          // Store provider
           const pid = item.providerID || item.providerId || (item.provider?._id) || (typeof item.provider === 'string' ? item.provider : null);
           if (fid && pid) {
             newMap[fid] = pid;
           }
 
+          // Store service fee
           const fee = item.serviceFee || item.platformFee || 0;
           if (fid && (fee > 0 || !newFeeMap[fid])) {
             newFeeMap[fid] = fee;
           }
+
+          // Store price from feed (prioritize baseRevenue e.g. 5.99)
+          const feedPrice = Number(item.baseRevenue || item.price || 0);
+          if (fid && (feedPrice > 0 || !newPriceMap[fid])) {
+            newPriceMap[fid] = feedPrice;
+          }
         });
-        set({ foodProviderMap: newMap, foodServiceFeeMap: newFeeMap });
+        set({ foodProviderMap: newMap, foodServiceFeeMap: newFeeMap, foodPriceMap: newPriceMap });
       }
 
       return result.data;
@@ -1420,9 +1441,13 @@ export const useStore = create((set, get) => ({
       // POST /api/v1/cart/add
       // Body: { foodId: "...", quantity: 1 } (typically)
 
+      const foodId = item.foodId || item._id || item.id;
+      const price = (get() as any).foodPriceMap[foodId] || item.price || 0;
+
       const payload = {
-        foodId: item.foodId || item._id || item.id,
+        foodId: foodId,
         quantity: quantity,
+        price: price, // Added price to payload to ensure consistency
       };
 
       console.log("Adding to cart:", payload);
@@ -1485,13 +1510,21 @@ export const useStore = create((set, get) => ({
         throw new Error(result.message || "Failed to fetch cart");
       }
 
+      const items = result.data?.items || [];
+      const foodPriceMap = (get() as any).foodPriceMap;
+      const recalculatedSubtotal = items.reduce((sum: number, item: any) => {
+        const fid = item.foodId?._id || item.foodId?.id || item.foodId;
+        const price = foodPriceMap[fid] || item.foodId?.baseRevenue || item.price || item.foodId?.price || 0;
+        return sum + (Number(price) * Number(item.quantity || 0));
+      }, 0);
+
       set({
         isLoading: false,
-        cartCount: (result.data?.items || []).reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0),
-        cartSubtotal: Number(result.data?.subtotal || 0),
-        cartItems: result.data?.items || [],
+        cartCount: items.reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0),
+        cartSubtotal: Number(recalculatedSubtotal.toFixed(2)),
+        cartItems: items,
       });
-      return result.data;
+      return { ...result.data, subtotal: recalculatedSubtotal, items };
     } catch (error: any) {
       console.log("fetchCart error:", error);
       set({ error: error.message, isLoading: false });
@@ -1866,8 +1899,15 @@ export const useStore = create((set, get) => ({
         const addr = reverseGeocode[0];
         const displayAddress = `${addr.name || addr.street || ''} ${addr.city || addr.subregion || ''}`.trim() || "Unknown Location";
 
-        set({ address: displayAddress });
-        await AsyncStorage.setItem(STORAGE_KEYS.LOCATION, displayAddress);
+        let stateRegion = addr.region || addr.city || addr.district || null;
+        if (stateRegion && typeof stateRegion === 'string') {
+          // Remove " Division" or " State" to better match API
+          stateRegion = stateRegion.replace(/ Division/g, '').replace(/ State/g, '').trim();
+        }
+
+        set({ address: displayAddress, userState: stateRegion });
+        if (displayAddress) await AsyncStorage.setItem(STORAGE_KEYS.LOCATION, displayAddress);
+        if (stateRegion) await AsyncStorage.setItem(STORAGE_KEYS.STATE, stateRegion);
 
         // If user is logged in, sync with profile
         const currentUser = (get() as any).user;
@@ -1879,6 +1919,24 @@ export const useStore = create((set, get) => ({
       }
     } catch (error) {
       console.log("updateUserLocation error:", error);
+      return null;
+    }
+  },
+
+  fetchStateTax: async (stateName: string) => {
+    if (!stateName) return null;
+    console.log("Fetching tax for state:", stateName);
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/v1/states/tax?state=${encodeURIComponent(stateName)}`);
+      const result = await response.json();
+      console.log("fetchStateTax result:", JSON.stringify(result, null, 2));
+      if (result.success && result.data) {
+        set({ stateTaxInfo: result.data });
+        return result.data;
+      }
+      return null;
+    } catch (error) {
+      console.log("fetchStateTax error:", error);
       return null;
     }
   },

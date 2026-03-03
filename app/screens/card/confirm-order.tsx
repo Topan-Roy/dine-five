@@ -45,6 +45,11 @@ export default function ConfirmOrderScreen() {
         createPaymentIntent,
         foodProviderMap,
         foodServiceFeeMap,
+        foodPriceMap,
+        userState,
+        stateTaxInfo,
+        fetchStateTax,
+        updateUserLocation,
     } = useStore() as any;
 
     const isBuyNow = params.buyNow === 'true';
@@ -65,19 +70,20 @@ export default function ConfirmOrderScreen() {
     const buyNowBaseItem = useMemo(() => {
         if (!isBuyNow || !params.foodId) return null;
         const qty = Math.max(1, Number(params.quantity || 1));
-        const price = Number(params.price || 0);
+        const foodIdStr = String(params.foodId);
+        const price = foodPriceMap[foodIdStr] || Number(params.price || 0);
         return {
-            id: String(params.foodId),
-            cartItemId: String(params.foodId),
-            foodId: String(params.foodId),
+            id: foodIdStr,
+            cartItemId: foodIdStr,
+            foodId: foodIdStr,
             name: String(params.name || 'Product'),
             price,
             image: String(params.image || ''),
             quantity: qty,
             providerId: String(params.providerId || ''),
-            serviceFee: parseFloat(params.serviceFee || '0'),
+            serviceFee: parseFloat(params.serviceFee || '0') || foodServiceFeeMap[foodIdStr] || 0,
         };
-    }, [isBuyNow, params.foodId, params.quantity, params.price, params.name, params.image, params.providerId, params.serviceFee]);
+    }, [isBuyNow, params.foodId, params.quantity, params.price, params.name, params.image, params.providerId, params.serviceFee, foodServiceFeeMap, foodPriceMap]);
 
     const loadPricing = async (
         providerId: string,
@@ -103,11 +109,11 @@ export default function ConfirmOrderScreen() {
 
             if (breakdown) {
                 setPricing({
-                    subtotal: Number(breakdown.subtotal || 0),
+                    subtotal: fallbackSubtotal, // Use client-side 5.99 based subtotal
                     platformFee: Number(breakdown.platformFee || 0),
                     stateTax: Number(breakdown.stateTax || 0),
                     textFee: Number(breakdown.textFee || 0),
-                    total: Number(breakdown.total || 0),
+                    total: (fallbackSubtotal + Number(breakdown.platformFee || 0) + Number(breakdown.stateTax || 0)),
                     city: breakdown.city || 'Unknown State',
                     state: breakdown.state || 'Unknown State',
                 });
@@ -141,7 +147,8 @@ export default function ConfirmOrderScreen() {
                 [{
                     foodId: buyNowBaseItem.foodId,
                     quantity: buyNowBaseItem.quantity,
-                    serviceFee: buyNowBaseItem.serviceFee || 0
+                    serviceFee: buyNowBaseItem.serviceFee || 0,
+                    price: buyNowBaseItem.price
                 }],
                 localSubtotal
             );
@@ -156,7 +163,6 @@ export default function ConfirmOrderScreen() {
                     id: item.foodId?._id || item._id,
                     cartItemId: item._id,
                     name: item.foodId?.title || item.foodId?.name,
-                    price: item.price,
                     image: item.foodId?.image,
                     quantity: item.quantity,
                     foodId: foodId,
@@ -167,6 +173,7 @@ export default function ConfirmOrderScreen() {
                         item.foodId?.providerId ||
                         item.foodId?.provider?._id ||
                         '',
+                    price: foodPriceMap[foodId] || item.price || item.foodId?.price || 0,
                     serviceFee:
                         item.foodId?.serviceFee ||
                         item.serviceFee ||
@@ -187,6 +194,7 @@ export default function ConfirmOrderScreen() {
                 foodId: item.foodId,
                 quantity: item.quantity,
                 serviceFee: item.serviceFee || 0,
+                price: item.price
             }));
 
             await loadPricing(providerId, itemsForPaymentIntent, localSubtotal);
@@ -199,6 +207,14 @@ export default function ConfirmOrderScreen() {
     useEffect(() => {
         loadCart();
     }, [isBuyNow, params.foodId, params.quantity]);
+
+    useEffect(() => {
+        if (userState) {
+            fetchStateTax(userState);
+        } else {
+            updateUserLocation();
+        }
+    }, [userState]);
 
     const handleUpdateQuantity = async (
         foodId: string,
@@ -255,8 +271,19 @@ export default function ConfirmOrderScreen() {
         return cartItems.reduce((sum, item) => sum + (Number(item.serviceFee || 0) * item.quantity), 0);
     }, [cartItems]);
 
-    const displayServiceFee = pricing.platformFee || calculatedServiceFee;
-    const total = pricing.total || (subtotal + displayServiceFee + pricing.stateTax);
+    const displayServiceFee = calculatedServiceFee || pricing.platformFee;
+    const displayStateTax = stateTaxInfo?.tax ? (subtotal * Number(stateTaxInfo.tax) / 100) : (pricing.stateTax || 0);
+
+    useEffect(() => {
+        console.log("Tax Debug Info:", {
+            userState,
+            taxRate: stateTaxInfo?.tax,
+            subtotal,
+            calculatedTax: displayStateTax
+        });
+    }, [userState, stateTaxInfo, subtotal, displayStateTax]);
+
+    const total = (subtotal + displayServiceFee + displayStateTax);
 
     const handleContinue = () => {
         if (!cartItems.length) {
@@ -275,6 +302,8 @@ export default function ConfirmOrderScreen() {
                     foodId: String(item.foodId),
                     quantity: String(item.quantity),
                     price: String(item.price),
+                    serviceFee: String(displayServiceFee),
+                    stateTax: String(displayStateTax),
                     total: String(total),
                     paymentMethod: 'CARD',
                 },
@@ -286,6 +315,8 @@ export default function ConfirmOrderScreen() {
             pathname: '/screens/card/checkout',
             params: {
                 total: String(total),
+                serviceFee: String(displayServiceFee),
+                stateTax: String(displayStateTax),
                 paymentMethod: 'CARD',
                 discount: '0',
             },
@@ -375,8 +406,8 @@ export default function ConfirmOrderScreen() {
                     </View>
 
                     <View className="flex-row justify-between mt-2">
-                        <Text>City Tax</Text>
-                        <Text>${pricing.stateTax.toFixed(2)}</Text>
+                        <Text>{stateTaxInfo?.name || 'City'} Tax</Text>
+                        <Text>${displayStateTax.toFixed(2)}</Text>
                     </View>
 
                     <View className="flex-row justify-between mt-3 border-t pt-3">

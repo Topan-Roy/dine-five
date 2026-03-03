@@ -95,7 +95,7 @@ export const PopularItems = ({
                     id: item.id,
                     foodId: item.id,
                     name: item.name,
-                    price: (item.price ?? 0).toString(),
+                    price: (item.baseRevenue || item.price || 0).toString(),
                     image: item.image || "",
                     rating: (item.rating ?? 0).toString(),
                     reviews: "0",
@@ -134,7 +134,7 @@ export const PopularItems = ({
               <View className="flex-row items-center justify-between mt-2">
                 <View className="bg-[#FFE69C] px-3 py-1 rounded-full">
                   <Text className="text-sm font-bold text-[#332701]">
-                    ${item.price}
+                    ${item.baseRevenue || item.price}
                   </Text>
                 </View>
                 <TouchableOpacity

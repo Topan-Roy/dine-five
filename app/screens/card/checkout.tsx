@@ -33,7 +33,9 @@ function CheckoutContent() {
     clearCart,
     foodProviderMap,
     foodServiceFeeMap,
+    foodPriceMap,
     createPaymentIntent,
+    stateTaxInfo,
   } = useStore() as any;
 
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
@@ -71,6 +73,7 @@ function CheckoutContent() {
     if (!isBuyNow || !params.foodId) return null;
 
     const foodId = String(params.foodId);
+    const price = foodPriceMap[foodId] || Number(params.price || 0);
     const mappedProviderId = foodProviderMap?.[foodId] || "";
 
     return {
@@ -86,12 +89,12 @@ function CheckoutContent() {
         {
           foodId,
           quantity: Math.max(1, Number(params.quantity || 1)),
-          price: Number(params.price || 0),
+          price: price,
           serviceFee: Number(params.serviceFee || 0),
         },
       ],
     };
-  }, [isBuyNow, params.providerId, params.foodId, params.quantity, params.price, params.serviceFee, foodProviderMap]);
+  }, [isBuyNow, params.providerId, params.foodId, params.quantity, params.price, params.serviceFee, foodProviderMap, foodPriceMap]);
 
   const calculatedServiceFee = useMemo(() => {
     if (isBuyNow && buyNowData) {
@@ -107,8 +110,9 @@ function CheckoutContent() {
     return 0;
   }, [isBuyNow, buyNowData, cartRawData]);
 
-  const displayServiceFee = pricing.platformFee || calculatedServiceFee;
-  const currentTotal = pricing.total || (pricing.subtotal + displayServiceFee + pricing.stateTax);
+  const displayServiceFee = calculatedServiceFee || pricing.platformFee;
+  const displayStateTax = stateTaxInfo?.tax ? (pricing.subtotal * Number(stateTaxInfo.tax) / 100) : (pricing.stateTax || 0);
+  const currentTotal = (pricing.subtotal + displayServiceFee + displayStateTax);
 
   const CARDS = ["Mastercard - Daniel Jones", "Visa - Daniel Jones"];
 
@@ -132,6 +136,7 @@ function CheckoutContent() {
       return {
         foodId: foodId,
         quantity: item.quantity,
+        price: foodPriceMap[foodId] || item.foodId?.baseRevenue || item.price || item.foodId?.price || 0,
         serviceFee: item.foodId?.serviceFee || item.serviceFee || item.foodId?.platformFee || item.platformFee || foodServiceFeeMap[foodId] || 0,
       };
     });
@@ -141,7 +146,7 @@ function CheckoutContent() {
       return {
         foodId: foodId,
         quantity: item.quantity,
-        price: item.price,
+        price: foodPriceMap[foodId] || item.foodId?.baseRevenue || item.price || item.foodId?.price || 0,
         serviceFee: item.foodId?.serviceFee || item.serviceFee || item.foodId?.platformFee || item.platformFee || foodServiceFeeMap[foodId] || 0,
       };
     });
@@ -161,12 +166,13 @@ function CheckoutContent() {
         const secret = paymentIntentResult?.data?.clientSecret;
 
         if (breakdown) {
+          const buyNowSubtotal = buyNowData.orderItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
           setPricing({
-            subtotal: Number(breakdown.subtotal || 0),
+            subtotal: buyNowSubtotal,
             platformFee: Number(breakdown.platformFee || 0),
             stateTax: Number(breakdown.stateTax || 0),
             textFee: Number(breakdown.textFee || 0),
-            total: Number(breakdown.total || 0),
+            total: (buyNowSubtotal + Number(breakdown.platformFee || 0) + Number(breakdown.stateTax || 0)),
             city: breakdown.city || "Unknown State",
             state: breakdown.state || "Unknown State",
           });
@@ -197,11 +203,11 @@ function CheckoutContent() {
 
       if (breakdown) {
         setPricing({
-          subtotal: Number(breakdown.subtotal || 0),
+          subtotal: Number(cartData.subtotal || 0),
           platformFee: Number(breakdown.platformFee || 0),
           stateTax: Number(breakdown.stateTax || 0),
           textFee: Number(breakdown.textFee || 0),
-          total: Number(breakdown.total || 0),
+          total: (Number(cartData.subtotal || 0) + Number(breakdown.platformFee || 0) + Number(breakdown.stateTax || 0)),
           city: breakdown.city || "Unknown State",
           state: breakdown.state || "Unknown State",
         });
@@ -238,12 +244,13 @@ function CheckoutContent() {
 
         const breakdown = paymentIntentResult?.data?.breakdown;
         if (breakdown) {
+          const localSubtotal = source.orderItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
           setPricing({
-            subtotal: Number(breakdown.subtotal || 0),
+            subtotal: localSubtotal,
             platformFee: Number(breakdown.platformFee || 0),
             stateTax: Number(breakdown.stateTax || 0),
             textFee: Number(breakdown.textFee || 0),
-            total: Number(breakdown.total || 0),
+            total: (localSubtotal + Number(breakdown.platformFee || 0) + Number(breakdown.stateTax || 0)),
             city: breakdown.city || "Unknown State",
             state: breakdown.state || "Unknown State",
           });
@@ -333,8 +340,8 @@ function CheckoutContent() {
             <Text className="text-gray-900">${displayServiceFee.toFixed(2)}</Text>
           </View>
           <View className="flex-row justify-between mb-2">
-            <Text className="text-gray-600">City Tax</Text>
-            <Text className="text-gray-900">${pricing.stateTax.toFixed(2)}</Text>
+            <Text className="text-gray-600">{stateTaxInfo?.name || 'City'} Tax</Text>
+            <Text className="text-gray-900">${displayStateTax.toFixed(2)}</Text>
           </View>
           <View className="flex-row justify-between mt-4 pt-4 border-t">
             <Text className="text-xl font-bold">Total</Text>

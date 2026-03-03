@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CardScreen() {
   const router = useRouter();
-  const { fetchCart, updateCartQuantity, removeCartItem } = useStore() as any;
+  const { fetchCart, updateCartQuantity, removeCartItem, foodPriceMap } = useStore() as any;
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subtotal, setSubtotal] = useState(0);
@@ -22,11 +22,12 @@ export default function CardScreen() {
     if (cartData && cartData.items) {
       const formattedItems = cartData.items.map((item: any) => {
         const foodId = item.foodId?._id || item.foodId?.id || item.foodId;
+        const displayPrice = foodPriceMap[foodId] || item.foodId?.baseRevenue || item.price || 0;
         return {
           id: foodId,
           foodId,
           name: item.foodId?.title || item.foodId?.name,
-          price: item.price,
+          price: displayPrice,
           image: item.foodId?.image,
           quantity: item.quantity,
         };
