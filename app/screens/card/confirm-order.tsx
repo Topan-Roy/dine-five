@@ -44,6 +44,7 @@ export default function ConfirmOrderScreen() {
         removeCartItem,
         createPaymentIntent,
         foodProviderMap,
+        foodServiceFeeMap,
     } = useStore() as any;
 
     const isBuyNow = params.buyNow === 'true';
@@ -149,23 +150,32 @@ export default function ConfirmOrderScreen() {
 
         const cartData = await fetchCart();
         if (cartData && cartData.items) {
-            const formattedItems = cartData.items.map((item: any) => ({
-                id: item.foodId?._id || item._id,
-                cartItemId: item._id,
-                name: item.foodId?.title || item.foodId?.name,
-                price: item.price,
-                image: item.foodId?.image,
-                quantity: item.quantity,
-                foodId: item.foodId?._id || item.foodId?.id || item.foodId,
-                providerId:
-                    item.providerID ||
-                    item.foodId?.providerID ||
-                    item.providerId ||
-                    item.foodId?.providerId ||
-                    item.foodId?.provider?._id ||
-                    '',
-                serviceFee: item.foodId?.serviceFee || item.serviceFee || 0,
-            }));
+            const formattedItems = cartData.items.map((item: any) => {
+                const foodId = item.foodId?._id || item.foodId?.id || item.foodId;
+                return {
+                    id: item.foodId?._id || item._id,
+                    cartItemId: item._id,
+                    name: item.foodId?.title || item.foodId?.name,
+                    price: item.price,
+                    image: item.foodId?.image,
+                    quantity: item.quantity,
+                    foodId: foodId,
+                    providerId:
+                        item.providerID ||
+                        item.foodId?.providerID ||
+                        item.providerId ||
+                        item.foodId?.providerId ||
+                        item.foodId?.provider?._id ||
+                        '',
+                    serviceFee:
+                        item.foodId?.serviceFee ||
+                        item.serviceFee ||
+                        item.foodId?.platformFee ||
+                        item.platformFee ||
+                        foodServiceFeeMap[foodId] ||
+                        0,
+                };
+            });
 
             setCartItems(formattedItems);
             const localSubtotal = Number(cartData.subtotal || 0);
@@ -245,8 +255,8 @@ export default function ConfirmOrderScreen() {
         return cartItems.reduce((sum, item) => sum + (Number(item.serviceFee || 0) * item.quantity), 0);
     }, [cartItems]);
 
-    const displayServiceFee = calculatedServiceFee;
-    const total = subtotal + displayServiceFee + pricing.stateTax;
+    const displayServiceFee = pricing.platformFee || calculatedServiceFee;
+    const total = pricing.total || (subtotal + displayServiceFee + pricing.stateTax);
 
     const handleContinue = () => {
         if (!cartItems.length) {

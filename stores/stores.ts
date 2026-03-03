@@ -34,6 +34,7 @@ export const useStore = create((set, get) => ({
   cartItems: [] as any[],
   toast: { visible: false, message: "", type: "success" as "success" | "error" | "info" },
   foodProviderMap: {} as Record<string, string>,
+  foodServiceFeeMap: {} as Record<string, number>,
   address: "Set location",
 
   // // this is for user profile
@@ -726,17 +727,24 @@ export const useStore = create((set, get) => ({
 
       set({ isLoading: false });
 
-      // Build a map of foodId -> providerId for later use in checkout
+      // Build maps for later use in checkout
       if (Array.isArray(result.data)) {
         const newMap = { ...(get() as any).foodProviderMap };
+        const newFeeMap = { ...(get() as any).foodServiceFeeMap };
+
         result.data.forEach((item: any) => {
           const fid = item.id || item._id;
           const pid = item.providerID || item.providerId || (item.provider?._id) || (typeof item.provider === 'string' ? item.provider : null);
           if (fid && pid) {
             newMap[fid] = pid;
           }
+
+          const fee = item.serviceFee || item.platformFee || 0;
+          if (fid && (fee > 0 || !newFeeMap[fid])) {
+            newFeeMap[fid] = fee;
+          }
         });
-        set({ foodProviderMap: newMap });
+        set({ foodProviderMap: newMap, foodServiceFeeMap: newFeeMap });
       }
 
       return result.data;

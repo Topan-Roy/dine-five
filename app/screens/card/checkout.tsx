@@ -32,6 +32,7 @@ function CheckoutContent() {
     createOrder,
     clearCart,
     foodProviderMap,
+    foodServiceFeeMap,
     createPaymentIntent,
   } = useStore() as any;
 
@@ -98,15 +99,16 @@ function CheckoutContent() {
     }
     if (cartRawData && cartRawData.items) {
       return cartRawData.items.reduce((sum: number, item: any) => {
-        const fee = item.foodId?.serviceFee || item.serviceFee || 0;
+        const foodId = item.foodId?._id || item.foodId?.id || item.foodId;
+        const fee = item.foodId?.serviceFee || item.serviceFee || item.foodId?.platformFee || item.platformFee || foodServiceFeeMap[foodId] || 0;
         return sum + (Number(fee) * item.quantity);
       }, 0);
     }
     return 0;
   }, [isBuyNow, buyNowData, cartRawData]);
 
-  const displayServiceFee = calculatedServiceFee;
-  const currentTotal = pricing.subtotal + displayServiceFee + pricing.stateTax;
+  const displayServiceFee = pricing.platformFee || calculatedServiceFee;
+  const currentTotal = pricing.total || (pricing.subtotal + displayServiceFee + pricing.stateTax);
 
   const CARDS = ["Mastercard - Daniel Jones", "Visa - Daniel Jones"];
 
@@ -125,18 +127,24 @@ function CheckoutContent() {
       foodProviderMap?.[foodId] ||
       "";
 
-    const itemsForPaymentIntent = cartData.items.map((item: any) => ({
-      foodId: item.foodId?._id || item.foodId?.id || item.foodId,
-      quantity: item.quantity,
-      serviceFee: item.foodId?.serviceFee || item.serviceFee || 0,
-    }));
+    const itemsForPaymentIntent = cartData.items.map((item: any) => {
+      const foodId = item.foodId?._id || item.foodId?.id || item.foodId;
+      return {
+        foodId: foodId,
+        quantity: item.quantity,
+        serviceFee: item.foodId?.serviceFee || item.serviceFee || item.foodId?.platformFee || item.platformFee || foodServiceFeeMap[foodId] || 0,
+      };
+    });
 
-    const orderItems = cartData.items.map((item: any) => ({
-      foodId: item.foodId?._id || item.foodId?.id || item.foodId,
-      quantity: item.quantity,
-      price: item.price,
-      serviceFee: item.foodId?.serviceFee || item.serviceFee || 0,
-    }));
+    const orderItems = cartData.items.map((item: any) => {
+      const foodId = item.foodId?._id || item.foodId?.id || item.foodId;
+      return {
+        foodId: foodId,
+        quantity: item.quantity,
+        price: item.price,
+        serviceFee: item.foodId?.serviceFee || item.serviceFee || item.foodId?.platformFee || item.platformFee || foodServiceFeeMap[foodId] || 0,
+      };
+    });
 
     return { providerId, itemsForPaymentIntent, orderItems };
   };

@@ -9,7 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyOrdersScreen() {
   const router = useRouter();
-  const { fetchCurrentOrders, fetchPreviousOrders, isLoading } =
+  const { fetchCurrentOrders, fetchPreviousOrders, isLoading, foodServiceFeeMap } =
     useStore() as any;
   const [activeTab, setActiveTab] = useState<"current" | "previous">("current");
   const [currentOrders, setCurrentOrders] = useState<any[]>([]);
@@ -73,6 +73,28 @@ export default function MyOrdersScreen() {
       default:
         return "text-[#1F2A33]";
     }
+  };
+
+  const handleReorder = (order: any) => {
+    if (!order.items || order.items.length === 0) return;
+
+    // We take the first item from the past order to repeat the purchase
+    const item = order.items[0];
+    const food = item.foodId;
+
+    router.push({
+      pathname: "/screens/card/confirm-order",
+      params: {
+        buyNow: "true",
+        foodId: String(food?._id || food?.id || food || ""),
+        name: String(food?.title || food?.name || food?.foodName || "Product"),
+        price: String(item.price || food?.price || 0),
+        image: String(food?.image || food?.foodImage || ""),
+        quantity: String(item.quantity || 1),
+        providerId: String(order.providerId?._id || order.providerId || ""),
+        serviceFee: String(foodServiceFeeMap[food?._id || food?.id || food] || item.serviceFee || food?.serviceFee || 0),
+      },
+    });
   };
 
   const ordersToShow = activeTab === "current" ? currentOrders : previousOrders;
@@ -221,9 +243,7 @@ export default function MyOrdersScreen() {
               ) : (
                 <View className="flex-row gap-2">
                   <TouchableOpacity
-                    onPress={() => {
-                      // Logic for reordering could be added here
-                    }}
+                    onPress={() => handleReorder(order)}
                     className="flex-1 border border-[#E3E6F0] py-3 rounded-xl items-center bg-[#FFFFFF]"
                   >
                     <Text className="text-[#000] font-bold text-sm">
