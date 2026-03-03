@@ -58,8 +58,9 @@ export const PopularItems = ({
   });
 
   const isItemInCart = (itemId: string) => {
+    if (!itemId) return false;
     return (cartItems || []).some((cartItem: any) => {
-      const cartFoodId = cartItem?.foodId?._id || cartItem?.foodId?.id || cartItem?.foodId;
+      const cartFoodId = cartItem?.foodId?._id || cartItem?.foodId?.id || cartItem?.foodId || cartItem?._id;
       return String(cartFoodId) === String(itemId);
     });
   };
@@ -86,7 +87,7 @@ export const PopularItems = ({
               activeOpacity={0.9}
               onPress={() => {
                 if (inCart) {
-                  router.push("/(tabs)/card");
+                  router.push("/card");
                   return;
                 }
                 router.push({
@@ -141,7 +142,7 @@ export const PopularItems = ({
                   onPress={(e) => {
                     e.stopPropagation();
                     if (inCart) {
-                      router.push("/(tabs)/card");
+                      router.push("/card");
                       return;
                     }
                     onAddItem(item);

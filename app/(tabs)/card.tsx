@@ -2,7 +2,7 @@ import { CartItem } from '@/components/card/CartItem';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useStore } from '@/stores/stores';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -43,9 +43,11 @@ export default function CardScreen() {
     if (showLoading) setLoading(false);
   };
 
-  React.useEffect(() => {
-    loadCart();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCart();
+    }, [])
+  );
 
   const handleUpdateQuantity = async (
     foodId: string,

@@ -40,7 +40,7 @@ export default function HomeScreen() {
     });
 
     if (alreadyInCart) {
-      router.push("/(tabs)/card");
+      router.push("/card");
       return;
     }
 

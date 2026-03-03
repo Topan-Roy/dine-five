@@ -1,5 +1,6 @@
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -17,6 +18,14 @@ const { width } = Dimensions.get("window");
 export const Toast = () => {
     const { toast, hideToast, setToast } = useStore() as any;
     const insets = useSafeAreaInsets();
+    const router = useRouter();
+
+    const handlePress = () => {
+        if (toast.type === "success" || toast.message?.toLowerCase().includes("cart")) {
+            router.push("/card");
+            hideToast();
+        }
+    };
 
     // Animation state
     const translateY = useSharedValue(-100);
@@ -110,7 +119,7 @@ export const Toast = () => {
                     { backgroundColor: colors.bg, borderLeftColor: colors.border, borderLeftWidth: 5 },
                 ]}
             >
-                <View className="flex-row items-center px-4 pt-3.5 pb-4">
+                <TouchableOpacity activeOpacity={0.9} onPress={handlePress} className="flex-row items-center px-4 pt-3.5 pb-4">
                     <View
                         className="w-10 h-10 rounded-full items-center justify-center mr-3"
                         style={{ backgroundColor: `${colors.icon}15` }}
@@ -133,7 +142,7 @@ export const Toast = () => {
                     >
                         <Ionicons name="close" size={20} color="#9CA3AF" />
                     </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
 
                 {/* Dynamic Progress Bar */}
                 <Animated.View style={[styles.progressBar, progressStyle, { backgroundColor: colors.icon }]} />
