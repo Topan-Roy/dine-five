@@ -29,14 +29,14 @@ const step3 = () => {
           </View>
 
           {/* Progress indicators - Step 3 active */}
-          <View className="flex-row justify-between items-center px-6 pt-14">
+          {/* <View className="flex-row justify-between items-center px-6 pt-14">
             <View className="flex-row gap-2">
               <View className="w-20 h-2 bg-gray-400 rounded-full" />
               <View className="w-20 h-2 bg-gray-400 rounded-full" />
               <View className="w-20 h-2 bg-yellow-400 rounded-full" />
               <View className="w-20 h-2 bg-gray-400 rounded-full" />
             </View>
-          </View>
+          </View> */}
         </ImageBackground>
       </View>
 

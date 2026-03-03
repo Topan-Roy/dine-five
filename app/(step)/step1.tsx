@@ -6,7 +6,7 @@ import {
   StatusBar,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 const step1 = () => {
@@ -17,7 +17,7 @@ const step1 = () => {
       {/* Full screen image background */}
       <View className="flex-1 relative">
         <ImageBackground
-          source={require("@/assets/images/00.png")}
+          source={require("@/assets/images/00000.png")}
           resizeMode="cover"
           className="flex-1"
         >
@@ -29,14 +29,14 @@ const step1 = () => {
           </View>
 
           {/* Progress indicators - Step 1 active */}
-          <View className="flex-row justify-between items-center px-6 pt-14">
+          {/* <View className="flex-row justify-between items-center px-6 pt-14">
             <View className="flex-row gap-2">
               <View className="w-20 h-2 bg-yellow-400 rounded-full" />
               <View className="w-20 h-2 bg-gray-400 rounded-full" />
               <View className="w-20 h-2 bg-gray-400 rounded-full" />
               <View className="w-20 h-2 bg-gray-400 rounded-full" />
             </View>
-          </View>
+          </View> */}
         </ImageBackground>
       </View>
 

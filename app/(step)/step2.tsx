@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+
 const step2 = () => {
   return (
     <View className="flex-1 bg-black">
@@ -17,7 +18,7 @@ const step2 = () => {
       {/* Full screen image background */}
       <View className="flex-1 relative">
         <ImageBackground
-          source={require("@/assets/images/22.png")}
+          source={require("@/assets/images/222.png")}
           resizeMode="cover"
           className="flex-1"
         >
@@ -29,14 +30,14 @@ const step2 = () => {
           </View>
 
           {/* Progress indicators - Step 2 active */}
-          <View className="flex-row justify-between items-center px-6 pt-14">
+          {/* <View className="flex-row justify-between items-center px-6 pt-14">
             <View className="flex-row gap-2">
               <View className="w-20 h-2 bg-gray-400 rounded-full" />
               <View className="w-20 h-2 bg-yellow-400 rounded-full" />
               <View className="w-20 h-2 bg-gray-400 rounded-full" />
               <View className="w-20 h-2 bg-gray-400 rounded-full" />
             </View>
-          </View>
+          </View> */}
         </ImageBackground>
       </View>
 

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { TextInput, TouchableOpacity, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 
 export const SearchBar = ({
     searchText,
@@ -22,11 +22,11 @@ export const SearchBar = ({
                     value={searchText}
                     onChangeText={onSearch}
                 />
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     onPress={onFilterPress}
                     className="w-10 h-10 bg-yellow-400 rounded-full items-center justify-center shadow-sm left-3">
                     <Ionicons name="options-outline" size={22} color="#555555" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
         </View>
     );
