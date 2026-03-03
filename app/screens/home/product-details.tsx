@@ -20,7 +20,8 @@ export default function ProductDetails() {
     fetchReviewsByFoodId,
     cartCount,
     cartSubtotal,
-    fetchCart
+    fetchCart,
+    foodDescriptionMap
   } = useStore() as any;
   const {
     id,
@@ -28,8 +29,8 @@ export default function ProductDetails() {
     name,
     price,
     image,
-    description,
-    productDescription,
+    description: paramDesc,
+    productDescription: paramProdDesc,
     restaurantName,
     restaurantProfile,
     providerId: paramProviderId,
@@ -80,8 +81,16 @@ export default function ProductDetails() {
     calories: 300,
     time: 25,
     description:
-      (productDescription as string)?.trim() ||
-      (description as string)?.trim() ||
+      [
+        foodDescriptionMap[productId],
+        foodDescriptionMap[id as string],
+        paramProdDesc,
+        paramDesc,
+        "Experience the authentic taste of our special preparation, made with fresh ingredients and traditional recipes."
+      ]
+        .map(s => String(s || "").trim())
+        .filter(s => s.length > 0 && s !== "undefined" && s !== "null")
+        .find(s => s.length > 30) || // Prioritize longer, real descriptions
       "Experience the authentic taste of our special preparation, made with fresh ingredients and traditional recipes.",
     restaurantName: (restaurantName as string) || "The Gourmet Kitchen",
     restaurantProfile: (restaurantProfile as string) || "",

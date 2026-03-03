@@ -17,8 +17,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function FavoriteScreen() {
     const router = useRouter();
-    const { fetchFavorites, addToCart, removeFavorite, isLoading, foodPriceMap } =
-        useStore() as any;
+    const {
+        fetchFavorites,
+        addToCart,
+        removeFavorite,
+        isLoading,
+        foodPriceMap,
+        foodDescriptionMap,
+    } = useStore() as any;
     const [favorites, setFavorites] = useState<any[]>([]);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -66,12 +72,56 @@ export default function FavoriteScreen() {
                 router.push({
                     pathname: "/screens/home/product-details",
                     params: {
-                        id: item.food.foodId,
-                        name: item.food.title,
-                        price: (foodPriceMap[item.food.foodId] || item.food.baseRevenue || item.food.finalPriceTag).toString(),
+                        id: item.food.foodId || item.food._id || item.food.id,
+                        foodId: item.food.foodId || item.food._id || item.food.id,
+                        name:
+                            item.food.name ||
+                            item.food.title ||
+                            item.name ||
+                            item.title ||
+                            "Delicious Food",
+                        price: (
+                            foodPriceMap[item.food.foodId] ||
+                            item.food.baseRevenue ||
+                            item.food.finalPriceTag ||
+                            item.food.price ||
+                            0
+                        ).toString(),
                         image: item.food.image,
-                        rating: (item.food.averageRating || 4.7).toString(),
-                        reviews: (item.food.totalReviews || 2500).toString(),
+                        rating: (
+                            item.food.averageRating ||
+                            item.food.rating ||
+                            0
+                        ).toString(),
+                        reviews: (
+                            item.food.totalReviews ||
+                            item.food.reviews ||
+                            0
+                        ).toString(),
+                        productDescription:
+                            foodDescriptionMap[item.food.foodId] ||
+                            foodDescriptionMap[item.food._id] ||
+                            item.food.productDescription ||
+                            item.food.description ||
+                            item.productDescription ||
+                            item.description ||
+                            "",
+                        description:
+                            foodDescriptionMap[item.food.foodId] ||
+                            foodDescriptionMap[item.food._id] ||
+                            item.food.productDescription ||
+                            item.food.description ||
+                            item.productDescription ||
+                            item.description ||
+                            "",
+                        restaurantName:
+                            item.food.provider ||
+                            item.food.restaurantName ||
+                            "",
+                        providerId:
+                            item.food.providerID || item.food.providerId || "",
+                        serviceFee: (item.food.serviceFee || 0).toString(),
+                        isFavorite: "true",
                     },
                 });
             }}
@@ -83,7 +133,6 @@ export default function FavoriteScreen() {
                     className="w-28 h-28 rounded-2xl"
                     resizeMode="cover"
                 />
-                <TouchableOpacity className="absolute top-2 left-2 w-8 h-8 bg-white/80 rounded-full items-center justify-center shadow-sm"></TouchableOpacity>
             </View>
 
             <View className="flex-1 ml-4 justify-between">
@@ -93,7 +142,7 @@ export default function FavoriteScreen() {
                             numberOfLines={1}
                             className="text-lg font-bold text-gray-900 flex-1"
                         >
-                            {item.food.title}
+                            {item.food.name || item.food.title}
                         </Text>
                         <Text className="text-[10px] text-yellow-600 font-medium ml-2">
                             Top Rated
@@ -103,13 +152,13 @@ export default function FavoriteScreen() {
                     <View className="flex-row items-center mt-1">
                         <Ionicons name="star" size={14} color="#FFC107" />
                         <Text className="text-gray-500 text-xs ml-1">
-                            {item.food.averageRating || 4.7}(
-                            {item.food.totalReviews || "2.5k"})
+                            {item.food.averageRating || item.food.rating || 0}(
+                            {item.food.totalReviews || item.food.reviews || 0})
                         </Text>
                     </View>
 
                     <Text className="text-xl font-bold text-gray-900 mt-2">
-                        $ {foodPriceMap[item.food.foodId] || item.food.baseRevenue || item.food.finalPriceTag}
+                        $ {foodPriceMap[item.food.foodId] || item.food.baseRevenue || item.food.finalPriceTag || item.food.price}
                     </Text>
 
                     <Text className="text-gray-400 text-[10px] mt-1">
@@ -122,9 +171,9 @@ export default function FavoriteScreen() {
                         e.stopPropagation();
                         handleToggleFavorite(item.food.foodId);
                     }}
-                    className="absolute bottom-0 right-0 w-10 h-10 bg-yellow-400 rounded-full items-center justify-center shadow-sm"
+                    className="absolute bottom-0 right-0 w-10 h-10 bg-pink-50 rounded-full items-center justify-center shadow-sm"
                 >
-                    <Ionicons name="add" size={24} color="#000" />
+                    <Ionicons name="heart" size={20} color="#EF4444" />
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>

@@ -37,6 +37,7 @@ export const useStore = create((set, get) => ({
   foodProviderMap: {} as Record<string, string>,
   foodServiceFeeMap: {} as Record<string, number>,
   foodPriceMap: {} as Record<string, number>,
+  foodDescriptionMap: {} as Record<string, string>,
   address: "Set location",
   userState: null as string | null,
   stateTaxInfo: null as any,
@@ -743,6 +744,7 @@ export const useStore = create((set, get) => ({
         const newMap = { ...(get() as any).foodProviderMap };
         const newFeeMap = { ...(get() as any).foodServiceFeeMap };
         const newPriceMap = { ...(get() as any).foodPriceMap };
+        const newDescriptionMap = { ...(get() as any).foodDescriptionMap };
 
         result.data.forEach((item: any) => {
           const fid = item.id || item._id;
@@ -764,8 +766,19 @@ export const useStore = create((set, get) => ({
           if (fid && (feedPrice > 0 || !newPriceMap[fid])) {
             newPriceMap[fid] = feedPrice;
           }
+
+          // Store description
+          const desc = item.productDescription || item.description || "";
+          if (fid && desc && !newDescriptionMap[fid]) {
+            newDescriptionMap[fid] = desc;
+          }
         });
-        set({ foodProviderMap: newMap, foodServiceFeeMap: newFeeMap, foodPriceMap: newPriceMap });
+        set({
+          foodProviderMap: newMap,
+          foodServiceFeeMap: newFeeMap,
+          foodPriceMap: newPriceMap,
+          foodDescriptionMap: newDescriptionMap,
+        });
       }
 
       return result.data;
