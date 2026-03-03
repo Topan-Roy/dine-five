@@ -146,7 +146,7 @@ export default function CardScreen() {
         <Text className="text-2xl font-bold text-gray-900">${subtotal.toFixed(2)}</Text>
         <TouchableOpacity
           onPress={() => router.push('/screens/card/confirm-order')}
-          className="bg-yellow-400 px-8 py-4 rounded-2xl shadow-md">
+          className="bg-yellow-400 px-8 py-4 mb-6 rounded-2xl shadow-md">
           <Text className="text-gray-900 font-bold text-lg">Check Out</Text>
         </TouchableOpacity>
       </View>

@@ -187,11 +187,11 @@ export default function ProductDetails() {
           <View className="absolute inset-0 bg-black/5" />
 
           {/* Pagination Dots */}
-          <View className="absolute bottom-12 w-full flex-row justify-center gap-2">
+          {/* <View className="absolute bottom-12 w-full flex-row justify-center gap-2">
             <View className="w-2.5 h-2.5 rounded-full bg-[#FFC107]" />
             <View className="w-2.5 h-2.5 rounded-full bg-white/60" />
             <View className="w-2.5 h-2.5 rounded-full bg-white/60" />
-          </View>
+          </View> */}
         </View>
 
         {/* Info Card Container */}

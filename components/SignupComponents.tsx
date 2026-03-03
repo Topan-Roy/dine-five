@@ -71,7 +71,7 @@ const SignupComponents = () => {
       {/* name input field */}
       <CustomInput
         label="Name"
-        className="mt-2"
+        className="mt-6"
         placeholder="Your full name"
         onChangeText={(text) => setName(text)}
         value={name}
@@ -131,7 +131,7 @@ const SignupComponents = () => {
       </View>
 
       {/* divider or */}
-      <View className="mt-1 flex-row items-center gap-3">
+      <View className="mt-7 mb-4 flex-row items-center gap-3">
         <View className=" h-px bg-[#EDEDED] mx-2 flex-1" />
         <Text className="text-[#8E8E8E]  text-base">or</Text>
         <View className="flex-1 h-px bg-[#EDEDED] mx-2" />

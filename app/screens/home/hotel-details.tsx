@@ -75,7 +75,7 @@ export default function HotelDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const { cartCount, cartSubtotal, fetchCart } = useStore() as any;
+  const { cartCount, cartSubtotal, fetchCart, addToCart, cartItems } = useStore() as any;
 
   const [products, setProducts] = React.useState<HotelProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = React.useState(true);
@@ -141,11 +141,27 @@ export default function HotelDetailsScreen() {
     };
 
     loadProviderFoods();
-
     return () => {
       active = false;
     };
   }, [providerId]);
+
+  const isItemInCart = (itemId: string) => {
+    if (!itemId) return false;
+    return (cartItems || []).some((cartItem: any) => {
+      const cartFoodId = cartItem?.foodId?._id || cartItem?.foodId?.id || cartItem?.foodId || cartItem?._id;
+      return String(cartFoodId) === String(itemId);
+    });
+  };
+
+  const handleAddItem = async (item: any) => {
+    const inCart = isItemInCart(item.id);
+    if (inCart) {
+      router.push("/card");
+      return;
+    }
+    await addToCart(item, 1);
+  };
 
   return (
     <View className="flex-1 bg-[#FDFBF7]">
@@ -223,7 +239,7 @@ export default function HotelDetailsScreen() {
                           restaurantProfile: hotelImage,
                           productDescription: item.productDescription || "",
                           providerId: item.providerId || providerId,
-                          isNew: item.isNew.toString(),
+                          isNew: String(item.isNew ?? false),
                         },
                       });
                     }}
@@ -231,9 +247,9 @@ export default function HotelDetailsScreen() {
                   >
                     <View className="relative">
                       <Image source={{ uri: item.image }} className="w-full h-32 rounded-xl" resizeMode="cover" />
-                      {item.isNew && (
-                        <View className="absolute top-2 left-2 bg-pink-100 px-2 py-0.5 rounded-full border border-pink-200">
-                          <Text className="text-sm font-normal text-pink-500">NEW</Text>
+                      {item.isNew === true && (
+                        <View className="absolute top-2 left-2 bg-yellow-400 px-2.5 py-1 rounded-full  shadow-sm">
+                          <Text className="text-[10px] font-bold text-[#332701]">New</Text>
                         </View>
                       )}
                     </View>
@@ -249,10 +265,11 @@ export default function HotelDetailsScreen() {
                       <TouchableOpacity
                         onPress={(e) => {
                           e.stopPropagation();
+                          handleAddItem(item);
                         }}
-                        className="w-7 h-7 bg-[#FFE69C] rounded-full items-center justify-center"
+                        className={`w-7 h-7 ${isItemInCart(item.id) ? 'bg-green-500' : 'bg-[#FFE69C]'} rounded-full items-center justify-center`}
                       >
-                        <Ionicons name="add" size={18} color="#332701" />
+                        <Ionicons name={isItemInCart(item.id) ? "cart" : "add"} size={18} color={isItemInCart(item.id) ? "#fff" : "#332701"} />
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>

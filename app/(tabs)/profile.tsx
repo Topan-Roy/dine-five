@@ -20,12 +20,12 @@ const MENU_ITEMS = [
     icon: "reader-outline", // list icon lookalike
     route: "/screens/profile/my-orders",
   },
-  {
-    id: "payment",
-    title: "Payment",
-    icon: "card-outline",
-    route: "/screens/profile/payment",
-  },
+  // {
+  //   id: "payment",
+  //   title: "Payment",
+  //   icon: "card-outline",
+  //   route: "/screens/profile/payment",
+  // },
   {
     id: "favorite",
     title: "Favorite",
@@ -66,7 +66,7 @@ export default function ProfileScreen() {
                   user?.photo ||
                   user?.avatar ||
                   user?.image ||
-                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
+                  "https://i.ibb.co.com/WvT5LftP/iconprofile.jpg",
               }}
               style={{ height: 80, width: 80, borderRadius: 100 }}
               contentFit="cover"

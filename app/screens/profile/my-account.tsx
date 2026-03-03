@@ -43,12 +43,12 @@ export default function MyAccountScreen() {
 
   // Filter state initialized with user data
   const [formData, setFormData] = useState({
-    name: user?.name || user?.fullName || "John Doe",
-    email: user?.email || "john.doe@example.com",
-    phone: user?.phone || "1234567890",
-    phonePrefix: "+1",
-    dateOfBirth: (user?.dateOfBirth || user?.dob || "1995-02-01").split("T")[0],
-    address: user?.address || "123 Main St, New York",
+    name: user?.name || user?.fullName || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    phonePrefix: "+880",
+    dateOfBirth: (user?.dateOfBirth || user?.dob || "").split("T")[0],
+    address: user?.address || "",
   });
 
   // Keep form synced with store user data
@@ -193,7 +193,7 @@ export default function MyAccountScreen() {
                       user?.photo ||
                       user?.avatar ||
                       user?.image ||
-                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500",
+                      "https://i.ibb.co.com/WvT5LftP/iconprofile.jpg",
                   }}
                   style={{ width: "100%", height: "100%" }}
                   contentFit="cover"
@@ -262,11 +262,13 @@ export default function MyAccountScreen() {
                       value={formData.phone}
                       onChangeText={(t) => handleChange("phone", t)}
                       keyboardType="phone-pad"
+                      placeholder="0123456789"
+                      placeholderTextColor="#9CA3AF"
                       className="text-base font-normal text-gray-900 p-0"
                     />
                   ) : (
-                    <Text className="text-base font-normal text-gray-900">
-                      {formData.phone}
+                    <Text className={`text-base font-normal ${formData.phone ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {formData.phone || "No phone number set"}
                     </Text>
                   )}
                 </View>
@@ -286,11 +288,12 @@ export default function MyAccountScreen() {
                     value={formData.dateOfBirth}
                     onChangeText={(t) => handleChange("dateOfBirth", t)}
                     placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#9CA3AF"
                     className="text-base font-normal text-gray-900 p-0"
                   />
                 ) : (
-                  <Text className="text-base font-normal text-gray-900">
-                    {formData.dateOfBirth}
+                  <Text className={`text-base font-normal ${formData.dateOfBirth ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {formData.dateOfBirth || "Birth date not added"}
                   </Text>
                 )}
               </View>
@@ -306,11 +309,13 @@ export default function MyAccountScreen() {
                   <TextInput
                     value={formData.address}
                     onChangeText={(t) => handleChange("address", t)}
+                    placeholder="Enter your address"
+                    placeholderTextColor="#9CA3AF"
                     className="flex-1 text-base font-normal text-gray-900 p-0"
                   />
                 ) : (
-                  <Text className="text-base font-normal text-gray-900">
-                    Address - {formData.address}
+                  <Text className={`text-base font-normal ${formData.address ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {formData.address || "Address not specified"}
                   </Text>
                 )}
                 {!isEditing && (

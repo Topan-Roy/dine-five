@@ -75,7 +75,7 @@ const LoginComponents = () => {
       {/* email input field */}
       <CustomInput
         label="Email"
-        className="mt-2"
+        className="mt-6"
         placeholder="name@example.com"
         onChangeText={(text) => setEmail(text)}
         value={email}
@@ -138,12 +138,12 @@ const LoginComponents = () => {
       </View>
 
       {/* devider or */}
-      <View className="mt-3 mb-8 flex-row items-center gap-3">
+      <View className="mt-10 mb-8 flex-row items-center gap-3">
         {/* divider */}
-        <View className=" h-px bg-[#EDEDED] mx-2 flex-1" />
-        <Text className="text-[#8E8E8E]  text-base">or</Text>
+        <View className=" h-px bg-[#EDEDED] mx-2 flex-1 mb-5" />
+        <Text className="text-[#8E8E8E]   text-base">or</Text>
         {/* divider */}
-        <View className="flex-1 h-px bg-[#EDEDED] mx-2" />
+        <View className="flex-1 h-px bg-[#EDEDED] mx-2 mb-5" />
       </View>
 
       {/* google login */}
