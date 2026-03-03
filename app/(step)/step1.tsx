@@ -17,12 +17,12 @@ const step1 = () => {
       {/* Full screen image background */}
       <View className="flex-1 relative">
         <ImageBackground
-          source={require("@/assets/images/11.jpg")}
+          source={require("@/assets/images/00.png")}
           resizeMode="cover"
           className="flex-1"
         >
           {/* Skip button */}
-          <View className="absolute top-12 right-3">
+          <View className="absolute top-12 right-2">
             <TouchableOpacity onPress={() => router.push("/(step)/step2")}>
               <Text className="text-base font-medium text-[#FFCD39]">Skip</Text>
             </TouchableOpacity>

@@ -22,7 +22,7 @@ const step3 = () => {
           className="flex-1"
         >
           {/* Skip button */}
-          <View className="absolute top-12 right-3">
+          <View className="absolute top-12 right-2">
             <TouchableOpacity onPress={() => router.push("/(step)/step4")}>
               <Text className="text-base font-medium text-[#FFCD39]">Skip</Text>
             </TouchableOpacity>

@@ -20,7 +20,7 @@ const step4 = () => {
                     resizeMode="cover"
                     className="flex-1"
                 >
-                    <View className="absolute top-12 right-3">
+                    <View className="absolute top-12 right-2">
                         <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
                             <Text className="text-base font-medium text-[#FFCD39]">Skip</Text>
                         </TouchableOpacity>
