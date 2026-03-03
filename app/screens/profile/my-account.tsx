@@ -8,7 +8,6 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -16,8 +15,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyAccountScreen() {
@@ -41,25 +41,72 @@ export default function MyAccountScreen() {
     { code: "+33", country: "France", flag: "🇫🇷" },
   ];
 
+  // Helper to split phone into prefix and local number for initial state
+  const getInitialPhoneData = () => {
+    let rawPhone = user?.phone || "";
+    let prefix = "+880";
+    let phone = rawPhone;
+
+    const matchingCode = COUNTRY_CODES.find((item) =>
+      rawPhone.startsWith(item.code)
+    );
+
+    if (matchingCode) {
+      prefix = matchingCode.code;
+      phone = rawPhone.slice(matchingCode.code.length);
+      if (prefix === "+880" && !phone.startsWith("0")) {
+        phone = "0" + phone;
+      }
+    } else if (rawPhone.startsWith("0")) {
+      prefix = "+880";
+    }
+
+    return { prefix, phone };
+  };
+
+  const initialPhone = getInitialPhoneData();
+
   // Filter state initialized with user data
   const [formData, setFormData] = useState({
     name: user?.name || user?.fullName || "",
     email: user?.email || "",
-    phone: user?.phone || "",
-    phonePrefix: "+880",
-    dateOfBirth: (user?.dateOfBirth || user?.dob || "").split("T")[0],
+    phone: initialPhone.phone,
+    phonePrefix: initialPhone.prefix,
+    dateOfBirth: (user?.dateOfBirth || user?.dob || "").split("T")[0] || "",
     address: user?.address || "",
   });
 
-  // Keep form synced with store user data
+  // Sync form with user data, handling phone number splitting
   React.useEffect(() => {
     if (user) {
+      let displayPhone = user.phone || "";
+      let detectedPrefix = "+880";
+
+      // Try to detect prefix from existing phone number
+      const matchingCode = COUNTRY_CODES.find((item) =>
+        displayPhone.startsWith(item.code)
+      );
+
+      if (matchingCode) {
+        detectedPrefix = matchingCode.code;
+        displayPhone = displayPhone.slice(matchingCode.code.length);
+        // Special handling for Bangladesh: ensure leading 0 for local display
+        if (detectedPrefix === "+880" && !displayPhone.startsWith("0")) {
+          displayPhone = "0" + displayPhone;
+        }
+      }
+
       setFormData((prev) => ({
         ...prev,
         name: user?.name || user?.fullName || prev.name,
         email: user.email || prev.email,
-        phone: user.phone || prev.phone,
-        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split("T")[0] : (user.dob ? user.dob.split("T")[0] : prev.dateOfBirth),
+        phone: displayPhone,
+        phonePrefix: detectedPrefix,
+        dateOfBirth: user.dateOfBirth
+          ? user.dateOfBirth.split("T")[0]
+          : user.dob
+            ? user.dob.split("T")[0]
+            : prev.dateOfBirth,
         address: user.address || prev.address,
       }));
     }
@@ -91,6 +138,10 @@ export default function MyAccountScreen() {
     setIsLoading(true);
     try {
       let cleanPhone = (formData.phone || "").replace(/\D/g, "");
+      // For Bangladesh (+880), strip leading 0 if present to avoid dual prefix
+      if (formData.phonePrefix === "+880" && cleanPhone.startsWith("0")) {
+        cleanPhone = cleanPhone.substring(1);
+      }
       const fullPhone = `${formData.phonePrefix}${cleanPhone}`;
 
       console.log("Saving profile data for:", formData.name, "with phone:", fullPhone);
