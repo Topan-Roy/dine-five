@@ -10,6 +10,7 @@ export interface Product {
     time?: number;
     description?: string;
     isNew?: boolean;
+    baseRevenue?: number;
     restaurantName?: string;
     restaurantProfile?: string;
 }

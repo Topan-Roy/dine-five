@@ -17,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function FavoriteScreen() {
     const router = useRouter();
-    const { fetchFavorites, addToCart, removeFavorite, isLoading } =
+    const { fetchFavorites, addToCart, removeFavorite, isLoading, foodPriceMap } =
         useStore() as any;
     const [favorites, setFavorites] = useState<any[]>([]);
     const [refreshing, setRefreshing] = useState(false);
@@ -51,7 +51,7 @@ export default function FavoriteScreen() {
         const product: Product = {
             id: item.food.foodId,
             name: item.food.title,
-            price: item.food.finalPriceTag.toString(),
+            price: (foodPriceMap[item.food.foodId] || item.food.baseRevenue || item.food.finalPriceTag).toString(),
             image: item.food.image,
             rating: item.food.averageRating || 4.7,
             reviews: item.food.totalReviews || 2500,
@@ -68,7 +68,7 @@ export default function FavoriteScreen() {
                     params: {
                         id: item.food.foodId,
                         name: item.food.title,
-                        price: item.food.finalPriceTag.toString(),
+                        price: (foodPriceMap[item.food.foodId] || item.food.baseRevenue || item.food.finalPriceTag).toString(),
                         image: item.food.image,
                         rating: (item.food.averageRating || 4.7).toString(),
                         reviews: (item.food.totalReviews || 2500).toString(),
@@ -109,7 +109,7 @@ export default function FavoriteScreen() {
                     </View>
 
                     <Text className="text-xl font-bold text-gray-900 mt-2">
-                        $ {item.food.finalPriceTag}
+                        $ {foodPriceMap[item.food.foodId] || item.food.baseRevenue || item.food.finalPriceTag}
                     </Text>
 
                     <Text className="text-gray-400 text-[10px] mt-1">
