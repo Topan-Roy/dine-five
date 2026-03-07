@@ -23,7 +23,7 @@ export const HomeHeader = () => {
                             user?.photo ||
                             user?.avatar ||
                             user?.image ||
-                            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+                            "https://i.ibb.co.com/WvT5LftP/iconprofile.jpg",
                     }}
                     contentFit="cover"
                     style={{ width: 48, height: 48, borderRadius: 100 }}
