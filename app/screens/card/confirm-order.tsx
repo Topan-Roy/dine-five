@@ -36,6 +36,7 @@ export default function ConfirmOrderScreen() {
         quantity?: string;
         providerId?: string;
         serviceFee?: string;
+        stateTax?: string;
     }>();
 
     const {
@@ -267,23 +268,36 @@ export default function ConfirmOrderScreen() {
         }
     };
 
-    const calculatedServiceFee = useMemo(() => {
-        return cartItems.reduce((sum, item) => sum + (Number(item.serviceFee || 0) * item.quantity), 0);
+    // Unit-based fees for display only (requested by user to keep fixed on this page)
+    const unitServiceFee = useMemo(() => {
+        return cartItems.reduce((sum, item) => sum + Number(item.serviceFee || 0), 0);
     }, [cartItems]);
 
-    const displayServiceFee = calculatedServiceFee || pricing.platformFee;
-    const displayStateTax = stateTaxInfo?.tax ? (subtotal * Number(stateTaxInfo.tax) / 100) : (pricing.stateTax || 0);
+    const unitPriceTotal = useMemo(() => {
+        return cartItems.reduce((sum, item) => sum + Number(item.price || 0), 0);
+    }, [cartItems]);
+
+    const displayServiceFee = Number(unitServiceFee > 0 ? unitServiceFee : (pricing.platformFee || 0));
+    const calculatedTax = stateTaxInfo?.tax ? (unitPriceTotal * Number(stateTaxInfo.tax) / 100) : 0;
+    const displayStateTax = Number(pricing.stateTax || calculatedTax);
+
+    // This total stays fixed for unit quantity as per user request
+    const displayTotal = Number((unitPriceTotal + displayServiceFee + displayStateTax).toFixed(2));
+
+    // Real total for calculation/passing to next screen
+    const realTotal = Number((subtotal + (unitServiceFee * (cartItems[0]?.quantity || 1)) + displayStateTax).toFixed(2));
 
     useEffect(() => {
         console.log("Tax Debug Info:", {
             userState,
             taxRate: stateTaxInfo?.tax,
+            unitSubtotal: unitPriceTotal,
             subtotal,
             calculatedTax: displayStateTax
         });
-    }, [userState, stateTaxInfo, subtotal, displayStateTax]);
+    }, [userState, stateTaxInfo, subtotal, displayStateTax, pricing.stateTax]);
 
-    const total = (subtotal + displayServiceFee + displayStateTax);
+    const total = displayTotal;
 
     const handleContinue = () => {
         if (!cartItems.length) {
@@ -302,7 +316,7 @@ export default function ConfirmOrderScreen() {
                     foodId: String(item.foodId),
                     quantity: String(item.quantity),
                     price: String(item.price),
-                    serviceFee: String(displayServiceFee),
+                    serviceFee: String(item.serviceFee || 0),
                     stateTax: String(displayStateTax),
                     total: String(total),
                     paymentMethod: 'CARD',

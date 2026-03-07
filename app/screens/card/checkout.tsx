@@ -48,6 +48,7 @@ function CheckoutContent() {
     quantity?: string;
     price?: string;
     serviceFee?: string;
+    stateTax?: string;
   }>();
 
   const isBuyNow = params.buyNow === "true";
@@ -68,6 +69,7 @@ function CheckoutContent() {
     state: "Unknown State",
   });
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const { userCity, userState } = useStore() as any;
 
   const buyNowData = useMemo(() => {
     if (!isBuyNow || !params.foodId) return null;
@@ -110,9 +112,13 @@ function CheckoutContent() {
     return 0;
   }, [isBuyNow, buyNowData, cartRawData]);
 
-  const displayServiceFee = calculatedServiceFee || pricing.platformFee;
-  const displayStateTax = stateTaxInfo?.tax ? (pricing.subtotal * Number(stateTaxInfo.tax) / 100) : (pricing.stateTax || 0);
-  const currentTotal = (pricing.subtotal + displayServiceFee + displayStateTax);
+  const displayServiceFee = Number(calculatedServiceFee > 0 ? calculatedServiceFee : (pricing.platformFee || 0));
+  const baseSubtotalForTax = isBuyNow ? Number(params.price || 0) : (cartRawData?.items?.reduce((sum: number, item: any) => sum + Number(item.price || item.foodId?.price || 0), 0) || 0);
+  const calculatedTax = stateTaxInfo?.tax ? (baseSubtotalForTax * Number(stateTaxInfo.tax) / 100) : Number(params.stateTax || 0);
+  const displayStateTax = Number(pricing.stateTax || calculatedTax);
+  
+  // Use direct sum of displayed components to ensure mathematical consistency in UI
+  const currentTotal = Number((pricing.subtotal + displayServiceFee + displayStateTax).toFixed(2));
 
   const CARDS = ["Mastercard - Daniel Jones", "Visa - Daniel Jones"];
 
@@ -160,6 +166,8 @@ function CheckoutContent() {
         const paymentIntentResult = await createPaymentIntent({
           providerId: buyNowData.providerId,
           items: buyNowData.itemsForPaymentIntent,
+          city: userCity,
+          state: userState,
         });
 
         const breakdown = paymentIntentResult?.data?.breakdown;
@@ -196,6 +204,8 @@ function CheckoutContent() {
       const paymentIntentResult = await createPaymentIntent({
         providerId,
         items: itemsForPaymentIntent,
+        city: userCity,
+        state: userState,
       });
 
       const breakdown = paymentIntentResult?.data?.breakdown;
@@ -239,6 +249,8 @@ function CheckoutContent() {
         const paymentIntentResult = await createPaymentIntent({
           providerId: source.providerId,
           items: source.itemsForPaymentIntent,
+          city: userCity,
+          state: userState,
         });
         activeClientSecret = paymentIntentResult?.data?.clientSecret || null;
 
