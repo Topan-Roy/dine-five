@@ -1,10 +1,10 @@
 import { useStore } from "@/stores/stores";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   Text,
   TouchableOpacity,
   View,
@@ -79,12 +79,18 @@ export const PopularItems = ({
   return (
     <View className="px-4">
       <View className="flex-row flex-wrap justify-between">
-        {filteredItems.map((item) => {
+        {filteredItems.map((item, index) => {
           const inCart = isItemInCart(item.id || item._id);
+
+          // Use exactly the same logic as the working Product Details page
+          const rawImage = item.image || item.foodImage || "";
+          const safeImageUrl = rawImage.startsWith("http://")
+            ? rawImage.replace("http://", "https://")
+            : rawImage || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500";
 
           return (
             <TouchableOpacity
-              key={item.id}
+              key={item.id || item._id || index}
               activeOpacity={0.9}
               onPress={() => {
                 if (inCart) {
@@ -94,29 +100,30 @@ export const PopularItems = ({
                 router.push({
                   pathname: "/screens/home/product-details",
                   params: {
-                    id: item.id,
-                    foodId: item.id,
-                    name: item.name,
-                    price: (item.baseRevenue || item.price || 0).toString(),
-                    image: item.image || "",
-                    rating: (item.rating ?? 0).toString(),
+                    id: String(item.id || item._id || ""),
+                    foodId: String(item.id || item._id || ""),
+                    name: String(item.name || ""),
+                    price: String(item.baseRevenue || item.price || 0),
+                    image: String(item.image || ""),
+                    rating: String(item.rating || 0),
                     reviews: "0",
-                    restaurantName: item.provider || "",
+                    restaurantName: String(item.provider || ""),
                     restaurantProfile: "",
                     isFavorite: "false",
-                    productDescription: item.productDescription || "",
-                    providerId: item.providerID || item.providerId || "",
-                    serviceFee: (item.serviceFee ?? 0).toString(),
+                    productDescription: String(item.productDescription || ""),
+                    providerId: String(item.providerID || item.providerId || ""),
+                    serviceFee: String(item.serviceFee || 0),
                   },
                 });
               }}
               className="w-[48%] mt-4 bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100"
             >
-              <View className="relative">
+              <View className="relative bg-gray-100 rounded-xl overflow-hidden">
                 <Image
-                  source={{ uri: item.image }}
-                  className="w-full h-32 rounded-xl"
-                  resizeMode="cover"
+                  source={{ uri: safeImageUrl }}
+                  style={{ width: '100%', height: 128, borderRadius: 12 }}
+                  contentFit="cover"
+                  transition={500}
                 />
                 {item.inStock === true && (
                   <View className="absolute top-2 left-2 bg-yellow-400 px-2 py-0.5 rounded-full shadow-sm">

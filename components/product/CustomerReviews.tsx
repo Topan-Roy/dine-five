@@ -38,7 +38,7 @@ export const CustomerReviews = ({ reviews = [] }: CustomerReviewsProps) => {
       {reviews.map((review) => {
         const reviewId = review._id || review.id || Math.random().toString();
         const displayName = review.name || review.customerId?.fullName || "Anonymous User";
-        const profilePic = review.profileImage || review.customerId?.profilePic || "https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?w=150";
+        const profilePic = review.profileImage || review.customerId?.profilePic || "https://i.ibb.co.com/WvT5LftP/iconprofile.jpg";
         const reviewComment = review.comment || review.description || "";
         const reviewDate = review.date || review.createdAt || new Date().toISOString();
 

@@ -26,8 +26,12 @@ export const CartItem = ({
   return (
     <View className="flex-row items-center bg-white p-3 rounded-2xl mb-4 shadow-sm border border-gray-100">
       <Image
-        source={{ uri: image }}
+        source={{ 
+          uri: (image || "").replace("http://", "https://") || 
+               "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500" 
+        }}
         contentFit="cover"
+        transition={500}
         style={{ width: 100, height: 80, borderRadius: 12 }}
       />
 

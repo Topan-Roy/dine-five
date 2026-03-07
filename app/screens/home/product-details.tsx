@@ -74,7 +74,7 @@ export default function ProductDetails() {
     name: (name as string) || "Delicious Food Item",
     price: (price as string) || "0.00",
     image: (image as string && (image as string).includes('http'))
-      ? image
+      ? (image as string).replace("http://", "https://")
       : (image as string && (image as string).includes('base64'))
         ? image
         : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500",

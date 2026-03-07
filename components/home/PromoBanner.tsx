@@ -130,10 +130,13 @@ export const PromoBanner = ({ refreshKey = 0 }: { refreshKey?: number }) => {
               elevation: 6,
             }}>
               <Image
-                source={{ uri: item.bannerImage }}
-                style={{ width: 160, height: 160 }}
+                source={{
+                  uri: (item.bannerImage || item.image || "").replace("http://", "https://") ||
+                    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500"
+                }}
+                style={{ width: 150, height: 150, borderRadius: 20 }}
                 contentFit="contain"
-                transition={700}
+                transition={500}
                 cachePolicy="memory-disk"
               />
             </View>

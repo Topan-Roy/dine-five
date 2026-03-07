@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 type HotelCard = {
   id: number;
@@ -161,9 +162,13 @@ export const PopularHotels = ({
           className="bg-white rounded-2xl p-3 border border-[#E7E7E7] mb-4"
         >
           <Image
-            source={{ uri: hotel.image }}
-            className="w-full h-44 rounded-xl mb-3"
-            resizeMode="cover"
+            source={{ 
+              uri: (hotel.image || "").replace("http://", "https://") || 
+                   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500" 
+            }}
+            style={{ width: '100%', height: 176, borderRadius: 12, marginBottom: 12 }}
+            contentFit="cover"
+            transition={500}
           />
 
           <Text className="text-[16px] font-medium text-[#20242A] leading-6 tracking-[0.08px] mb-2">

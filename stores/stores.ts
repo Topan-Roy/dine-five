@@ -741,12 +741,22 @@ export const useStore = create((set, get) => ({
 
       // Build maps for later use in checkout
       if (Array.isArray(result.data)) {
+        const normalizedData = result.data.map((rawItem: any) => {
+          const item: any = {};
+          // Normalize keys (handle leading quotes or typos from API)
+          Object.keys(rawItem).forEach(key => {
+            const cleanKey = key.replace(/^["'\s]+|["'\s]+$/g, "");
+            item[cleanKey] = rawItem[key];
+          });
+          return item;
+        });
+
         const newMap = { ...(get() as any).foodProviderMap };
         const newFeeMap = { ...(get() as any).foodServiceFeeMap };
         const newPriceMap = { ...(get() as any).foodPriceMap };
         const newDescriptionMap = { ...(get() as any).foodDescriptionMap };
 
-        result.data.forEach((item: any) => {
+        normalizedData.forEach((item: any) => {
           const fid = item.id || item._id;
 
           // Store provider
@@ -779,6 +789,7 @@ export const useStore = create((set, get) => ({
           foodPriceMap: newPriceMap,
           foodDescriptionMap: newDescriptionMap,
         });
+        return normalizedData;
       }
 
       return result.data;

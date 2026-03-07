@@ -267,16 +267,14 @@ export default function LocationScreen() {
             <TouchableOpacity
               key={cat}
               onPress={() => setCuisineFilter(cat)}
-              className={`mr-2 px-5 py-2 rounded-full border ${
-                cuisineFilter === cat || (!cuisineFilter && cat === 'All')
-                  ? 'bg-[#FFC107] border-[#FFC107]'
-                  : 'bg-white border-gray-200'
-              }`}
+              className={`mr-2 px-5 py-2 rounded-full border ${cuisineFilter === cat || (!cuisineFilter && cat === 'All')
+                ? 'bg-[#FFC107] border-[#FFC107]'
+                : 'bg-white border-gray-200'
+                }`}
             >
               <Text
-                className={`text-xs font-bold ${
-                  cuisineFilter === cat || (!cuisineFilter && cat === 'All') ? 'text-white' : 'text-gray-500'
-                }`}
+                className={`text-xs font-bold ${cuisineFilter === cat || (!cuisineFilter && cat === 'All') ? 'text-white' : 'text-gray-500'
+                  }`}
               >
                 {cat}
               </Text>
@@ -388,8 +386,11 @@ export default function LocationScreen() {
             <View className="flex-row items-start">
               <TouchableOpacity activeOpacity={0.9} onPress={openRestaurantDetails}>
                 <Image
-                  source={{ uri: selectedRestaurant.profile || 'https://via.placeholder.com/160' }}
-                  className="w-20 h-20 rounded-full"
+                  source={{ 
+                    uri: (selectedRestaurant.profile || "").replace("http://", "https://") || 
+                         "https://i.ibb.co.com/WvT5LftP/iconprofile.jpg" 
+                  }}
+                  style={{ width: 80, height: 80, borderRadius: 40 }}
                   resizeMode="cover"
                 />
               </TouchableOpacity>
