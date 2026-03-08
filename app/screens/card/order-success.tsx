@@ -10,7 +10,7 @@ export default function OrderSuccessScreen() {
 
     const {
         amount = '0',
-        address = 'Home',
+        address = '',
         paymentMethod = 'Not specified',
     } = useLocalSearchParams<{
         amount?: string;
@@ -78,7 +78,7 @@ export default function OrderSuccessScreen() {
                         </Text>
                     </View>
 
-                    {/* Delivery Address */}
+                    {/* Restaurant Location */}
                     <View className="flex-row justify-between items-center mt-4">
                         <View className="flex-row items-center">
                             <Ionicons
@@ -88,13 +88,13 @@ export default function OrderSuccessScreen() {
                                 style={{ marginRight: 8 }}
                             />
                             <Text className="text-gray-500 text-base">
-                                Delivery to
+                                Restaurant
                             </Text>
                         </View>
                         <Text
                             numberOfLines={1}
                             className="text-gray-900 font-bold text-base flex-1 text-right ml-4">
-                            {address}
+                            {address || "Restaurant Location"}
                         </Text>
                     </View>
 

@@ -37,6 +37,7 @@ export default function ConfirmOrderScreen() {
         providerId?: string;
         serviceFee?: string;
         stateTax?: string;
+        restaurantAddress?: string;
     }>();
 
     const {
@@ -360,6 +361,7 @@ export default function ConfirmOrderScreen() {
                     stateTax: String(displayStateTax),
                     total: String(total),
                     paymentMethod: 'CARD',
+                    restaurantAddress: params.restaurantAddress,
                 },
             });
             return;
@@ -373,6 +375,7 @@ export default function ConfirmOrderScreen() {
                 stateTax: String(displayStateTax),
                 paymentMethod: 'CARD',
                 discount: '0',
+                restaurantAddress: params.restaurantAddress,
             },
         });
     };

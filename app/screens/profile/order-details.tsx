@@ -1,4 +1,5 @@
 import { useStore } from "@/stores/stores";
+import { useRestaurantStore } from "@/stores/useRestaurantStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -27,6 +28,13 @@ export default function OrderDetailsScreen() {
   const [existingReviewId, setExistingReviewId] = useState<string | null>(null);
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [orderData, setOrderData] = useState<any>(null);
+  const { restaurants } = useRestaurantStore();
+
+  const restaurantFromMap = restaurants.find(
+    (r) =>
+      r.providerId === orderData?.providerId?._id ||
+      r.providerId === orderData?.providerId
+  );
 
   // State for Rating Modal
   const [rateModalVisible, setRateModalVisible] = useState(false);
@@ -215,7 +223,7 @@ export default function OrderDetailsScreen() {
         ),
       },
       {
-        title: "Order picked up and delivered",
+        title: "Order picked up ",
         active: ["picked_up", "delivered"].includes(currentState),
       },
     ];
@@ -230,7 +238,7 @@ export default function OrderDetailsScreen() {
         <View className="relative">
           {/* Dot */}
           <View
-            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${currentState !== "pending" ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
+            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${currentState === "preparing" ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
           />
           {currentState === "preparing" ? (
             <View>
@@ -256,7 +264,7 @@ export default function OrderDetailsScreen() {
         {/* Step 2: Ready */}
         <View className="relative">
           <View
-            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${["ready", "ready_for_pickup", "picked_up", "delivered"].includes(currentState) ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
+            className={`absolute -left-[31px] w-4 h-4 rounded-full border-2 ${["ready", "ready_for_pickup"].includes(currentState) ? "bg-[#FFC107] border-[#FFC107]" : "bg-gray-100 border-gray-100"} z-10`}
           />
           {currentState === "ready" || currentState === "ready_for_pickup" ? (
             <View>
@@ -287,7 +295,7 @@ export default function OrderDetailsScreen() {
           {["picked_up", "delivered", "completed"].includes(currentState) ? (
             <View>
               <Text className="font-bold text-gray-900 text-base">
-                Order picked up and delivered
+                Order picked up
               </Text>
               <TouchableOpacity
                 onPress={() => setRateModalVisible(true)}
@@ -301,7 +309,7 @@ export default function OrderDetailsScreen() {
             </View>
           ) : (
             <Text className="text-gray-200 font-bold text-base">
-              Order picked up and delivered
+              Order picked up
             </Text>
           )}
         </View>
@@ -380,7 +388,17 @@ export default function OrderDetailsScreen() {
               <Text className="text-gray-500 text-base">Pickup at</Text>
             </View>
             <Text className="text-gray-900 font-bold text-sm underline">
-              {orderData?.providerId?.address || "Restaurant Address"}
+              {restaurantFromMap?.restaurantAddress ||
+               orderData?.providerInfo?.restaurantAddress || 
+               orderData?.providerInfo?.address || 
+               orderData?.providerInfo?.officeAddress ||
+               orderData?.providerId?.restaurantAddress || 
+               orderData?.providerId?.address || 
+               orderData?.pickupAddress ||
+               orderData?.restaurantAddress ||
+               (orderData?.providerInfo?.city ? `${orderData.providerInfo.city}${orderData.providerInfo.state ? ', ' + orderData.providerInfo.state : ''}` : 
+                orderData?.providerId?.city ? `${orderData.providerId.city}${orderData.providerId.state ? ', ' + orderData.providerId.state : ''}` : 
+                "Restaurant Location")}
             </Text>
           </View>
 

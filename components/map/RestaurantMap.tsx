@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Region } from "react-native-maps";
 import { Restaurant, useRestaurantStore } from "../../stores/useRestaurantStore";
 import { RestaurantCard } from "./RestaurantCard";
 const RADIUS_OPTIONS = [
@@ -47,6 +47,8 @@ export const RestaurantMap = () => {
     fetchNearbyRestaurants,
     setSelectedRestaurant,
     setRadiusMeters,
+    startWatchingLocation,
+    stopWatchingLocation,
   } = useRestaurantStore();
 
   const userLat = location?.latitude ?? 23.780704;
@@ -56,6 +58,8 @@ export const RestaurantMap = () => {
   // ─── Init location ───────────────────────────────────────────────────────────
   useEffect(() => {
     fetchLocation();
+    startWatchingLocation();
+    return () => stopWatchingLocation();
   }, []);
 
   // ─── Fetch when location, filter, or radius changes ──────────────────────────
@@ -75,15 +79,31 @@ export const RestaurantMap = () => {
   // ─── Handlers ────────────────────────────────────────────────────────────────
   const handleMarkerPress = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
-    mapRef.current?.animateToRegion(
-      {
-        latitude: restaurant.location.lat,
-        longitude: restaurant.location.lng,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      } as Region,
-      500
-    );
+    
+    if (location) {
+      // Fit both user location and restaurant marker in view to show the full line
+      // Added more bottom padding to account for the restaurant card
+      mapRef.current?.fitToCoordinates(
+        [
+          { latitude: location.latitude, longitude: location.longitude },
+          { latitude: restaurant.location.lat, longitude: restaurant.location.lng }
+        ],
+        {
+          edgePadding: { top: 120, right: 80, bottom: 400, left: 80 },
+          animated: true,
+        }
+      );
+    } else {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: restaurant.location.lat,
+          longitude: restaurant.location.lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        } as Region,
+        500
+      );
+    }
   };
 
   const goToMyLocation = () => {
@@ -162,11 +182,23 @@ export const RestaurantMap = () => {
           latitudeDelta: 0.04,
           longitudeDelta: 0.04,
         }}
-        showsUserLocation={true}
+        showsUserLocation={false}
         showsMyLocationButton={false}
         showsCompass={false}
         onPress={() => setSelectedRestaurant(null)}
       >
+        {location && (
+          <Marker
+            coordinate={{ latitude: location.latitude, longitude: location.longitude }}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <View className="items-center">
+              <View className="w-10 h-10 rounded-full bg-white border-2 border-[#FFC107] items-center justify-center shadow-lg">
+                <Ionicons name="person" size={20} color="#FFC107" />
+              </View>
+            </View>
+          </Marker>
+        )}
         {restaurants.map((restaurant, index) => (
           <Marker
             key={`${restaurant.providerId}-${index}`}
@@ -204,6 +236,39 @@ export const RestaurantMap = () => {
             </View>
           </Marker>
         ))}
+
+        {selectedRestaurant && location && (
+          <>
+            <Polyline
+              coordinates={[
+                { latitude: location.latitude, longitude: location.longitude },
+                {
+                  latitude: selectedRestaurant.location.lat,
+                  longitude: selectedRestaurant.location.lng,
+                },
+              ]}
+              strokeColor="#0F73F7"
+              strokeWidth={5}
+              lineDashPattern={[0]}
+            />
+            {/* Midpoint Distance Label */}
+            <Marker
+              coordinate={{
+                latitude: (location.latitude + selectedRestaurant.location.lat) / 2,
+                longitude: (location.longitude + selectedRestaurant.location.lng) / 2,
+              }}
+              anchor={{ x: 0.5, y: 0.5 }}
+            >
+              <View className="bg-white px-2 py-1 rounded-lg border-2 border-[#0F73F7] shadow-xl">
+                <Text className="text-[12px] font-black text-[#0F73F7]">
+                  {selectedRestaurant.distance < 1
+                    ? `${Math.round(selectedRestaurant.distance * 1000)} m`
+                    : `${selectedRestaurant.distance.toFixed(1)} km`}
+                </Text>
+              </View>
+            </Marker>
+          </>
+        )}
       </MapView>
 
       {/* ── Radius chips overlay ── */}

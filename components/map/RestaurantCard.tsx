@@ -66,7 +66,9 @@ export const RestaurantCard: React.FC<Props> = ({
             <View className="flex-row items-center gap-1 bg-amber-50 px-2 py-1 rounded-full">
               <Ionicons name="navigate-outline" size={11} color="#F59E0B" />
               <Text className="text-amber-600 text-xs font-semibold">
-                {formatDistance(restaurant.distance)}
+                {restaurant.distance < 1
+                  ? `${Math.round(restaurant.distance * 1000)} m`
+                  : `${restaurant.distance.toFixed(1)} km`} away
               </Text>
             </View>
             {restaurant.availableFoods > 0 && (

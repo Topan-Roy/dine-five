@@ -1,4 +1,5 @@
 import { useStore } from "@/stores/stores";
+import { useRestaurantStore } from "@/stores/useRestaurantStore";
 import { Ionicons } from "@expo/vector-icons";
 import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -37,6 +38,7 @@ function CheckoutContent() {
     createPaymentIntent,
     stateTaxInfo,
   } = useStore() as any;
+  const { restaurants, selectedRestaurant } = useRestaurantStore();
 
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
@@ -49,6 +51,7 @@ function CheckoutContent() {
     price?: string;
     serviceFee?: string;
     stateTax?: string;
+    restaurantAddress?: string;
   }>();
 
   const isBuyNow = params.buyNow === "true";
@@ -311,11 +314,16 @@ function CheckoutContent() {
           await clearCart();
         }
 
+        const restaurant = selectedRestaurant || (restaurants && (restaurants as any[]).find(r => r.providerId === source.providerId));
+        // Prioritize params.restaurantAddress which comes from the navigation chain
+        const restaurantAddress = params.restaurantAddress || (restaurant as any)?.restaurantAddress || (restaurant as any)?.address || "Restaurant Location";
+
         router.push({
           pathname: "/screens/card/order-success",
           params: {
             amount: currentTotal.toFixed(2),
             paymentMethod: selectedCard,
+            address: restaurantAddress,
           },
         });
       } else {

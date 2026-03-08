@@ -91,6 +91,7 @@ export default function HotelDetailsScreen() {
   const hotelDelivery = (params.delivery as string) || "Free";
   const hotelCategories = (params.categories as string) || "Restaurant";
   const providerId = (params.providerId as string) || "";
+  const restaurantAddress = (params.restaurantAddress as string) || "";
 
   React.useEffect(() => {
     let active = true;
@@ -239,6 +240,7 @@ export default function HotelDetailsScreen() {
                           restaurantProfile: hotelImage,
                           productDescription: item.productDescription || "",
                           providerId: item.providerId || providerId,
+                          restaurantAddress: restaurantAddress,
                           isNew: String(item.isNew ?? false),
                         },
                       });

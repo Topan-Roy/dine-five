@@ -133,7 +133,7 @@ export const PopularHotels = ({
     <View className="px-4 mt-5">
       <View className="flex-row items-center justify-between mb-3">
         <Text className="text-[16px] font-medium text-[#20242A] leading-6 tracking-[0.08px]">
-          Popular hotels
+          Popular Restaurant
         </Text>
         <TouchableOpacity>
           <Text className="text-[#EAB308] font-semibold text-base">See all</Text>
@@ -162,9 +162,9 @@ export const PopularHotels = ({
           className="bg-white rounded-2xl p-3 border border-[#E7E7E7] mb-4"
         >
           <Image
-            source={{ 
-              uri: (hotel.image || "").replace("http://", "https://") || 
-                   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500" 
+            source={{
+              uri: (hotel.image || "").replace("http://", "https://") ||
+                "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500"
             }}
             style={{ width: '100%', height: 176, borderRadius: 12, marginBottom: 12 }}
             contentFit="cover"

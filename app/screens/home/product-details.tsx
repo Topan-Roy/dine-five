@@ -35,6 +35,7 @@ export default function ProductDetails() {
     restaurantProfile,
     providerId: paramProviderId,
     serviceFee: paramServiceFee,
+    restaurantAddress: paramRestaurantAddress,
   } = params;
   console.log("Product details params:", params);
 
@@ -98,6 +99,7 @@ export default function ProductDetails() {
     restaurantProfile: (restaurantProfile as string) || "",
     providerId: paramProviderId as string,
     serviceFee: parseFloat(paramServiceFee as string) || 0,
+    restaurantAddress: paramRestaurantAddress as string,
   };
 
   const isFav =
@@ -148,6 +150,7 @@ export default function ProductDetails() {
         quantity: String(quantity),
         providerId: String(product.providerId || ""),
         serviceFee: String(product.serviceFee || 0),
+        restaurantAddress: String(product.restaurantAddress || ""),
       },
     });
   };

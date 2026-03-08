@@ -122,6 +122,7 @@ export default function LocationScreen() {
         categories,
         time: `${etaMin} min`,
         delivery: 'Free',
+        restaurantAddress: selectedRestaurant.restaurantAddress,
       },
     });
   };
@@ -291,9 +292,9 @@ export default function LocationScreen() {
           initialRegion={mapCenter}
           showsUserLocation={false}
           showsMyLocationButton={false}
-          scrollEnabled={!selectedRestaurant}
-          rotateEnabled={!selectedRestaurant}
-          pitchEnabled={!selectedRestaurant}
+          scrollEnabled={true}
+          rotateEnabled={true}
+          pitchEnabled={true}
           onPress={() => setSelectedRestaurant(null)}
         >
           {location && (
@@ -310,18 +311,36 @@ export default function LocationScreen() {
           )}
 
           {selectedRestaurant && location && (
-            <Polyline
-              coordinates={[
-                { latitude: location.latitude, longitude: location.longitude },
-                {
-                  latitude: selectedRestaurant.location.lat,
-                  longitude: selectedRestaurant.location.lng,
-                },
-              ]}
-              strokeColor="#0F73F7"
-              strokeWidth={4}
-              lineDashPattern={[0]}
-            />
+            <>
+              <Polyline
+                coordinates={[
+                  { latitude: location.latitude, longitude: location.longitude },
+                  {
+                    latitude: selectedRestaurant.location.lat,
+                    longitude: selectedRestaurant.location.lng,
+                  },
+                ]}
+                strokeColor="#0F73F7"
+                strokeWidth={4}
+                lineDashPattern={[0]}
+              />
+              {/* Midpoint Distance Label */}
+              <Marker
+                coordinate={{
+                  latitude: (location.latitude + selectedRestaurant.location.lat) / 2,
+                  longitude: (location.longitude + selectedRestaurant.location.lng) / 2,
+                }}
+                anchor={{ x: 0.5, y: 0.5 }}
+              >
+                <View className="bg-white px-2 py-1 rounded-lg border-2 border-[#0F73F7] shadow-xl">
+                  <Text className="text-[12px] font-black text-[#0F73F7]">
+                    {selectedRestaurant.distance < 1
+                      ? `${Math.round(selectedRestaurant.distance * 1000)} m`
+                      : `${selectedRestaurant.distance.toFixed(1)} km`}
+                  </Text>
+                </View>
+              </Marker>
+            </>
           )}
 
           {safeRestaurants.map((item, idx) => {
