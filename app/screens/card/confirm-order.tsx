@@ -67,6 +67,7 @@ export default function ConfirmOrderScreen() {
         state: 'Unknown State',
     });
     const [isPricingLoading, setIsPricingLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
 
     const buyNowBaseItem = useMemo(() => {
         if (!isBuyNow || !params.foodId) return null;
@@ -89,7 +90,8 @@ export default function ConfirmOrderScreen() {
     const loadPricing = async (
         providerId: string,
         itemsForPaymentIntent: { foodId: string; quantity: number; serviceFee?: number; price?: number }[],
-        fallbackSubtotal: number
+        fallbackSubtotal: number,
+        silent = false
     ) => {
         if (!providerId || !itemsForPaymentIntent.length) {
             setPricing((prev) => ({
@@ -100,7 +102,7 @@ export default function ConfirmOrderScreen() {
             return;
         }
 
-        setIsPricingLoading(true);
+        if (!silent) setIsPricingLoading(true);
         try {
             const paymentIntentResult = await createPaymentIntent({
                 providerId,
@@ -151,8 +153,10 @@ export default function ConfirmOrderScreen() {
                     serviceFee: buyNowBaseItem.serviceFee || 0,
                     price: buyNowBaseItem.price
                 }],
-                localSubtotal
+                localSubtotal,
+                false // show loader for initial load
             );
+            setIsInitialLoading(false);
             return;
         }
 
@@ -161,27 +165,27 @@ export default function ConfirmOrderScreen() {
             const formattedItems = cartData.items.map((item: any) => {
                 const foodId = item.foodId?._id || item.foodId?.id || item.foodId;
                 return {
-                    id: item.foodId?._id || item._id,
-                    cartItemId: item._id,
+                    id: String(foodId || item._id),
+                    cartItemId: String(item._id || foodId),
                     name: item.foodId?.title || item.foodId?.name,
                     image: item.foodId?.image,
-                    quantity: item.quantity,
-                    foodId: foodId,
+                    quantity: Number(item.quantity || 0),
+                    foodId: String(foodId),
                     providerId:
-                        item.providerID ||
-                        item.foodId?.providerID ||
-                        item.providerId ||
-                        item.foodId?.providerId ||
-                        item.foodId?.provider?._id ||
-                        '',
-                    price: foodPriceMap[foodId] || item.price || item.foodId?.price || 0,
+                        String(item.providerID ||
+                            item.foodId?.providerID ||
+                            item.providerId ||
+                            item.foodId?.providerId ||
+                            item.foodId?.provider?._id ||
+                            ''),
+                    price: Number(foodPriceMap[foodId] || item.price || item.foodId?.price || 0),
                     serviceFee:
-                        item.foodId?.serviceFee ||
-                        item.serviceFee ||
-                        item.foodId?.platformFee ||
-                        item.platformFee ||
-                        foodServiceFeeMap[foodId] ||
-                        0,
+                        Number(item.foodId?.serviceFee ||
+                            item.serviceFee ||
+                            item.foodId?.platformFee ||
+                            item.platformFee ||
+                            foodServiceFeeMap[foodId] ||
+                            0),
                 };
             });
 
@@ -198,11 +202,12 @@ export default function ConfirmOrderScreen() {
                 price: item.price
             }));
 
-            await loadPricing(providerId, itemsForPaymentIntent, localSubtotal);
+            await loadPricing(providerId, itemsForPaymentIntent, localSubtotal, false);
         } else {
             setCartItems([]);
             setSubtotal(0);
         }
+        setIsInitialLoading(false);
     };
 
     useEffect(() => {
@@ -241,7 +246,7 @@ export default function ConfirmOrderScreen() {
             const localSubtotal = Number((item.price * item.quantity).toFixed(2));
             setSubtotal(localSubtotal);
             const providerId = item.providerId || foodProviderMap?.[item.foodId] || '';
-            await loadPricing(providerId, [{ foodId: item.foodId, quantity: item.quantity }], localSubtotal);
+            await loadPricing(providerId, [{ foodId: item.foodId, quantity: item.quantity }], localSubtotal, true);
             return;
         }
 
@@ -261,7 +266,37 @@ export default function ConfirmOrderScreen() {
             } else {
                 await updateCartQuantity(foodId, newQuantity);
             }
-            await loadCart();
+            // Silent sync with server
+            const cartData = await fetchCart();
+            if (cartData && cartData.items) {
+                const updatedItems = cartData.items.map((item: any) => {
+                    const fid = item.foodId?._id || item.foodId?.id || item.foodId;
+                    return {
+                        id: String(fid || item._id),
+                        cartItemId: String(item._id || fid),
+                        name: item.foodId?.title || item.foodId?.name,
+                        image: item.foodId?.image,
+                        quantity: Number(item.quantity || 0),
+                        foodId: String(fid),
+                        providerId: String(item.providerID || item.foodId?.providerID || item.providerId || item.foodId?.providerId || item.foodId?.provider?._id || ''),
+                        price: Number(foodPriceMap[fid] || item.price || item.foodId?.price || 0),
+                        serviceFee: Number(item.foodId?.serviceFee || item.serviceFee || item.foodId?.platformFee || item.platformFee || foodServiceFeeMap[fid] || 0),
+                    };
+                });
+                setCartItems(updatedItems);
+                const localSubtotal = Number(cartData.subtotal || 0);
+                setSubtotal(localSubtotal);
+
+                const first = updatedItems[0];
+                const providerId = first?.providerId || foodProviderMap?.[first?.foodId] || '';
+                const itemsForIntent = updatedItems.map((item: any) => ({
+                    foodId: item.foodId,
+                    quantity: item.quantity,
+                    serviceFee: item.serviceFee || 0,
+                    price: item.price
+                }));
+                await loadPricing(providerId, itemsForIntent, localSubtotal, true); // SILENT sync
+            }
         } catch (err) {
             console.log(err);
             await loadCart();
@@ -278,14 +313,21 @@ export default function ConfirmOrderScreen() {
     }, [cartItems]);
 
     const displayServiceFee = Number(unitServiceFee > 0 ? unitServiceFee : (pricing.platformFee || 0));
-    const calculatedTax = stateTaxInfo?.tax ? (unitPriceTotal * Number(stateTaxInfo.tax) / 100) : 0;
-    const displayStateTax = Number(pricing.stateTax || calculatedTax);
+    
+    // STRICT FIXED TAX: Calculate tax ONLY for one unit of the items (e.g. 0.90 flat for the whole order)
+    // We take the price of the first item to determine the base tax, which will stay fixed.
+    const firstItemPrice = isBuyNow ? Number(params.price || 0) : (cartItems[0]?.price || 0);
+    const calculatedTaxFromRate = stateTaxInfo?.tax ? (Number(firstItemPrice) * Number(stateTaxInfo.tax) / 100) : Number(params.stateTax || 0);
+    const qtyForNormalization = isBuyNow ? Math.max(1, Number(params.quantity || 1)) : (cartItems?.reduce((sum, i) => sum + Number(i.quantity || 0), 0) || 1);
+    
+    // This amount (e.g. 0.90) will NOT change even if quantity or products increase
+    const displayStateTax = Number(calculatedTaxFromRate > 0 ? calculatedTaxFromRate : (pricing.stateTax > 0 ? (pricing.stateTax / qtyForNormalization) : 0));
 
-    // This total stays fixed for unit quantity as per user request
-    const displayTotal = Number((unitPriceTotal + displayServiceFee + displayStateTax).toFixed(2));
+    // Use direct sum of displayed components to ensure mathematical consistency in UI
+    const total = Number((unitPriceTotal + displayServiceFee + displayStateTax).toFixed(2));
 
     // Real total for calculation/passing to next screen
-    const realTotal = Number((subtotal + (unitServiceFee * (cartItems[0]?.quantity || 1)) + displayStateTax).toFixed(2));
+    const realTotal = Number((subtotal + cartItems.reduce((sum, item) => sum + (Number(item.serviceFee || 0) * item.quantity), 0) + displayStateTax).toFixed(2));
 
     useEffect(() => {
         console.log("Tax Debug Info:", {
@@ -296,8 +338,6 @@ export default function ConfirmOrderScreen() {
             calculatedTax: displayStateTax
         });
     }, [userState, stateTaxInfo, subtotal, displayStateTax, pricing.stateTax]);
-
-    const total = displayTotal;
 
     const handleContinue = () => {
         if (!cartItems.length) {

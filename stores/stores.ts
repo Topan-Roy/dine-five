@@ -760,27 +760,32 @@ export const useStore = create((set, get) => ({
           const fid = item.id || item._id;
 
           // Store provider
-          const pid = item.providerID || item.providerId || (item.provider?._id) || (typeof item.provider === 'string' ? item.provider : null);
+          const pid = item.providerID || item.providerId || item.providerId || (item.provider?._id) || (typeof item.provider === 'string' ? item.provider : null);
           if (fid && pid) {
             newMap[fid] = pid;
           }
 
-          // Store service fee
-          const fee = item.serviceFee || item.platformFee || 0;
+          // Store service fee (handling common typos like 'serviiceFee', 'platformFee')
+          const fee = Number(item.serviceFee || item.serviiceFee || item.platformFee || 0);
           if (fid && (fee > 0 || !newFeeMap[fid])) {
-            newFeeMap[fid] = fee;
+            newFeeMap[fid] = Number(fee.toFixed(2));
           }
 
           // Store price from feed (prioritize baseRevenue e.g. 5.99)
           const feedPrice = Number(item.baseRevenue || item.price || 0);
           if (fid && (feedPrice > 0 || !newPriceMap[fid])) {
-            newPriceMap[fid] = feedPrice;
+            newPriceMap[fid] = Number(feedPrice.toFixed(2));
           }
 
           // Store description
           const desc = item.productDescription || item.description || "";
           if (fid && desc && !newDescriptionMap[fid]) {
             newDescriptionMap[fid] = desc;
+          }
+
+          // Fix mangled image URLs (e.g. double uploads path)
+          if (item.image && typeof item.image === 'string') {
+            item.image = item.image.replace(/\/pload\/v\d+\/uploads\//g, "/uploads/");
           }
         });
         set({

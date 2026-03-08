@@ -110,12 +110,18 @@ function CheckoutContent() {
       }, 0);
     }
     return 0;
-  }, [isBuyNow, buyNowData, cartRawData]);
+  }, [isBuyNow, buyNowData, cartRawData, foodServiceFeeMap]);
 
   const displayServiceFee = Number(calculatedServiceFee > 0 ? calculatedServiceFee : (pricing.platformFee || 0));
-  const baseSubtotalForTax = isBuyNow ? Number(params.price || 0) : (cartRawData?.items?.reduce((sum: number, item: any) => sum + Number(item.price || item.foodId?.price || 0), 0) || 0);
-  const calculatedTax = stateTaxInfo?.tax ? (baseSubtotalForTax * Number(stateTaxInfo.tax) / 100) : Number(params.stateTax || 0);
-  const displayStateTax = Number(pricing.stateTax || calculatedTax);
+  
+  // STRICT PRIORITY: Use the exact tax passed from the confirm-order screen (e.g. 0.90)
+  // This ensures that the tax never changes once it has been displayed to the user
+  const passedTax = Number(params.stateTax || 0);
+  const firstItemPrice = isBuyNow ? Number(params.price || 0) : (cartRawData?.items?.[0]?.price || cartRawData?.items?.[0]?.foodId?.price || 0);
+  const calculatedTaxFromRate = stateTaxInfo?.tax ? (Number(firstItemPrice) * Number(stateTaxInfo.tax) / 100) : 0;
+  
+  // We prefer passedTax first, then locally calculated rate, then server value
+  const displayStateTax = Number(passedTax > 0 ? passedTax : (calculatedTaxFromRate > 0 ? calculatedTaxFromRate : (pricing.stateTax || 0)));
   
   // Use direct sum of displayed components to ensure mathematical consistency in UI
   const currentTotal = Number((pricing.subtotal + displayServiceFee + displayStateTax).toFixed(2));
