@@ -32,7 +32,6 @@
       ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "usesCleartextTraffic": true,
       "intentFilters": []
     },
     "web": {
@@ -43,6 +42,14 @@
     "plugins": [
       "expo-router",
       "expo-av",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
       [
         "expo-location",
         {
@@ -67,7 +74,8 @@
           "merchantIdentifier": "merchant.com.mdalifk2002.dinefive",
           "enableGooglePay": true
         }
-      ]
+      ],
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true,
