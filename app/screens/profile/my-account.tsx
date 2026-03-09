@@ -148,7 +148,6 @@ export default function MyAccountScreen() {
         <Text className="text-gray-400 text-base mr-1" numberOfLines={1}>
           {value || (label === "Birthday" ? "Optional" : "Add info")}
         </Text>
-        <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
       </View>
     </TouchableOpacity>
   );

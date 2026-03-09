@@ -55,20 +55,20 @@ export default function SettingsScreen() {
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete Account",
-      "Are you sure you want to delete your account? This action cannot be undone.",
+      "Are you sure you want to permanently delete your account? This will remove all your data from our database and cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "Delete Permanently",
           style: "destructive",
           onPress: async () => {
             const result = await deleteAccount();
-            if (result && result.success) {
-              Alert.alert("Success", result.message || "Account deactivated");
+            if (result && (result.success || result.status === "success" || result.data)) {
+              Alert.alert("Success", result.message || "Account deleted successfully from database");
               router.replace("/(auth)/login");
             } else {
               const error = (useStore.getState() as any).error;
-              Alert.alert("Error", error || "Failed to delete account");
+              Alert.alert("Error", error || "Failed to delete account. Please try again later.");
             }
           },
         },

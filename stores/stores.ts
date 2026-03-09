@@ -691,7 +691,7 @@ export const useStore = create((set, get) => ({
       if (!accessToken) throw new Error("No access token found");
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/profile/me`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/profile`,
         {
           method: "DELETE",
           headers: {
@@ -702,17 +702,38 @@ export const useStore = create((set, get) => ({
       );
 
       const result = await response.json();
+      console.log("Delete account API response:", result);
+
       if (!response.ok) {
-        throw new Error(result.message || "Failed to deactivate account");
+        throw new Error(result.message || "Failed to delete account from server");
       }
 
-      // Logout automatically after account deletion
-      await (get() as any).logout();
+      // Check for backend success
+      if (result.success === true) {
+        // Force clear all auth data from AsyncStorage using constant keys
+        await Promise.all([
+          AsyncStorage.removeItem(STORAGE_KEYS.USER),
+          AsyncStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN),
+          AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN),
+        ]);
 
-      set({ isLoading: false });
-      return result;
+        // Reset store state
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isLoading: false,
+          cartItems: [],
+          cartCount: 0,
+          favorites: [],
+        });
+
+        return result;
+      } else {
+        throw new Error(result.message || "Server did not confirm deletion");
+      }
     } catch (error: any) {
-      console.log("deleteAccount error", error);
+      console.log("CRITICAL deleteAccount error:", error);
       set({ error: error.message, isLoading: false });
       return null;
     }
