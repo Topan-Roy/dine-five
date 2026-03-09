@@ -4,20 +4,18 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
-import { FlatList } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyAccountScreen() {
@@ -26,82 +24,24 @@ export default function MyAccountScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
-
-  const COUNTRY_CODES = [
-    { code: "+1", country: "United States", flag: "🇺🇸" },
-    { code: "+880", country: "Bangladesh", flag: "🇧🇩" },
-    { code: "+44", country: "United Kingdom", flag: "🇬🇧" },
-    { code: "+91", country: "India", flag: "🇮🇳" },
-    { code: "+971", country: "UAE", flag: "🇦🇪" },
-    { code: "+966", country: "Saudi Arabia", flag: "🇸🇦" },
-    { code: "+61", country: "Australia", flag: "🇦🇺" },
-    { code: "+1", country: "Canada", flag: "🇨🇦" },
-    { code: "+49", country: "Germany", flag: "🇩🇪" },
-    { code: "+33", country: "France", flag: "🇫🇷" },
-  ];
-
-  // Helper to split phone into prefix and local number for initial state
-  const getInitialPhoneData = () => {
-    let rawPhone = user?.phone || "";
-    let prefix = "+880";
-    let phone = rawPhone;
-
-    const matchingCode = COUNTRY_CODES.find((item) =>
-      rawPhone.startsWith(item.code)
-    );
-
-    if (matchingCode) {
-      prefix = matchingCode.code;
-      phone = rawPhone.slice(matchingCode.code.length);
-      if (prefix === "+880" && !phone.startsWith("0")) {
-        phone = "0" + phone;
-      }
-    } else if (rawPhone.startsWith("0")) {
-      prefix = "+880";
-    }
-
-    return { prefix, phone };
-  };
-
-  const initialPhone = getInitialPhoneData();
 
   // Filter state initialized with user data
   const [formData, setFormData] = useState({
-    name: user?.name || user?.fullName || "",
-    email: user?.email || "",
-    phone: initialPhone.phone,
-    phonePrefix: initialPhone.prefix,
-    dateOfBirth: (user?.dateOfBirth || user?.dob || "").split("T")[0] || "",
-    address: user?.address || "",
+    name: user?.name || user?.fullName || "Theresa Webb",
+    email: user?.email || "michael.mitc@example.com",
+    phone: user?.phone || "Number",
+    dateOfBirth: (user?.dateOfBirth || user?.dob || "").split("T")[0] || "Optional",
+    address: user?.address || "Home",
   });
 
-  // Sync form with user data, handling phone number splitting
-  React.useEffect(() => {
+  // Sync form with user data
+  useEffect(() => {
     if (user) {
-      let displayPhone = user.phone || "";
-      let detectedPrefix = "+880";
-
-      // Try to detect prefix from existing phone number
-      const matchingCode = COUNTRY_CODES.find((item) =>
-        displayPhone.startsWith(item.code)
-      );
-
-      if (matchingCode) {
-        detectedPrefix = matchingCode.code;
-        displayPhone = displayPhone.slice(matchingCode.code.length);
-        // Special handling for Bangladesh: ensure leading 0 for local display
-        if (detectedPrefix === "+880" && !displayPhone.startsWith("0")) {
-          displayPhone = "0" + displayPhone;
-        }
-      }
-
       setFormData((prev) => ({
         ...prev,
         name: user?.name || user?.fullName || prev.name,
         email: user.email || prev.email,
-        phone: displayPhone,
-        phonePrefix: detectedPrefix,
+        phone: user.phone || prev.phone,
         dateOfBirth: user.dateOfBirth
           ? user.dateOfBirth.split("T")[0]
           : user.dob
@@ -112,8 +52,7 @@ export default function MyAccountScreen() {
     }
   }, [user]);
 
-  // Fetch latest profile on mount
-  React.useEffect(() => {
+  useEffect(() => {
     fetchProfile();
   }, []);
 
@@ -137,20 +76,11 @@ export default function MyAccountScreen() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      let cleanPhone = (formData.phone || "").replace(/\D/g, "");
-      // For Bangladesh (+880), strip leading 0 if present to avoid dual prefix
-      if (formData.phonePrefix === "+880" && cleanPhone.startsWith("0")) {
-        cleanPhone = cleanPhone.substring(1);
-      }
-      const fullPhone = `${formData.phonePrefix}${cleanPhone}`;
-
-      console.log("Saving profile data for:", formData.name, "with phone:", fullPhone);
-
       let dataToUpdate: any;
       if (selectedImage) {
         const form = new FormData();
         form.append("name", formData.name);
-        form.append("phone", fullPhone);
+        form.append("phone", formData.phone);
         form.append("dateOfBirth", formData.dateOfBirth);
         form.append("address", formData.address);
 
@@ -167,7 +97,7 @@ export default function MyAccountScreen() {
       } else {
         dataToUpdate = {
           name: formData.name,
-          phone: fullPhone,
+          phone: formData.phone,
           dateOfBirth: formData.dateOfBirth,
           address: formData.address,
         };
@@ -178,42 +108,70 @@ export default function MyAccountScreen() {
       if (result) {
         Alert.alert("Success", "Profile updated successfully");
         setIsEditing(false);
-        setSelectedImage(null); // Clear selection after success
-      } else {
-        const storeError = (useStore.getState() as any).error;
-        Alert.alert("Error", storeError || "Failed to update profile");
+        setSelectedImage(null);
       }
     } catch (error: any) {
-      console.log("Save error:", error);
       Alert.alert("Error", error.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const [isEmailVisible, setIsEmailVisible] = useState(false);
+
+  const maskEmail = (email: string) => {
+    if (!email || !email.includes("@")) return email;
+    const [name, domain] = email.split("@");
+    return `${name.substring(0, 3)}***@${domain}`;
+  };
+
+  const renderViewItem = (label: string, value: string, icon?: string, onIconPress?: () => void) => (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      disabled={!isEditing && label !== "Email"}
+      onPress={() => {
+        if (!isEditing && label === "Email" && onIconPress) {
+          onIconPress();
+        }
+      }}
+      className="bg-white px-5 py-4 rounded-2xl mb-4 border border-gray-50 flex-row items-center justify-between shadow-sm shadow-black/5"
+    >
+      <View className="flex-row items-center gap-3">
+        {icon && (
+          <TouchableOpacity disabled={!onIconPress} onPress={onIconPress}>
+            <Ionicons name={icon as any} size={22} color="#4B5563" />
+          </TouchableOpacity>
+        )}
+        <Text className="text-gray-700 text-base font-medium">{label}</Text>
+      </View>
+      <View className="flex-row items-center gap-2">
+        <Text className="text-gray-400 text-base mr-1" numberOfLines={1}>
+          {value || (label === "Birthday" ? "Optional" : "Add info")}
+        </Text>
+        <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-[#FDFBF7]">
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View className="flex-row items-center justify-center pt-2 pb-6 relative px-4">
+      <View className="flex-row items-center justify-between px-5 pt-3 pb-6">
         <TouchableOpacity
-          onPress={() => router.back()}
-          className="absolute left-4 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+          onPress={() => (isEditing ? setIsEditing(false) : router.back())}
+          className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-md shadow-black/10"
         >
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900">My Account</Text>
+
+        <Text className="text-xl font-bold text-gray-900">
+          {isEditing ? "Your name" : "My Account"}
+        </Text>
 
         <TouchableOpacity
-          onPress={() => {
-            if (isEditing) {
-              handleSave();
-            } else {
-              setIsEditing(true);
-            }
-          }}
-          className="absolute right-4"
+          onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
           disabled={isLoading}
         >
           {isLoading ? (
@@ -226,202 +184,127 @@ export default function MyAccountScreen() {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "padding"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-        className="flex-1"
-      >
-        <ScrollView className="flex-1 px-6">
-          {/* User Avatar */}
-          <View className="items-center mb-8">
-            <View className="relative">
-              <View className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden">
-                <Image
-                  source={{
-                    uri:
-                      selectedImage ||
-                      user?.profilePic ||
-                      user?.photo ||
-                      user?.avatar ||
-                      user?.image ||
-                      "https://i.ibb.co.com/WvT5LftP/iconprofile.jpg",
-                  }}
-                  style={{ width: "100%", height: "100%" }}
-                  contentFit="cover"
-                />
-              </View>
-              {isEditing && (
-                <TouchableOpacity
-                  onPress={pickImage}
-                  className="absolute bottom-0 right-0 bg-gray-900 w-8 h-8 rounded-full items-center justify-center border-2 border-white"
-                >
-                  <Ionicons name="camera" size={14} color="#fff" />
-                </TouchableOpacity>
-              )}
+      <ScrollView className="flex-1 px-6 pt-2" showsVerticalScrollIndicator={false}>
+        {/* Profile Avatar Section */}
+        <View className="items-center mb-10">
+          <View className="relative">
+            <View className="w-28 h-28 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-xl shadow-black/10">
+              <Image
+                source={{
+                  uri:
+                    selectedImage ||
+                    user?.profilePic ||
+                    user?.photo ||
+                    "https://i.ibb.co.com/WvT5LftP/iconprofile.jpg",
+                }}
+                style={{ width: "100%", height: "100%" }}
+                contentFit="cover"
+              />
             </View>
-            <Text className="text-xl font-bold text-gray-900 text-center mt-4">
-              {formData.name}
-            </Text>
-            <Text className="text-gray-500 text-sm text-center mt-1">
-              {formData.email}
-            </Text>
+            {isEditing && (
+              <TouchableOpacity
+                onPress={pickImage}
+                className="absolute bottom-1 right-1 bg-white w-9 h-9 rounded-full items-center justify-center shadow-lg border border-gray-100"
+              >
+                <Ionicons name="camera" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            )}
           </View>
+          {!isEditing && (
+            <View className="mt-5 items-center">
+              <Text className="text-2xl font-bold text-gray-900">
+                {formData.name}
+              </Text>
+              <Text className="text-gray-500 text-base mt-1">
+                {formData.email}
+              </Text>
+            </View>
+          )}
+        </View>
 
-          {/* Form Fields */}
-          <View className="space-y-5">
-            {/* Name Field (shown as read-only label in view mode, could be input in edit mode) */}
-            {isEditing ? (
+        {isEditing ? (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            className="pb-20"
+          >
+            <View className="gap-6">
               <View>
-                <Text className="text-gray-500 text-sm mb-1 ml-1">Name</Text>
+                <Text className="text-gray-500 text-base mb-2 font-medium">Your Name</Text>
                 <TextInput
                   value={formData.name}
-                  onChangeText={(t) => handleChange("name", t)}
-                  className="bg-white p-4 rounded-xl border border-gray-100 text-base font-normal text-gray-900"
+                  onChangeText={(v) => handleChange("name", v)}
+                  placeholder="Daniel Jones"
+                  placeholderTextColor="#9CA3AF"
+                  className="bg-white px-5 py-4 rounded-2xl border border-gray-100 text-lg font-normal text-gray-900 shadow-sm shadow-black/5"
                 />
               </View>
-            ) : (
-              <View className="bg-white p-4 rounded-xl border border-gray-100">
-                <Text className="text-base font-normal text-gray-900">
-                  {formData.name}
-                </Text>
-              </View>
-            )}
 
-            {/* Phone Field */}
-            <View className="mt-4">
-              {isEditing && (
-                <Text className="text-gray-500 text-sm mb-1 ml-1">
-                  Phone Number
-                </Text>
-              )}
-              <View className="flex-row gap-3">
-                <TouchableOpacity
-                  onPress={() => isEditing && setShowCountryPicker(true)}
-                  disabled={!isEditing}
-                  className="bg-white p-4 rounded-xl border border-gray-100 flex-row items-center justify-center gap-2"
-                >
-                  <Text className="text-base font-normal text-gray-900">
-                    {formData.phonePrefix}
-                  </Text>
-                  {isEditing && (
-                    <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
-                  )}
-                </TouchableOpacity>
-                <View className="flex-1 bg-white p-4 rounded-xl border border-gray-100 justify-center">
-                  {isEditing ? (
-                    <TextInput
-                      value={formData.phone}
-                      onChangeText={(t) => handleChange("phone", t)}
-                      keyboardType="phone-pad"
-                      placeholder="0123456789"
-                      placeholderTextColor="#9CA3AF"
-                      className="text-base font-normal text-gray-900 p-0"
-                    />
-                  ) : (
-                    <Text className={`text-base font-normal ${formData.phone ? 'text-gray-900' : 'text-gray-400'}`}>
-                      {formData.phone || "No phone number set"}
-                    </Text>
-                  )}
-                </View>
+              <View>
+                <Text className="text-gray-500 text-base mb-2 font-medium">Number</Text>
+                <TextInput
+                  value={formData.phone}
+                  onChangeText={(v) => handleChange("phone", v)}
+                  placeholder="Daniel Jones"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="phone-pad"
+                  className="bg-white px-5 py-4 rounded-2xl border border-gray-100 text-lg font-normal text-gray-900 shadow-sm shadow-black/5"
+                />
               </View>
-            </View>
 
-            {/* DOB Field */}
-            <View className="mt-4">
-              {isEditing && (
-                <Text className="text-gray-500 text-sm mb-1 ml-1">
-                  Date of Birth
-                </Text>
-              )}
-              <View className="bg-white p-4 rounded-xl border border-gray-100">
-                {isEditing ? (
+              <View>
+                <Text className="text-gray-500 text-base mb-2 font-medium">Your Birthday</Text>
+                <View className="relative">
                   <TextInput
                     value={formData.dateOfBirth}
-                    onChangeText={(t) => handleChange("dateOfBirth", t)}
-                    placeholder="YYYY-MM-DD"
+                    onChangeText={(v) => handleChange("dateOfBirth", v)}
+                    placeholder="00/00/0000"
                     placeholderTextColor="#9CA3AF"
-                    className="text-base font-normal text-gray-900 p-0"
+                    className="bg-white px-5 py-4 rounded-2xl border border-gray-100 text-lg font-normal text-gray-900 shadow-sm shadow-black/5"
                   />
-                ) : (
-                  <Text className={`text-base font-normal ${formData.dateOfBirth ? 'text-gray-900' : 'text-gray-400'}`}>
-                    {formData.dateOfBirth || "Birth date not added"}
-                  </Text>
-                )}
+                  {/* <View className="absolute left-4 top-[18px]">
+                    <Ionicons name="calendar-outline" size={24} color="#9CA3AF" />
+                  </View> */}
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-gray-500 text-base mb-2 font-medium">Your Country</Text>
+                <TextInput
+                  value={formData.address}
+                  onChangeText={(v) => handleChange("address", v)}
+                  placeholder="Home"
+                  placeholderTextColor="#9CA3AF"
+                  className="bg-white px-5 py-4 rounded-2xl border border-gray-100 text-lg font-normal text-gray-900 shadow-sm shadow-black/5"
+                />
+              </View>
+
+              <View>
+                <Text className="text-gray-500 text-base mb-2 font-medium">Your Email</Text>
+                <TextInput
+                  value={formData.email}
+                  editable={false}
+                  placeholder="Daniel Jones"
+                  placeholderTextColor="#9CA3AF"
+                  className="bg-white px-5 py-4 rounded-2xl border border-gray-100 text-lg font-normal text-gray-400 shadow-sm shadow-black/5"
+                />
               </View>
             </View>
-
-            {/* Address Field */}
-            <View className="mt-4">
-              {isEditing && (
-                <Text className="text-gray-500 text-sm mb-1 ml-1">Address</Text>
-              )}
-              <View className="bg-white p-4 rounded-xl border border-gray-100 flex-row justify-between items-center">
-                {isEditing ? (
-                  <TextInput
-                    value={formData.address}
-                    onChangeText={(t) => handleChange("address", t)}
-                    placeholder="Enter your address"
-                    placeholderTextColor="#9CA3AF"
-                    className="flex-1 text-base font-normal text-gray-900 p-0"
-                  />
-                ) : (
-                  <Text className={`text-base font-normal ${formData.address ? 'text-gray-900' : 'text-gray-400'}`}>
-                    {formData.address || "Address not specified"}
-                  </Text>
-                )}
-                {!isEditing && (
-                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-                )}
-              </View>
-            </View>
+          </KeyboardAvoidingView>
+        ) : (
+          <View className="pb-10">
+            {renderViewItem("Name", formData.name)}
+            {renderViewItem("Number", formData.phone)}
+            {renderViewItem("Birthday", formData.dateOfBirth)}
+            {renderViewItem("Country", formData.address)}
+            {renderViewItem(
+              "Email",
+              isEmailVisible ? formData.email : maskEmail(formData.email),
+              isEmailVisible ? "eye-outline" : "eye-off-outline",
+              () => setIsEmailVisible(!isEmailVisible)
+            )}
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Country Code Picker Modal */}
-      <Modal
-        visible={showCountryPicker}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCountryPicker(false)}
-      >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl h-[60%] px-6 pt-6">
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-xl font-bold text-gray-900">
-                Select Country
-              </Text>
-              <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
-                <Ionicons name="close" size={24} color="#000" />
-              </TouchableOpacity>
-            </View>
-
-            <FlatList
-              data={COUNTRY_CODES}
-              keyExtractor={(item) => item.country + item.code}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    handleChange("phonePrefix", item.code);
-                    setShowCountryPicker(false);
-                  }}
-                  className="flex-row items-center py-4 border-b border-gray-50"
-                >
-                  <Text className="text-2xl mr-4">{item.flag}</Text>
-                  <Text className="flex-1 text-base text-gray-900">
-                    {item.country}
-                  </Text>
-                  <Text className="text-base font-semibold text-[#FFC107]">
-                    {item.code}
-                  </Text>
-                </TouchableOpacity>
-              )}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 40 }}
-            />
-          </View>
-        </View>
-      </Modal>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
