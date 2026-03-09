@@ -389,16 +389,16 @@ export default function OrderDetailsScreen() {
             </View>
             <Text className="text-gray-900 font-bold text-sm underline">
               {restaurantFromMap?.restaurantAddress ||
-               orderData?.providerInfo?.restaurantAddress || 
-               orderData?.providerInfo?.address || 
-               orderData?.providerInfo?.officeAddress ||
-               orderData?.providerId?.restaurantAddress || 
-               orderData?.providerId?.address || 
-               orderData?.pickupAddress ||
-               orderData?.restaurantAddress ||
-               (orderData?.providerInfo?.city ? `${orderData.providerInfo.city}${orderData.providerInfo.state ? ', ' + orderData.providerInfo.state : ''}` : 
-                orderData?.providerId?.city ? `${orderData.providerId.city}${orderData.providerId.state ? ', ' + orderData.providerId.state : ''}` : 
-                "Restaurant Location")}
+                orderData?.providerInfo?.restaurantAddress ||
+                orderData?.providerInfo?.address ||
+                orderData?.providerInfo?.officeAddress ||
+                orderData?.providerId?.restaurantAddress ||
+                orderData?.providerId?.address ||
+                orderData?.pickupAddress ||
+                orderData?.restaurantAddress ||
+                (orderData?.providerInfo?.city ? `${orderData.providerInfo.city}${orderData.providerInfo.state ? ', ' + orderData.providerInfo.state : ''}` :
+                  orderData?.providerId?.city ? `${orderData.providerId.city}${orderData.providerId.state ? ', ' + orderData.providerId.state : ''}` :
+                    "Restaurant Location")}
             </Text>
           </View>
 

@@ -1,20 +1,38 @@
-import { cardStore } from '@/utils/cardStore';
+import { usePaymentStore } from "@/stores/usePaymentStore";
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddCardScreen() {
     const router = useRouter();
+    const { addPaymentMethod, isLoading } = usePaymentStore();
     const [isDefault, setIsDefault] = useState(false);
     const [cardholderName, setCardholderName] = useState('');
     const [cardNumber, setCardNumber] = useState('');
-    const [expirationDate, setExpirationDate] = useState('');
+    const [expiryDate, setExpiryDate] = useState('');
     const [cvv, setCvv] = useState('');
 
-    const handleSaveCard = () => {
+    const formatExpiryDate = (text: string) => {
+        // Remove any non-numeric characters
+        const cleaned = text.replace(/\D/g, '');
+        
+        if (cleaned.length <= 2) {
+            return cleaned;
+        } else {
+            // Insert slash after 2 digits
+            return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
+        }
+    };
+
+    const handleExpiryChange = (text: string) => {
+        const formatted = formatExpiryDate(text);
+        setExpiryDate(formatted);
+    };
+
+    const handleSaveCard = async () => {
         // Validate form
         if (!cardholderName.trim()) {
             Alert.alert('Error', 'Please enter cardholder name');
@@ -24,10 +42,18 @@ export default function AddCardScreen() {
             Alert.alert('Error', 'Please enter a valid card number');
             return;
         }
-        if (!expirationDate.trim()) {
+        if (!expiryDate.trim()) {
             Alert.alert('Error', 'Please enter expiration date');
             return;
         }
+
+        // Validate MM/YY format
+        const expiryRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+        if (!expiryRegex.test(expiryDate)) {
+            Alert.alert('Error', 'Please enter expiration date in MM/YY format (e.g., 12/26)');
+            return;
+        }
+
         if (!cvv.trim() || cvv.length < 3) {
             Alert.alert('Error', 'Please enter a valid CVV');
             return;
@@ -35,22 +61,26 @@ export default function AddCardScreen() {
 
         // Add card to store
         try {
-            cardStore.addCard({
-                cardholderName,
-                cardNumber,
-                expirationDate,
-                cvv,
+            const success = await addPaymentMethod({
+                cardholderName: cardholderName.trim(),
+                cardNumber: cardNumber.replace(/\s/g, ''),
+                expiryDate: expiryDate.trim(),
+                cvv: cvv.replace(/\s/g, ''),
                 isDefault
             });
 
-            Alert.alert('Success', 'Card added successfully!', [
-                {
-                    text: 'OK',
-                    onPress: () => router.back()
-                }
-            ]);
-        } catch (error) {
-            Alert.alert('Error', 'Failed to add card');
+            if (success) {
+                Alert.alert('Success', 'Card added successfully!', [
+                    {
+                        text: 'OK',
+                        onPress: () => router.back()
+                    }
+                ]);
+            } else {
+                Alert.alert('Error', 'Failed to add card');
+            }
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to add card');
         }
     };
 
@@ -116,10 +146,11 @@ export default function AddCardScreen() {
                             <View className="flex-1">
                                 <Text className="text-sm font-medium text-gray-600 mb-2">Expiration date</Text>
                                 <TextInput
-                                    value={expirationDate}
-                                    onChangeText={setExpirationDate}
+                                    value={expiryDate}
+                                    onChangeText={handleExpiryChange}
                                     placeholder="MM/YY"
                                     placeholderTextColor="#9CA3AF"
+                                    keyboardType="number-pad"
                                     maxLength={5}
                                     className="bg-white p-4 rounded-2xl border border-gray-100 text-base text-gray-900"
                                 />
@@ -149,8 +180,13 @@ export default function AddCardScreen() {
                 <View className="px-6 pb-8">
                     <TouchableOpacity
                         onPress={handleSaveCard}
+                        disabled={isLoading}
                         className="bg-[#FFC107] w-full py-4 rounded-2xl items-center shadow-md">
-                        <Text className="text-gray-900 font-bold text-lg">Save</Text>
+                        {isLoading ? (
+                            <ActivityIndicator color="#000" />
+                        ) : (
+                            <Text className="text-gray-900 font-bold text-lg">Save</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>

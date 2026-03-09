@@ -1,22 +1,24 @@
-import { cardStore } from "@/utils/cardStore";
+console.log("--- PaymentScreen V3 Loading ---");
+import { usePaymentStore } from "@/stores/usePaymentStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect } from "react";
+import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PaymentScreen() {
+  console.log("--- PaymentScreen V3 Rendering ---");
   const router = useRouter();
-  const [cards, setCards] = useState(cardStore.getAllCards());
+  const { paymentMethods, isLoading, error, fetchPaymentMethods } = usePaymentStore();
 
   useEffect(() => {
-    // Refresh cards when component mounts
-    setCards(cardStore.getAllCards());
+    console.log("--- PaymentScreen V3 Mounted ---");
+    fetchPaymentMethods();
   }, []);
 
-  const defaultCard = cards.find((card: any) => card.isDefault);
-  const otherCards = cards.filter((card: any) => !card.isDefault);
+  const defaultCard = Array.isArray(paymentMethods) ? paymentMethods.find((card: any) => card.isDefault) : null;
+  const otherCards = Array.isArray(paymentMethods) ? paymentMethods.filter((card: any) => !card.isDefault) : [];
 
   return (
     <SafeAreaView className="flex-1 bg-[#FDFBF7]">
@@ -41,45 +43,59 @@ export default function PaymentScreen() {
       </View>
 
       <ScrollView className="flex-1 px-6">
-        {/* Default */}
-        <Text className="text-gray-500 text-sm mb-3 ml-1">Default</Text>
-        {defaultCard && (
-          <TouchableOpacity className="bg-white p-4 rounded-2xl mb-6 flex-row justify-between items-center border border-gray-100 shadow-sm">
-            <Text className="text-base font-semibold text-gray-900">
-              Mastercard - {defaultCard.cardholderName}
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-          </TouchableOpacity>
-        )}
-
-        {/* Others */}
-        {otherCards.length > 0 && (
-          <>
-            <Text className="text-gray-500 text-sm mb-3 ml-1">Others</Text>
-            {otherCards.map((card: any) => (
-              <TouchableOpacity 
-                key={card.id}
-                className="bg-white p-4 rounded-2xl mb-4 flex-row justify-between items-center border border-gray-100 shadow-sm"
-              >
-                <Text className="text-base font-semibold text-gray-900">
-                  Mastercard - {card.cardholderName}
-                </Text>
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-              </TouchableOpacity>
-            ))}
-          </>
-        )}
-
-        {cards.length === 0 && (
-          <View className="flex-1 items-center justify-center py-20">
-            <Text className="text-gray-400 text-center">No cards added yet</Text>
-            <TouchableOpacity
-              onPress={() => router.push("/screens/profile/add-card")}
-              className="mt-4 bg-[#FFC107] px-6 py-3 rounded-2xl"
-            >
-              <Text className="text-gray-900 font-semibold">Add Your First Card</Text>
-            </TouchableOpacity>
+        {error && (
+          <View className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
+            <Text className="text-red-600 text-sm text-center font-medium">{error}</Text>
           </View>
+        )}
+
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#FFC107" className="mt-10" />
+        ) : (
+          <>
+            {/* Default Section */}
+            {defaultCard && (
+              <>
+                <Text className="text-gray-500 text-sm mb-3 ml-1">Default</Text>
+                <TouchableOpacity className="bg-white p-4 rounded-2xl mb-6 flex-row justify-between items-center border border-gray-100 shadow-sm">
+                  <Text className="text-base font-semibold text-gray-900">
+                      {defaultCard.cardholderName} - {(defaultCard.cardNumber || '').slice(-4).padStart(defaultCard.cardNumber?.length || 16, "*")}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              </>
+            )}
+            
+            {/* Others Section */}
+            {otherCards.length > 0 && (
+              <>
+                <Text className="text-gray-500 text-sm mb-3 ml-1">Others</Text>
+                {otherCards.map((card: any) => (
+                  <TouchableOpacity
+                    key={card.id || card._id}
+                    className="bg-white p-4 rounded-2xl mb-4 flex-row justify-between items-center border border-gray-100 shadow-sm"
+                  >
+                    <Text className="text-base font-semibold text-gray-900">
+                       {card.cardholderName} - {(card.cardNumber || '').slice(-4).padStart(card.cardNumber?.length || 16, "*")}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+
+            {paymentMethods.length === 0 && !isLoading && !error && (
+              <View className="flex-1 items-center justify-center py-20">
+                <Text className="text-gray-400 text-center">No cards added yet</Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/screens/profile/add-card")}
+                  className="mt-4 bg-[#FFC107] px-6 py-3 rounded-2xl shadow-sm"
+                >
+                  <Text className="text-gray-900 font-semibold">Add Your First Card</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>

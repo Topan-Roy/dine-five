@@ -17,15 +17,15 @@ const MENU_ITEMS = [
   {
     id: "orders",
     title: "My Orders",
-    icon: "reader-outline", // list icon lookalike
+    icon: "reader-outline",
     route: "/screens/profile/my-orders",
   },
-  // {
-  //   id: "payment",
-  //   title: "Payment",
-  //   icon: "card-outline",
-  //   route: "/screens/profile/payment",
-  // },
+  {
+    id: "payment",
+    title: "Payment",
+    icon: "card-outline",
+    route: "screens/profile/payment",
+  },
   {
     id: "favorite",
     title: "Favorite",
@@ -82,7 +82,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Genearl Section */}
+        {/* General Section */}
         <Text className="text-[#70756B] text-sm font-normal mb-4">General</Text>
 
         {/* Menu List */}
@@ -90,7 +90,10 @@ export default function ProfileScreen() {
           {MENU_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.id}
-              onPress={() => router.push(item.route as any)}
+              onPress={() => {
+                console.log("Navigating to:", item.route);
+                router.push(item.route as any);
+              }}
               className="flex-row items-center justify-between py-2"
             >
               <View className="flex-row items-center gap-4">
