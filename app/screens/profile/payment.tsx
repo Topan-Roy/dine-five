@@ -4,18 +4,38 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PaymentScreen() {
   console.log("--- PaymentScreen V3 Rendering ---");
   const router = useRouter();
-  const { paymentMethods, isLoading, error, fetchPaymentMethods } = usePaymentStore();
+  const { paymentMethods, isLoading, error, fetchPaymentMethods, deletePaymentMethod } = usePaymentStore();
 
   useEffect(() => {
     console.log("--- PaymentScreen V3 Mounted ---");
     fetchPaymentMethods();
   }, []);
+
+  const handleDelete = (id: string, cardName: string) => {
+    Alert.alert(
+      "Delete Card",
+      `Are you sure you want to delete ${cardName}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: async () => {
+             const success = await deletePaymentMethod(id);
+             if (success) {
+               Alert.alert("Success", "Card deleted successfully");
+             }
+          }
+        }
+      ]
+    );
+  };
 
   const defaultCard = Array.isArray(paymentMethods) ? paymentMethods.find((card: any) => card.isDefault) : null;
   const otherCards = Array.isArray(paymentMethods) ? paymentMethods.filter((card: any) => !card.isDefault) : [];
@@ -58,10 +78,15 @@ export default function PaymentScreen() {
               <>
                 <Text className="text-gray-500 text-sm mb-3 ml-1">Default</Text>
                 <TouchableOpacity className="bg-white p-4 rounded-2xl mb-6 flex-row justify-between items-center border border-gray-100 shadow-sm">
-                  <Text className="text-base font-semibold text-gray-900">
+                  <Text className="text-base font-semibold text-gray-900 flex-1">
                       {defaultCard.cardholderName} - {(defaultCard.cardNumber || '').slice(-4).padStart(defaultCard.cardNumber?.length || 16, "*")}
                   </Text>
-                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                  <View className="flex-row items-center gap-3">
+                    <TouchableOpacity onPress={() => handleDelete((defaultCard as any).id || (defaultCard as any)._id, defaultCard.cardholderName)}>
+                      <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                    </TouchableOpacity>
+                    <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                  </View>
                 </TouchableOpacity>
               </>
             )}
@@ -75,10 +100,15 @@ export default function PaymentScreen() {
                     key={card.id || card._id}
                     className="bg-white p-4 rounded-2xl mb-4 flex-row justify-between items-center border border-gray-100 shadow-sm"
                   >
-                    <Text className="text-base font-semibold text-gray-900">
+                    <Text className="text-base font-semibold text-gray-900 flex-1">
                        {card.cardholderName} - {(card.cardNumber || '').slice(-4).padStart(card.cardNumber?.length || 16, "*")}
                     </Text>
-                    <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                    <View className="flex-row items-center gap-3">
+                      <TouchableOpacity onPress={() => handleDelete((card as any).id || (card as any)._id, card.cardholderName)}>
+                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                      </TouchableOpacity>
+                      <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                    </View>
                   </TouchableOpacity>
                 ))}
               </>

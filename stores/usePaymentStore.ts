@@ -17,6 +17,7 @@ interface PaymentState {
   error: string | null;
   fetchPaymentMethods: () => Promise<void>;
   addPaymentMethod: (data: Omit<PaymentMethod, "id">) => Promise<boolean>;
+  deletePaymentMethod: (id: string) => Promise<boolean>;
 }
 
 const getBaseUrl = () => {
@@ -82,6 +83,28 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       return true;
     } catch (error: any) {
         console.error("addPaymentMethod error:", error);
+      set({ error: error.message, isLoading: false });
+      return false;
+    }
+  },
+
+  deletePaymentMethod: async (id: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`${getBaseUrl()}/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to delete payment method");
+      }
+
+      await get().fetchPaymentMethods();
+      return true;
+    } catch (error: any) {
+      console.error("deletePaymentMethod error:", error);
       set({ error: error.message, isLoading: false });
       return false;
     }

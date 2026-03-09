@@ -28,7 +28,7 @@ export default function OrderDetailsScreen() {
   const [existingReviewId, setExistingReviewId] = useState<string | null>(null);
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [orderData, setOrderData] = useState<any>(null);
-  const { restaurants } = useRestaurantStore();
+  const { restaurants, fetchLocation, fetchNearbyRestaurants, location } = useRestaurantStore();
 
   const restaurantFromMap = restaurants.find(
     (r) =>
@@ -44,19 +44,40 @@ export default function OrderDetailsScreen() {
   const currentState = (orderData?.status || orderData?.orderStatus || params.state || "pending").toLowerCase();
 
   useEffect(() => {
-    const loadOrderData = async () => {
+    const initPage = async () => {
+      // 1. Load Restaurant Data if not present
+      if (restaurants.length === 0) {
+        console.log("Restaurants list empty. Fetching nearby restaurants...");
+        let locToUse: any = location;
+        if (!locToUse) {
+           await fetchLocation();
+           locToUse = useRestaurantStore.getState().location;
+        }
+        if (locToUse) {
+          await fetchNearbyRestaurants({
+            latitude: locToUse.latitude,
+            longitude: locToUse.longitude,
+            radius: 5000, // 5km radius
+          });
+        }
+      }
+
+      // 2. Load Order Data
       const targetId = (params._id as string) || (params.orderId as string);
       if (targetId) {
         console.log("Fetching order details for:", targetId);
         const data = await fetchOrderDetails(targetId);
         if (data) {
+          console.log("Order Data Received:", JSON.stringify(data, null, 2));
+          console.log("Provider ID from order:", data.providerId?._id || data.providerId);
+          console.log("Available Restaurants in Store:", restaurants.length);
           setOrderData(data);
           setOrderItems(data.items || []);
         }
       }
     };
 
-    loadOrderData();
+    initPage();
   }, [params._id, params.orderId]);
 
   useEffect(() => {
