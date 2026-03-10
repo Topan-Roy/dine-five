@@ -314,13 +314,13 @@ export default function ConfirmOrderScreen() {
     }, [cartItems]);
 
     const displayServiceFee = Number(unitServiceFee > 0 ? unitServiceFee : (pricing.platformFee || 0));
-    
+
     // STRICT FIXED TAX: Calculate tax ONLY for one unit of the items (e.g. 0.90 flat for the whole order)
     // We take the price of the first item to determine the base tax, which will stay fixed.
     const firstItemPrice = isBuyNow ? Number(params.price || 0) : (cartItems[0]?.price || 0);
     const calculatedTaxFromRate = stateTaxInfo?.tax ? (Number(firstItemPrice) * Number(stateTaxInfo.tax) / 100) : Number(params.stateTax || 0);
     const qtyForNormalization = isBuyNow ? Math.max(1, Number(params.quantity || 1)) : (cartItems?.reduce((sum, i) => sum + Number(i.quantity || 0), 0) || 1);
-    
+
     // This amount (e.g. 0.90) will NOT change even if quantity or products increase
     const displayStateTax = Number(calculatedTaxFromRate > 0 ? calculatedTaxFromRate : (pricing.stateTax > 0 ? (pricing.stateTax / qtyForNormalization) : 0));
 

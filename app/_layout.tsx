@@ -32,10 +32,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     let interval: any;
-    console.log("Checking Auth State:", { isInitialized, hasUser: !!user });
+    // console.log("Checking Auth State:", { isInitialized, hasUser: !!user });
 
     if (isInitialized && user) {
-      console.log("🚀 Notification polling started (3s interval)");
+      // console.log("🚀 Notification polling started (3s interval)");
 
       interval = setInterval(() => {
         checkNewNotifications();
@@ -43,7 +43,7 @@ export default function RootLayout() {
     }
     return () => {
       if (interval) {
-        console.log("🛑 Notification polling stopped");
+        // console.log("🛑 Notification polling stopped");
         clearInterval(interval);
       }
       // logic removed: notifiedIdSet.current.clear(); 
@@ -63,7 +63,7 @@ export default function RootLayout() {
           showBadge: true,
           lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
         });
-        console.log("✅ Android Notification Channel Setup Done (MAX Importance)");
+        // console.log("✅ Android Notification Channel Setup Done (MAX Importance)");
       }
 
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -72,9 +72,9 @@ export default function RootLayout() {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
-      console.log("🔔 Notification Permission Status:", finalStatus);
+      // console.log("🔔 Notification Permission Status:", finalStatus);
     } catch (error) {
-      console.log("❌ Push Setup Error:", error);
+      // console.log("❌ Push Setup Error:", error);
     }
   };
 
@@ -84,7 +84,7 @@ export default function RootLayout() {
     try {
       const state = useStore.getState() as any;
       const data = await state.fetchNotifications(true);
-      
+
       if (data) {
         // Collect all potential notifications from any array the API sends
         const allNotifs = [
@@ -103,8 +103,8 @@ export default function RootLayout() {
               notifiedIdSet.current.add(id);
             } else {
               // Truly NEW notification - trigger alert
-              console.log(`🔔 NEW NOTIF DETECTED: ${notif.title}`);
-              
+              // console.log(`🔔 NEW NOTIF DETECTED: ${notif.title}`);
+
               await Notifications.scheduleNotificationAsync({
                 content: {
                   title: notif.title || "Order Update",
@@ -126,7 +126,7 @@ export default function RootLayout() {
         }
       }
     } catch (e) {
-      console.log("❌ Polling Error:", e);
+      // console.log("❌ Polling Error:", e);
     }
   };
 
