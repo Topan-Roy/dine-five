@@ -26,8 +26,8 @@ export default function NotificationScreen() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadNotifications = async () => {
+  const loadNotifications = async () => {
+    try {
       const data = await fetchNotifications();
       if (data) {
         setNotifications({
@@ -35,9 +35,18 @@ export default function NotificationScreen() {
           oldNotifications: data.oldNotifications || [],
         });
       }
+    } catch (e) {
+      console.error("Error loading notifications:", e);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
+
+  useEffect(() => {
     loadNotifications();
+    // Fast refresh when tracking notifications on this screen
+    const interval = setInterval(loadNotifications, 5000);
+    return () => clearInterval(interval);
   }, [fetchNotifications]);
 
   const formatTime = (dateString: string) => {
@@ -54,6 +63,7 @@ export default function NotificationScreen() {
 
     return date.toLocaleDateString();
   };
+
   const renderNotification = (item: any) => (
     <View className="flex-row items-start mb-6 w-full">
       <View className="w-12 h-12 bg-[#FFF3CD] rounded-full items-center justify-center mr-4">
@@ -82,17 +92,20 @@ export default function NotificationScreen() {
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View className="flex-row items-center justify-center pt-2 pb-6 relative px-4">
+      <View className="flex-row items-center justify-between pt-2 pb-6 px-4">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="absolute left-4 z-10 p-2"
+          className="p-2"
         >
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <View className="flex-row items-center gap-2  mt-2.5">
+        
+        <View className="flex-row items-center gap-2 mt-2.5">
           <Ionicons name="notifications-outline" size={24} color="#000" />
           <Text className="text-xl font-bold text-gray-900">Notifications</Text>
         </View>
+
+        <View className="w-10" />
       </View>
 
       {/* Toggle Switch */}
@@ -107,8 +120,7 @@ export default function NotificationScreen() {
             >
               New
             </Text>
-            {/* Red dot for new */}
-            {activeTab === "old" && (
+            {notifications.newNotifications.length > 0 && activeTab === "old" && (
               <View className="absolute top-3 right-[35%] w-2 h-2 bg-red-500 rounded-full" />
             )}
           </TouchableOpacity>
@@ -139,9 +151,9 @@ export default function NotificationScreen() {
           {activeTab === "new" ? (
             notifications.newNotifications.length > 0 ? (
               notifications.newNotifications.map((item, index) => (
-                <React.Fragment key={item._id || item.id || `new-${index}`}>
+                <View key={item._id || item.id || `new-${index}`}>
                   {renderNotification(item)}
-                </React.Fragment>
+                </View>
               ))
             ) : (
               <EmptyState
@@ -152,9 +164,9 @@ export default function NotificationScreen() {
             )
           ) : notifications.oldNotifications.length > 0 ? (
             notifications.oldNotifications.map((item, index) => (
-              <React.Fragment key={item._id || item.id || `old-${index}`}>
+              <View key={item._id || item.id || `old-${index}`}>
                 {renderNotification(item)}
-              </React.Fragment>
+              </View>
             ))
           ) : (
             <EmptyState

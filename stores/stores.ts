@@ -651,8 +651,8 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  fetchNotifications: async () => {
-    set({ isLoading: true, error: null });
+  fetchNotifications: async (silent = false) => {
+    if (!silent) set({ isLoading: true, error: null });
 
     try {
       const { accessToken } = get() as any;
@@ -674,11 +674,11 @@ export const useStore = create((set, get) => ({
         throw new Error(result.message || "Failed to fetch notifications");
       }
 
-      set({ isLoading: false });
+      if (!silent) set({ isLoading: false });
       return result.data;
     } catch (error: any) {
       console.log("fetchNotifications error", error);
-      set({ error: error.message, isLoading: false });
+      if (!silent) set({ error: error.message, isLoading: false });
       return null;
     }
   },

@@ -1,19 +1,128 @@
 import { Toast } from "@/components/common/Toast";
+import { useStore } from "@/stores/stores";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 
-import { useStore } from "@/stores/stores";
-import { useEffect } from "react";
+import * as Notifications from "expo-notifications";
+
+// Configure how notifications are handled when the app is open
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 export default function RootLayout() {
-  const { isInitialized, initializeAuth } = useStore() as any;
+  const { isInitialized, initializeAuth, fetchNotifications, user } = useStore() as any;
+  const notifiedIdSet = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     initializeAuth();
+    setupNotifications();
   }, []);
+
+  useEffect(() => {
+    let interval: any;
+    console.log("Checking Auth State:", { isInitialized, hasUser: !!user });
+
+    if (isInitialized && user) {
+      console.log("🚀 Notification polling started (3s interval)");
+
+      // Trigger a TEST notification once on login to prove it works
+      setTimeout(async () => {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "🍱 Dine Five is Active!",
+            body: "We will notify you about your orders instantly.",
+            sound: true,
+            priority: Notifications.AndroidNotificationPriority.MAX,
+          },
+          trigger: null,
+        });
+        console.log("✅ Startup Test Notification Sent");
+      }, 5000);
+
+      interval = setInterval(() => {
+        checkNewNotifications();
+      }, 3000);
+    }
+    return () => {
+      if (interval) {
+        console.log("🛑 Notification polling stopped");
+        clearInterval(interval);
+      }
+      notifiedIdSet.current.clear();
+    };
+  }, [isInitialized, user]);
+
+  const setupNotifications = async () => {
+    try {
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "default",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FFC107",
+          enableVibrate: true,
+          showBadge: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        });
+        console.log("✅ Android Notification Channel Setup Done (MAX Importance)");
+      }
+
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      console.log("🔔 Notification Permission Status:", finalStatus);
+    } catch (error) {
+      console.log("❌ Push Setup Error:", error);
+    }
+  };
+
+  const checkNewNotifications = async () => {
+    try {
+      const state = useStore.getState() as any;
+      const data = await state.fetchNotifications(true);
+
+      if (data && data.newNotifications && Array.isArray(data.newNotifications)) {
+        // console.log(`Polling Check: ${data.newNotifications.length} items on server`);
+
+        for (const notif of data.newNotifications) {
+          const id = notif._id || notif.id;
+
+          if (id && !notifiedIdSet.current.has(id)) {
+            console.log(`🔔 NEW NOTIFICATION: ${notif.title}`);
+
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: `🍱 Dine Five: ${notif.title || "Update"}`,
+                body: notif.message || "You have a new update.",
+                sound: true,
+                priority: Notifications.AndroidNotificationPriority.MAX,
+              },
+              trigger: null,
+            });
+
+            notifiedIdSet.current.add(id);
+          }
+        }
+      }
+    } catch (e) {
+      console.log("❌ Polling Error:", e);
+    }
+  };
 
   if (!isInitialized) return null;
 

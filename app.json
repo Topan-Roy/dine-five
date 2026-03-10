@@ -75,7 +75,9 @@
           "enableGooglePay": true
         }
       ],
-      "expo-build-properties"
+      "expo-build-properties",
+      "@react-native-community/datetimepicker",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
