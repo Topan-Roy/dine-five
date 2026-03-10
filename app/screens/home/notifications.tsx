@@ -26,9 +26,10 @@ export default function NotificationScreen() {
   });
   const [loading, setLoading] = useState(true);
 
-  const loadNotifications = async () => {
+  const loadNotifications = async (isSilent = false) => {
     try {
-      const data = await fetchNotifications();
+      if (!isSilent) setLoading(true);
+      const data = await fetchNotifications(true); // use silent fetch from store
       if (data) {
         setNotifications({
           newNotifications: data.newNotifications || [],
@@ -38,14 +39,14 @@ export default function NotificationScreen() {
     } catch (e) {
       console.error("Error loading notifications:", e);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadNotifications();
-    // Fast refresh when tracking notifications on this screen
-    const interval = setInterval(loadNotifications, 5000);
+    // Refresh list every 5 seconds to keep it synced with API
+    const interval = setInterval(() => loadNotifications(true), 5000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
@@ -56,6 +57,7 @@ export default function NotificationScreen() {
     const diff = now.getTime() - date.getTime();
 
     const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes} mins ago`;
 
     const hours = Math.floor(minutes / 60);
@@ -65,7 +67,7 @@ export default function NotificationScreen() {
   };
 
   const renderNotification = (item: any) => (
-    <View className="flex-row items-start mb-6 w-full">
+    <View className="flex-row items-start mb-6 w-full bg-white p-4 rounded-2xl shadow-sm border border-orange-50">
       <View className="w-12 h-12 bg-[#FFF3CD] rounded-full items-center justify-center mr-4">
         <Ionicons
           name={(item.icon || "notifications") as any}
@@ -74,14 +76,16 @@ export default function NotificationScreen() {
         />
       </View>
       <View className="flex-1">
-        <Text className="text-base font-semibold text-[#363A33] mb-1">
-          {item.title}
+        {/* API Title */}
+        <Text className="text-base font-bold text-[#1F2A33] mb-1">
+          {item.title || "New Message"}
         </Text>
-        <Text className="text-[#60655C] text-sm font-normal leading-5 mb-2">
-          {item.message}
+        {/* API Message */}
+        <Text className="text-[#60655C] text-sm font-medium leading-5 mb-2">
+          {item.message || "You have a new update in your account."}
         </Text>
-        <Text className="text-sm font-semibold text-gray-900">
-          {item.time || formatTime(item.createdAt)}
+        <Text className="text-xs font-semibold text-gray-400">
+          {formatTime(item.createdAt)}
         </Text>
       </View>
     </View>

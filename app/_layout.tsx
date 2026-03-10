@@ -37,20 +37,6 @@ export default function RootLayout() {
     if (isInitialized && user) {
       console.log("🚀 Notification polling started (3s interval)");
 
-      // Trigger a TEST notification once on login to prove it works
-      setTimeout(async () => {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "🍱 Dine Five is Active!",
-            body: "We will notify you about your orders instantly.",
-            sound: true,
-            priority: Notifications.AndroidNotificationPriority.MAX,
-          },
-          trigger: null,
-        });
-        console.log("✅ Startup Test Notification Sent");
-      }, 5000);
-
       interval = setInterval(() => {
         checkNewNotifications();
       }, 3000);
@@ -60,7 +46,8 @@ export default function RootLayout() {
         console.log("🛑 Notification polling stopped");
         clearInterval(interval);
       }
-      notifiedIdSet.current.clear();
+      // logic removed: notifiedIdSet.current.clear(); 
+      // We keep the set so we don't notify the same IDs again if the interval restarts
     };
   }, [isInitialized, user]);
 
@@ -91,32 +78,51 @@ export default function RootLayout() {
     }
   };
 
+  const isFirstFetch = useRef(true);
+
   const checkNewNotifications = async () => {
     try {
       const state = useStore.getState() as any;
       const data = await state.fetchNotifications(true);
+      
+      if (data) {
+        // Collect all potential notifications from any array the API sends
+        const allNotifs = [
+          ...(data.newNotifications || []),
+          ...(data.oldNotifications || []),
+          ...(Array.isArray(data) ? data : [])
+        ];
 
-      if (data && data.newNotifications && Array.isArray(data.newNotifications)) {
-        // console.log(`Polling Check: ${data.newNotifications.length} items on server`);
-
-        for (const notif of data.newNotifications) {
-          const id = notif._id || notif.id;
+        for (const notif of allNotifs) {
+          // Fix: API uses 'notificationId'
+          const id = notif.notificationId || notif._id || notif.id;
 
           if (id && !notifiedIdSet.current.has(id)) {
-            console.log(`🔔 NEW NOTIFICATION: ${notif.title}`);
+            if (isFirstFetch.current) {
+              // Silently record existing IDs on first load
+              notifiedIdSet.current.add(id);
+            } else {
+              // Truly NEW notification - trigger alert
+              console.log(`🔔 NEW NOTIF DETECTED: ${notif.title}`);
+              
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: notif.title || "Order Update",
+                  body: notif.message || "New message received",
+                  sound: true,
+                  priority: Notifications.AndroidNotificationPriority.MAX,
+                },
+                trigger: null,
+              });
 
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: `🍱 Dine Five: ${notif.title || "Update"}`,
-                body: notif.message || "You have a new update.",
-                sound: true,
-                priority: Notifications.AndroidNotificationPriority.MAX,
-              },
-              trigger: null,
-            });
-
-            notifiedIdSet.current.add(id);
+              notifiedIdSet.current.add(id);
+            }
           }
+        }
+
+        // After the first loop, mark first fetch as done
+        if (isFirstFetch.current) {
+          isFirstFetch.current = false;
         }
       }
     } catch (e) {

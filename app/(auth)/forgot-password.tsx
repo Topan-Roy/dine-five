@@ -50,7 +50,8 @@ const ForgotPassword = () => {
     <View className="flex-1">
       <StatusBar style="auto" />
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         className="flex-1"
       >
         <ImageBackground
@@ -62,8 +63,9 @@ const ForgotPassword = () => {
             className="flex-1"
             contentContainerStyle={{ flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <View className="flex-1 items-center justify-center">
+            <View className="flex-1 items-center justify-center pt-20">
               <Image
                 source={require("@/assets/icon.png")}
                 contentFit="contain"
@@ -78,7 +80,7 @@ const ForgotPassword = () => {
             </View>
             {/* Forgot Password form */}
             <View
-              className="bg-white pt-8 px-6 pb-10 rounded-t-3xl"
+              className="bg-white pt-8 px-6 pb-12 rounded-t-3xl"
               style={{
                 borderTopWidth: 2,
                 borderLeftWidth: 2,
@@ -86,6 +88,7 @@ const ForgotPassword = () => {
                 borderColor: "#F59E0B",
                 borderTopLeftRadius: 28,
                 borderTopRightRadius: 28,
+                marginTop: "auto"
               }}
             >
               <Text className="text-2xl font-bold text-center mb-4">
